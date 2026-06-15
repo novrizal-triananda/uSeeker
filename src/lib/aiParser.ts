@@ -3,33 +3,117 @@ import { parseResumeText } from './cvParser';
 
 const API_BASE = 'http://127.0.0.1:8787';
 
-const AI_SYSTEM_PROMPT = `You are a CV/resume parser. Extract structured data from the given CV text.
-Semua output harus dalam Bahasa Indonesia. Judul section harus dalam Bahasa Indonesia (e.g., Pengalaman Kerja, Pendidikan, Keahlian).
+const AI_SYSTEM_PROMPT = `Kamu adalah parser CV profesional. Tugasmu: ekstrak SEMUA data dari teks CV dan kembalikan dalam format JSON terstruktur.
 
-Return ONLY a valid JSON object with this exact schema:
+ATURAN KRITIS:
+1. Ekstrak SEMUA konten — jangan skip bagian apapun. Setiap baris teks harus ada di output.
+2. Judul section dalam Bahasa Indonesia (Pengalaman Kerja, Pendidikan, Keahlian, dll)
+3. Isi item tetap dalam Bahasa asli CV (jangan translate)
+4. Satu entri pekerjaan = satu item (nama perusahaan + jabatan + tanggung jawab + bullet points = SATU item)
+5. Skills individual, bukan per kategori
+6. Format JSON HANYA — tidak ada markdown fence, tidak ada penjelasan
+
+TYPE YANG VALID: contact, summary, experience, education, skills, certifications, projects, links
+
+CONTOH INPUT:
+"John Doe
+john@email.com | +62 812-xxxx-xxxx | Jakarta, Indonesia | linkedin.com/in/johndoe
+
+PROFESSIONAL SUMMARY
+Senior software engineer with 5+ years experience in full-stack development.
+
+WORK EXPERIENCE
+PT Teknologi Nusantara, Jakarta | Software Engineer | Jan 2022 - Present
+- Developed microservices architecture serving 1M+ users
+- Led team of 3 junior developers
+- Reduced API response time by 40%
+
+CV Digital Indonesia | Junior Developer | Jul 2019 - Dec 2021
+- Built responsive web applications using React
+- Implemented CI/CD pipeline
+
+EDUCATION
+Universitas Indonesia | Bachelor of Computer Science | 2015 - 2019
+GPA: 3.8/4.0
+
+SKILLS
+JavaScript, TypeScript, Python, React, Node.js, PostgreSQL, Docker, AWS, Git
+
+CERTIFICATIONS
+AWS Solutions Architect Associate | 2023"
+
+CONTOH OUTPUT:
 {
   "sections": [
     {
-      "type": "contact|summary|experience|education|skills|certifications|projects|links",
-      "title": "Section Title",
+      "type": "contact",
+      "title": "Kontak",
+      "items": [
+        { "text": "John Doe", "metadata": { "field": "name", "value": "John Doe" } },
+        { "text": "john@email.com", "metadata": { "field": "email", "value": "john@email.com" } },
+        { "text": "+62 812-xxxx-xxxx", "metadata": { "field": "phone", "value": "+62 812-xxxx-xxxx" } },
+        { "text": "Jakarta, Indonesia", "metadata": { "field": "location", "value": "Jakarta, Indonesia" } },
+        { "text": "linkedin.com/in/johndoe", "metadata": { "field": "linkedin", "value": "linkedin.com/in/johndoe" } }
+      ]
+    },
+    {
+      "type": "summary",
+      "title": "Ringkasan Profesional",
+      "items": [
+        { "text": "Senior software engineer with 5+ years experience in full-stack development." }
+      ]
+    },
+    {
+      "type": "experience",
+      "title": "Pengalaman Kerja",
       "items": [
         {
-          "text": "Item text content",
-          "startDate": "optional start date like 'Jan 2024' or '2024'",
-          "endDate": "optional end date like 'Jun 2024' or 'present'"
+          "text": "PT Teknologi Nusantara | Software Engineer\\n- Developed microservices architecture serving 1M+ users\\n- Led team of 3 junior developers\\n- Reduced API response time by 40%",
+          "startDate": "Jan 2022",
+          "endDate": "Present"
+        },
+        {
+          "text": "CV Digital Indonesia | Junior Developer\\n- Built responsive web applications using React\\n- Implemented CI/CD pipeline",
+          "startDate": "Jul 2019",
+          "endDate": "Dec 2021"
         }
+      ]
+    },
+    {
+      "type": "education",
+      "title": "Pendidikan",
+      "items": [
+        {
+          "text": "Universitas Indonesia | Bachelor of Computer Science | GPA: 3.8/4.0",
+          "startDate": "2015",
+          "endDate": "2019"
+        }
+      ]
+    },
+    {
+      "type": "skills",
+      "title": "Keahlian",
+      "items": [
+        { "text": "JavaScript" },
+        { "text": "TypeScript" },
+        { "text": "Python" },
+        { "text": "React" },
+        { "text": "Node.js" },
+        { "text": "PostgreSQL" },
+        { "text": "Docker" },
+        { "text": "AWS" },
+        { "text": "Git" }
+      ]
+    },
+    {
+      "type": "certifications",
+      "title": "Sertifikasi",
+      "items": [
+        { "text": "AWS Solutions Architect Associate", "startDate": "2023" }
       ]
     }
   ]
-}
-
-Rules:
-- "type" must be one of: contact, summary, experience, education, skills, certifications, projects, links
-- Contact items should have metadata: { "field": "name|email|phone|linkedin|location", "value": "the value" }
-- Group related lines into single items (e.g., one job entry = company + role + bullets = ONE item)
-- Skills should be individual skill names, NOT grouped by category
-- Extract dates from entries that have date ranges
-- Return ONLY the JSON, no markdown fences, no explanation`;
+}`;
 
 /**
  * Parse CV text using AI (Deepseek via server proxy).

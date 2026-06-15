@@ -91,9 +91,9 @@ export default function Triage() {
       const { extractTextFromFile } = await import('../lib/fileImporter');
       const text = await extractTextFromFile(file);
 
-      // Parse with local regex
-      const { parseResumeText } = await import('../lib/cvParser');
-      const parsed = await parseResumeText(text);
+      // Parse with AI (falls back to regex if server unavailable)
+      const { parseResumeWithAI } = await import('../lib/aiParser');
+      const parsed = await parseResumeWithAI(text);
 
       // Save to DB (overwrite existing)
       const existing = await db.masterResume.toCollection().first();
