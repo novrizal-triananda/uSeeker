@@ -113,6 +113,12 @@ export default function Visibility() {
     }
   }
 
+  async function handleDeleteApp(id: string) {
+    if (!confirm('Hapus lamaran ini?')) return;
+    await db.applications.delete(id);
+    await loadData();
+  }
+
   if (loading) {
     return (
       <div style={styles.container}>
@@ -244,58 +250,64 @@ export default function Visibility() {
                     <p style={styles.noCards}>Kosong</p>
                   ) : (
                     stageApps.map((app) => (
-                      <div key={app.id} style={styles.card}>
-                        <div style={styles.cardCompany}>{app.company}</div>
-                        <div style={styles.cardRole}>{app.roleTitle}</div>
-                        {app.notes && (
-                          <div style={styles.cardNotes}>{app.notes}</div>
-                        )}
-                        <div style={styles.cardFooter}>
-                          <time style={styles.cardDate}>
-                            {new Date(app.dateApplied).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                            })}
-                          </time>
-                          {app.outcome && (
-                            <span style={{
-                              padding: '2px 6px',
-                              borderRadius: 'var(--radius-sm)',
-                              fontSize: 'var(--font-size-sm)',
-                              fontWeight: 600,
-                              background: app.outcome === 'accepted' ? '#DCFCE7' : app.outcome === 'rejected' ? '#FEE2E2' : app.outcome === 'ghosted' ? '#F3F4F6' : '#FEF3C7',
-                              color: app.outcome === 'accepted' ? '#166534' : app.outcome === 'rejected' ? '#991B1B' : app.outcome === 'ghosted' ? '#6B7280' : '#92400E',
-                            }}>
-                              {OUTCOMES.find(o => o.key === app.outcome)?.icon} {app.outcome}
-                            </span>
+                        <div key={app.id} style={styles.card}>
+                          <div style={styles.cardHeader}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={styles.cardCompany}>{app.company}</div>
+                              <div style={styles.cardRole}>{app.roleTitle}</div>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteApp(app.id)}
+                              style={styles.deleteBtn}
+                              title="Hapus lamaran"
+                            >✕</button>
+                          </div>
+                          {app.notes && (
+                            <div style={styles.cardNotes}>{app.notes}</div>
                           )}
-                          <select
-                            value={app.status}
-                            onChange={(e) =>
-                              handleStatusChange(app.id, e.target.value as ApplicationStatus)
-                            }
-                            style={styles.statusSelect}
-                          >
-                            {PIPELINE_STAGES.map((s) => (
-                              <option key={s.key} value={s.key}>{s.label}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={app.outcome || ''}
-                            onChange={(e) => {
-                              const val = e.target.value as ApplicationOutcome;
-                              if (val) handleOutcomeChange(app.id, val);
-                            }}
-                            style={{ ...styles.statusSelect, marginLeft: 'var(--space-2)' }}
-                          >
-                            <option value="">Outcome...</option>
-                            {OUTCOMES.map((o) => (
-                              <option key={o.key} value={o.key}>{o.icon} {o.label}</option>
-                            ))}
-                          </select>
+                          <div style={styles.cardMeta}>
+                            <time style={styles.cardDate}>
+                              {new Date(app.dateApplied).toLocaleDateString('id-ID', {
+                                day: 'numeric', month: 'short', year: 'numeric',
+                              })}
+                            </time>
+                            {app.outcome && (
+                              <span style={{
+                                padding: '1px 6px', borderRadius: 'var(--radius-sm)',
+                                fontSize: '0.65rem', fontWeight: 600,
+                                background: app.outcome === 'accepted' ? '#DCFCE7' : app.outcome === 'rejected' ? '#FEE2E2' : app.outcome === 'ghosted' ? '#F3F4F6' : '#FEF3C7',
+                                color: app.outcome === 'accepted' ? '#166534' : app.outcome === 'rejected' ? '#991B1B' : app.outcome === 'ghosted' ? '#6B7280' : '#92400E',
+                              }}>
+                                {OUTCOMES.find(o => o.key === app.outcome)?.icon} {app.outcome}
+                              </span>
+                            )}
+                          </div>
+                          <div style={styles.cardControls}>
+                            <select
+                              value={app.status}
+                              onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                              style={styles.statusSelect}
+                            >
+                              {PIPELINE_STAGES.map((s) => (
+                                <option key={s.key} value={s.key}>{s.label}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={app.outcome || ''}
+                              onChange={(e) => {
+                                const val = e.target.value as ApplicationOutcome;
+                                if (val) handleOutcomeChange(app.id, val);
+                              }}
+                              style={styles.statusSelect}
+                            >
+                              <option value="">Outcome...</option>
+                              {OUTCOMES.map((o) => (
+                                <option key={o.key} value={o.key}>{o.icon} {o.label}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      ))
                   )}
                 </div>
               </div>
@@ -524,43 +536,68 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--color-border)',
     overflow: 'hidden',
   },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 'var(--space-2)',
+    marginBottom: 'var(--space-1)',
+  },
   cardCompany: {
     fontWeight: 600,
     fontSize: 'var(--font-size-sm)',
     color: 'var(--color-text)',
-    marginBottom: 'var(--space-1)',
+    lineHeight: 1.3,
   },
   cardRole: {
-    fontSize: 'var(--font-size-sm)',
-    color: 'var(--color-text-muted)',
-    marginBottom: 'var(--space-2)',
-  },
-  cardNotes: {
     fontSize: '0.75rem',
     color: 'var(--color-text-muted)',
+    lineHeight: 1.3,
+  },
+  cardNotes: {
+    fontSize: '0.7rem',
+    color: 'var(--color-text-muted)',
     fontStyle: 'italic',
-    marginBottom: 'var(--space-2)',
+    marginBottom: 'var(--space-1)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  cardFooter: {
+  cardMeta: {
     display: 'flex',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 'var(--space-1)',
+    gap: 'var(--space-2)',
+    marginBottom: 'var(--space-2)',
+    flexWrap: 'wrap',
   },
   cardDate: {
-    fontSize: '0.7rem',
+    fontSize: '0.65rem',
     color: 'var(--color-text-muted)',
   },
-  statusSelect: {
+  cardControls: {
+    display: 'flex',
+    gap: 'var(--space-1)',
+  },
+  deleteBtn: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--color-text-muted)',
+    cursor: 'pointer',
     fontSize: '0.7rem',
+    padding: '2px 4px',
+    borderRadius: 'var(--radius-sm)',
+    lineHeight: 1,
+    flexShrink: 0,
+  },
+  statusSelect: {
+    fontSize: '0.65rem',
     padding: '2px 4px',
     border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-sm)',
     backgroundColor: 'var(--color-bg)',
     color: 'var(--color-text)',
     cursor: 'pointer',
+    flex: 1,
+    minWidth: 0,
   },
 };

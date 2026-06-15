@@ -156,8 +156,10 @@ export default function Triage() {
       const job = await db.jobEntries.get(jobId);
       if (!job) return;
 
-      const fitScore = generateFitScore(masterResume, job.jobDescription, jobId);
-      await db.fitScores.put(fitScore);
+      const fitScore = generateFitScore(masterResume, job.jobDescription || '', jobId);
+      // Delete old score for this job to avoid duplicates
+      await db.fitScores.where('jobId').equals(jobId).delete();
+      await db.fitScores.add(fitScore);
       await loadData();
     } catch (err) {
       console.error('Failed to generate score:', err);
