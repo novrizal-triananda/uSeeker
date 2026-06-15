@@ -19,8 +19,11 @@ try {
 } catch { /* .env optional */ }
 
 const PORT = Number(process.env.USEEKER_API_PORT) || 8787;
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
-const DEEPSEEK_BASE = 'https://api.deepseek.com';
+
+// AI provider config — backward-compatible: falls back to Deepseek defaults
+const AI_API_KEY = process.env.AI_API_KEY || process.env.DEEPSEEK_API_KEY || '';
+const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
+const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat';
 
 function cors(res: http.ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -33,23 +36,23 @@ function jsonResponse(res: http.ServerResponse, status: number, data: unknown) {
   res.end(JSON.stringify(data));
 }
 
-async function callDeepseek(prompt: string, systemPrompt?: string): Promise<string> {
-  if (!DEEPSEEK_API_KEY) {
-    throw new Error('DEEPSEEK_API_KEY tidak dikonfigurasi di .env');
+async function callAI(prompt: string, systemPrompt?: string): Promise<string> {
+  if (!AI_API_KEY) {
+    throw new Error('AI API key tidak dikonfigurasi. Isi AI_API_KEY di .env');
   }
 
   const messages: { role: string; content: string }[] = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: prompt });
 
-  const response = await fetch(`${DEEPSEEK_BASE}/chat/completions`, {
+  const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      'Authorization': `Bearer ${AI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: AI_MODEL,
       messages,
       temperature: 0.1,
       max_tokens: 4096,
@@ -58,7 +61,7 @@ async function callDeepseek(prompt: string, systemPrompt?: string): Promise<stri
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Deepseek API error (${response.status}): ${err}`);
+    throw new Error(`AI API error (${response.status}): ${err}`);
   }
 
   const data = await response.json() as any;
@@ -78,7 +81,11 @@ const server = http.createServer(async (req, res) => {
   if (req.url === '/api/health' && req.method === 'GET') {
     jsonResponse(res, 200, {
       status: 'ok',
-      hasKey: !!DEEPSEEK_API_KEY,
+      ai: {
+        configured: !!AI_API_KEY,
+        provider: AI_API_KEY ? AI_BASE_URL : null,
+        model: AI_API_KEY ? AI_MODEL : null,
+      },
       timestamp: new Date().toISOString(),
     });
     return;
@@ -104,7 +111,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const result = await callDeepseek(prompt, systemPrompt);
+        const result = await callAI(prompt, systemPrompt);
         jsonResponse(res, 200, { result, task });
       } catch (err: any) {
         console.error('AI proxy error:', err.message);
@@ -119,5 +126,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`uSeeker API berjalan di http://127.0.0.1:${PORT}`);
-  console.log(`Deepseek API key: ${DEEPSEEK_API_KEY ? 'configured' : 'NOT SET'}`);
+  console.log(`AI provider: ${AI_API_KEY ? `${AI_BASE_URL} (${AI_MODEL})` : 'NOT SET'}`);
 });
