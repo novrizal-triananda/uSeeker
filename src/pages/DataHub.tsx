@@ -7,7 +7,7 @@ import {
   getPipelineSummary,
 } from '../lib/dataHub';
 import type { ConsolidatedView, InterviewPrep, PipelineSummary } from '../lib/dataHub';
-import type { Application } from '../types';
+
 
 export default function DataHub() {
   const [views, setViews] = useState<ConsolidatedView[]>([]);
@@ -39,7 +39,7 @@ export default function DataHub() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `useeker-export-${new Date().toISOString().split('T')[0]}.{format}`;
+      a.download = `useeker-export-${new Date().toISOString().split('T')[0]}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

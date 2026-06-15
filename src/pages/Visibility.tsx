@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import { addApplication, updateStatus, getPipelineStats } from '../lib/pipeline';
-import type { Application, ApplicationStatus, PipelineStats } from '../types';
+import { addApplication, updateStatus, getOutcome, getPipelineStats } from '../lib/pipeline';
+import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats } from '../types';
 
 const PIPELINE_STAGES: { key: ApplicationStatus; label: string; icon: string }[] = [
   { key: 'applied', label: 'Applied', icon: '📨' },
@@ -9,6 +9,13 @@ const PIPELINE_STAGES: { key: ApplicationStatus; label: string; icon: string }[]
   { key: 'interview', label: 'Interview', icon: '🎤' },
   { key: 'offer', label: 'Offer', icon: '🎉' },
   { key: 'rejected', label: 'Rejected', icon: '❌' },
+];
+
+const OUTCOMES: { key: ApplicationOutcome; label: string; icon: string }[] = [
+  { key: 'accepted', label: 'Accepted', icon: '✅' },
+  { key: 'rejected', label: 'Rejected', icon: '❌' },
+  { key: 'ghosted', label: 'Ghosted', icon: '👻' },
+  { key: 'withdrawn', label: 'Withdrawn', icon: '🏳️' },
 ];
 
 const STAGE_COLORS: Record<ApplicationStatus, string> = {
@@ -94,6 +101,15 @@ export default function Visibility() {
       await loadData();
     } catch {
       alert('Gagal memperbarui status.');
+    }
+  }
+
+  async function handleOutcomeChange(id: string, outcome: ApplicationOutcome) {
+    try {
+      await getOutcome(id, outcome);
+      await loadData();
+    } catch {
+      alert('Gagal memperbarui outcome.');
     }
   }
 
@@ -244,6 +260,18 @@ export default function Visibility() {
                               month: 'short',
                             })}
                           </time>
+                          {app.outcome && (
+                            <span style={{
+                              padding: '2px 6px',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: 'var(--font-size-sm)',
+                              fontWeight: 600,
+                              background: app.outcome === 'accepted' ? '#DCFCE7' : app.outcome === 'rejected' ? '#FEE2E2' : app.outcome === 'ghosted' ? '#F3F4F6' : '#FEF3C7',
+                              color: app.outcome === 'accepted' ? '#166534' : app.outcome === 'rejected' ? '#991B1B' : app.outcome === 'ghosted' ? '#6B7280' : '#92400E',
+                            }}>
+                              {OUTCOMES.find(o => o.key === app.outcome)?.icon} {app.outcome}
+                            </span>
+                          )}
                           <select
                             value={app.status}
                             onChange={(e) =>
@@ -253,6 +281,19 @@ export default function Visibility() {
                           >
                             {PIPELINE_STAGES.map((s) => (
                               <option key={s.key} value={s.key}>{s.label}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={app.outcome || ''}
+                            onChange={(e) => {
+                              const val = e.target.value as ApplicationOutcome;
+                              if (val) handleOutcomeChange(app.id, val);
+                            }}
+                            style={{ ...styles.statusSelect, marginLeft: 'var(--space-2)' }}
+                          >
+                            <option value="">Outcome...</option>
+                            {OUTCOMES.map((o) => (
+                              <option key={o.key} value={o.key}>{o.icon} {o.label}</option>
                             ))}
                           </select>
                         </div>

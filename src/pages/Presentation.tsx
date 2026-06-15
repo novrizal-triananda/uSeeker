@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../lib/db';
-import { parseResumeText } from '../lib/cvParser';
+import { importCVFile } from '../lib/fileImporter';
 import { generateLocalDiff, generateAiSuggestions } from '../lib/resumeDiff';
 import type { MasterResume, ResumeSection, JobEntry, TailorSuggestion } from '../types';
 
@@ -29,15 +29,18 @@ export default function Presentation() {
   }
 
   const handleFile = useCallback(async (file: File) => {
-    const text = await file.text();
-    const parsed = parseResumeText(text);
-    // Store as a new master resume (first import only - never overwrite existing)
-    const existing = await db.masterResume.toCollection().first();
-    if (!existing) {
-      await db.masterResume.add(parsed);
+    try {
+      const parsed = await importCVFile(file);
+      // Store as a new master resume (first import only - never overwrite existing)
+      const existing = await db.masterResume.toCollection().first();
+      if (!existing) {
+        await db.masterResume.add(parsed);
+      }
+      // Set display state from the parsed result
+      setResume(parsed);
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengimport file');
     }
-    // Set display state from the parsed result
-    setResume(parsed);
   }, []);
 
   function handleDragOver(e: React.DragEvent) {
@@ -53,9 +56,7 @@ export default function Presentation() {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.txt') || file.name.endsWith('.pdf') || file.name.endsWith('.md'))) {
-      handleFile(file);
-    }
+    if (file) handleFile(file);
   }
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
@@ -113,7 +114,7 @@ export default function Presentation() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.md,.pdf"
+          accept=".txt,.md,.docx,.pdf"
           onChange={handleFileInput}
           style={{ display: 'none' }}
         />

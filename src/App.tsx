@@ -14,11 +14,8 @@ import './App.css';
 
 function App() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // Service worker registration failed — non-critical
-      });
-    }
+    // Service worker disabled until V2 (offline PWA support).
+    // Causes stale-cache white screens in dev/preview when sw.js is present in public/.
   }, []);
 
   return (

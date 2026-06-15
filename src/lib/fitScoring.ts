@@ -91,7 +91,7 @@ function extractYears(text: string): number {
   return match ? parseInt(match[1]) : 0;
 }
 
-function calculatePreferenceMatch(jdText: string, expectedSalary?: string, salaryRange?: string): number {
+function calculatePreferenceMatch(_jdText: string, expectedSalary?: string, salaryRange?: string): number {
   let score = 100;
   if (expectedSalary && salaryRange) {
     const expected = parseInt(expectedSalary.match(/(\d+)/)?.[1] || '0');

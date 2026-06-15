@@ -1,13 +1,7 @@
 import { db } from './db';
-import type { Application, ApplicationStatus, ApplicationOutcome } from '../types';
+import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats } from '../types';
 
 const PIPELINE_STAGES: ApplicationStatus[] = ['applied', 'screen', 'interview', 'offer', 'rejected'];
-
-export interface PipelineStats {
-  total: number;
-  byStatus: Record<ApplicationStatus, number>;
-  responseRate: number;
-}
 
 export interface StageBocor {
   stage: ApplicationStatus;

@@ -11,8 +11,8 @@ import type { Application, FitScore } from '../types';
 import type { OutcomeDistribution, StageBocor, SkillGapEntry, LearningPoint } from '../lib/insights';
 
 export default function Insights() {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [fitScores, setFitScores] = useState<FitScore[]>([]);
+  const [, setApplications] = useState<Application[]>([]);
+  const [, setFitScores] = useState<FitScore[]>([]);
   const [distribution, setDistribution] = useState<OutcomeDistribution>({ accepted: 0, rejected: 0, ghosted: 0, withdrawn: 0 });
   const [stageBocor, setStageBocor] = useState<StageBocor | null>(null);
   const [skillGaps, setSkillGaps] = useState<SkillGapEntry[]>([]);

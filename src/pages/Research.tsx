@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import { createIntelCard, requestResearch, isBannedDomain, parseIntelResponse } from '../lib/companyIntel';
+import { createIntelCard, requestResearch, isBannedDomain } from '../lib/companyIntel';
 import type { CompanyIntel } from '../types';
 
 export default function Research() {
@@ -8,7 +8,7 @@ export default function Research() {
   const [company, setCompany] = useState('');
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
+
   const [researchingId, setResearchingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -23,14 +23,14 @@ export default function Research() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!company.trim() || !url.trim()) return;
+    if (!company.trim()) return;
 
-    if (isBannedDomain(url)) {
+    if (url.trim() && isBannedDomain(url)) {
       alert('Domain ini diblokir (review site/job board). Gunakan situs resmi perusahaan.');
       return;
     }
 
-    await createIntelCard({ company: company.trim(), officialUrl: url.trim(), notes: notes.trim() || undefined });
+    await createIntelCard({ company: company.trim(), officialUrl: url.trim() || '', notes: notes.trim() || undefined });
     setCompany('');
     setUrl('');
     setNotes('');
@@ -98,8 +98,7 @@ export default function Research() {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://about.google"
-              required
+              placeholder="https://about.google (opsional)"
               style={{
                 width: '100%', padding: 'var(--space-3)',
                 border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
@@ -132,7 +131,7 @@ export default function Research() {
           </div>
           <button
             type="submit"
-            disabled={!company.trim() || !url.trim() || isBannedDomain(url)}
+            disabled={!company.trim() || (url.trim() && isBannedDomain(url))}
             style={{
               alignSelf: 'flex-start',
               padding: 'var(--space-3) var(--space-6)',
@@ -143,7 +142,7 @@ export default function Research() {
               fontWeight: 600,
               cursor: 'pointer',
               fontSize: 'var(--font-size-base)',
-              opacity: (!company.trim() || !url.trim() || isBannedDomain(url)) ? 0.5 : 1,
+              opacity: (!company.trim() || (url.trim() && isBannedDomain(url))) ? 0.5 : 1,
             }}
           >
             + Tambah Kartu

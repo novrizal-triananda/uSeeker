@@ -91,6 +91,12 @@ export interface TailoredResume {
   createdAt: Date;
 }
 
+export interface PipelineStats {
+  total: number;
+  byStatus: Record<ApplicationStatus, number>;
+  responseRate: number;
+}
+
 export interface EventLog {
   id: string;
   type: EventType;
