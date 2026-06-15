@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { parseResumeWithAI } from '../lib/aiParser';
@@ -11,6 +12,8 @@ interface JobWithScore {
 }
 
 export default function Triage() {
+  const { jobId } = useParams<{ jobId: string }>();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<JobWithScore[]>([]);
   const [masterResume, setMasterResume] = useState<MasterResume | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +42,11 @@ export default function Triage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Sync selectedJobId with URL param
+  useEffect(() => {
+    if (jobId) setSelectedJobId(jobId);
+  }, [jobId]);
 
   async function loadData() {
     try {
@@ -458,7 +466,11 @@ export default function Triage() {
                 cursor: 'pointer',
                 borderColor: selectedJobId === job.id ? 'var(--color-primary)' : undefined,
               }}
-              onClick={() => setSelectedJobId(selectedJobId === job.id ? null : job.id)}
+              onClick={() => {
+                const newId = selectedJobId === job.id ? null : job.id;
+                setSelectedJobId(newId);
+                navigate(newId ? `/triage/${newId}` : '/triage', { replace: true });
+              }}
             >
               {/* Job header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

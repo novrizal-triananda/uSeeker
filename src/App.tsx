@@ -26,11 +26,14 @@ function App() {
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="triage" element={<Triage />} />
+          <Route path="triage/:jobId" element={<Triage />} />
           <Route path="research" element={<Research />} />
+          <Route path="research/:intelId" element={<Research />} />
           <Route path="tailoring" element={<Tailoring />} />
           <Route path="visibility" element={<Visibility />} />
           <Route path="insights" element={<Insights />} />
           <Route path="data-hub" element={<DataHub />} />
+          <Route path="data-hub/prep/:jobId" element={<DataHub />} />
         </Route>
       </Routes>
     </BrowserRouter>

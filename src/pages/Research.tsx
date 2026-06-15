@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { createIntelCard, requestResearch, isBannedDomain } from '../lib/companyIntel';
 import { logEvent } from '../lib/eventLog';
 import type { CompanyIntel, JobEntry } from '../types';
 
 export default function Research() {
+  const { intelId } = useParams<{ intelId: string }>();
+  const navigate = useNavigate();
   const [cards, setCards] = useState<CompanyIntel[]>([]);
   const [jobs, setJobs] = useState<JobEntry[]>([]);
   const [company, setCompany] = useState('');
@@ -19,6 +22,11 @@ export default function Research() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Sync expandedId with URL param
+  useEffect(() => {
+    if (intelId) setExpandedId(intelId);
+  }, [intelId]);
 
   async function loadData() {
     const [all, allJobs] = await Promise.all([
@@ -285,7 +293,11 @@ export default function Research() {
                       {researchingId === card.id ? '⏳ Riset...' : hasIntel ? '🔄 Riset Ulang' : '🔍 Riset'}
                     </button>
                     <button
-                      onClick={() => setExpandedId(isExpanded ? null : card.id)}
+                      onClick={() => {
+                        const newId = isExpanded ? null : card.id;
+                        setExpandedId(newId);
+                        navigate(newId ? `/research/${newId}` : '/research', { replace: true });
+                      }}
                       style={{
                         padding: 'var(--space-2) var(--space-4)',
                         background: 'var(--color-bg)', color: 'var(--color-text)',
