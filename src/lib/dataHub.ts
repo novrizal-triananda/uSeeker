@@ -137,13 +137,12 @@ export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | n
     db.applications.where('jobId').equals(jobId).first(),
   ]);
 
-  if (!application) return null;
-
+  // Return intel even without an application — shows what's available
   return {
     companyIntel: companyIntel ?? null,
     fitScore: fitScore ?? null,
     tailoredResume: tailoredResume ?? null,
-    application,
+    application: application ?? null,
   };
 }
 

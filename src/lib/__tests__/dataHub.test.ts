@@ -237,14 +237,17 @@ describe('getInterviewPrep', () => {
     expect(prep!.application?.status).toBe('interview');
   });
 
-  it('should return null when no application exists', async () => {
+  it('should return data even when no application exists', async () => {
     await db.jobEntries.add(sampleJob);
     await db.fitScores.add(sampleFitScore);
     await db.companyIntel.add(sampleIntel);
 
     const prep = await getInterviewPrep('job-1');
 
-    expect(prep).toBeNull();
+    expect(prep).not.toBeNull();
+    expect(prep!.application).toBeNull();
+    expect(prep!.fitScore).not.toBeNull();
+    expect(prep!.companyIntel).not.toBeNull();
   });
 
   it('should handle partial intel gracefully', async () => {

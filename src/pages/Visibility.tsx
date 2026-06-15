@@ -222,9 +222,6 @@ export default function Visibility() {
           <p style={styles.emptyDesc}>
             Tambahkan lamaran pertama Anda untuk mulai memantau pipeline.
           </p>
-          <button style={styles.ctaButton} onClick={() => setShowForm(true)}>
-            ＋ Tambah Lamaran
-          </button>
         </div>
       ) : (
         <div style={styles.board}>
@@ -525,6 +522,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     boxShadow: 'var(--shadow-sm)',
     border: '1px solid var(--color-border)',
+    overflow: 'hidden',
   },
   cardCompany: {
     fontWeight: 600,
@@ -548,9 +546,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardFooter: {
     display: 'flex',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 'var(--space-2)',
+    gap: 'var(--space-1)',
   },
   cardDate: {
     fontSize: '0.7rem',

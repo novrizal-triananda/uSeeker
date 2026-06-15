@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import type { JobEntry, FitScore, Application, CompanyIntel } from '../types';
+import type { JobEntry, FitScore, Application } from '../types';
 
 interface DashboardData {
   jobCount: number;

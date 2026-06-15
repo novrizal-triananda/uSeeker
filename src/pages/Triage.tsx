@@ -120,7 +120,8 @@ export default function Triage() {
   // ── Job Entry Handlers ──
   async function handleAddJob(e: React.FormEvent) {
     e.preventDefault();
-    if (!jobForm.company.trim() || !jobForm.roleTitle.trim() || !jobForm.jobDescription.trim()) return;
+    if (!jobForm.company.trim() || !jobForm.roleTitle.trim()) return;
+    // jobDescription is now optional - only company and roleTitle are required
 
     setSavingJob(true);
     try {
@@ -370,7 +371,7 @@ export default function Triage() {
             />
             <button
               type="submit"
-              disabled={savingJob || !jobForm.company.trim() || !jobForm.roleTitle.trim() || !jobForm.jobDescription.trim()}
+              disabled={savingJob || !jobForm.company.trim() || !jobForm.roleTitle.trim()}
               style={{
                 marginTop: 'var(--space-3)',
                 padding: 'var(--space-2) var(--space-5)',

@@ -46,6 +46,12 @@ const SECTION_ALIASES: Record<string, SectionType> = {
   socials: 'links',
   'online presence': 'links',
   'social media': 'links',
+  languages: 'skills',
+  'language skills': 'skills',
+  volunteer: 'experience',
+  'volunteer experience': 'experience',
+  'extra-curricular': 'experience',
+  references: 'links',
 };
 
 // --- Date patterns ---
@@ -58,9 +64,11 @@ const MONTH_PATTERN = MONTH_NAMES.join('|');
 const YEAR_PATTERN = '\\d{4}';
 const DATE_PART = `(?:${MONTH_PATTERN})\\s+${YEAR_PATTERN}|${YEAR_PATTERN}`;
 const DATE_RANGE_PATTERN = new RegExp(
-  `(${DATE_PART})\\s*[\u2013\u2014-]\\s*(${DATE_PART}|Present|Current|Now|present|current|now)`,
+  `(${DATE_PART})\\s*[\\u2013\\u2014-]\\s*(${DATE_PART}|Present|Current|Now|present|current|now)`,
   'i',
 );
+// Looser date pattern — a line that contains a year (used to detect new entries)
+const YEAR_LINE_PATTERN = /\b(19|20)\d{2}\b/;
 
 // --- Contact patterns ---
 const EMAIL_PATTERN = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
@@ -137,24 +145,31 @@ function mapHeadingToSectionType(heading: string): SectionType | null {
 // --- Detect if a line is a section heading ---
 function isSectionHeading(line: string): boolean {
   const trimmed = line.trim();
-  if (trimmed.length === 0 || trimmed.length > 80) return false;
+  if (trimmed.length === 0 || trimmed.length > 60) return false;
   const cleaned = trimmed
     .replace(/[:]+$/, '')
-    .replace(/^[\u2022\-_\*#=]+/, '')
+    .replace(/^[\u2022\-_*\#=]+/, '')
     .replace(/[,;]+$/, '')
     .trim();
   if (mapHeadingToSectionType(cleaned) !== null) {
-    if (cleaned.length <= 40) {
+    if (cleaned.length <= 50) {
       return true;
     }
   }
   if (
     trimmed === trimmed.toUpperCase() &&
     trimmed.length >= 3 &&
-    trimmed.length <= 40 &&
+    trimmed.length <= 50 &&
     /[A-Z]/.test(trimmed)
   ) {
     return mapHeadingToSectionType(cleaned) !== null;
+  }
+  // Also detect markdown-style headings (# ## ###)
+  if (/^#{1,3}\s+/.test(trimmed)) {
+    const withoutHash = trimmed.replace(/^#{1,3}\s+/, '').trim();
+    if (mapHeadingToSectionType(withoutHash) !== null) {
+      return true;
+    }
   }
   return false;
 }
@@ -164,14 +179,19 @@ function parseContactInfo(
   lines: string[]
 ): { contactItems: ResumeItem[]; remainingLines: string[] } {
   const contactItems: ResumeItem[] = [];
-  let foundName = false;
   let endIdx = 0;
-  for (let i = 0; i < lines.length; i++) {
+
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
     const line = lines[i].trim();
     if (!line) {
       endIdx = i + 1;
       continue;
     }
+    // Stop if we hit a section heading
+    if (isSectionHeading(line)) {
+      break;
+    }
+
     const emailMatch = line.match(EMAIL_PATTERN);
     if (emailMatch) {
       contactItems.push({ text: `Email: ${emailMatch[0]}`, metadata: { field: 'email', value: emailMatch[0] } });
@@ -190,17 +210,14 @@ function parseContactInfo(
       endIdx = i + 1;
       continue;
     }
-    if (isSectionHeading(line)) {
-      break;
-    }
-    if (!foundName && line.length > 0 && line.length <= 60) {
+    // Name line — first non-empty, non-contact line that isn't a section keyword
+    if (line.length > 0 && line.length <= 60) {
       const lower = line.toLowerCase();
       const hasSectionKeyword = Object.keys(SECTION_ALIASES).some(
         (alias) => lower === alias || lower.includes(alias)
       );
       if (!hasSectionKeyword) {
         contactItems.push({ text: line, metadata: { field: 'name', value: line } });
-        foundName = true;
         endIdx = i + 1;
         continue;
       }
@@ -211,7 +228,7 @@ function parseContactInfo(
   return { contactItems, remainingLines };
 }
 
-// --- Parse a skills section (comma-separated) ---
+// --- Parse a skills section (comma-separated or bullet-separated) ---
 function parseSkillsSection(lines: string[]): ResumeItem[] {
   const items: ResumeItem[] = [];
   const allText = lines.join('\n');
@@ -232,26 +249,96 @@ function parseSkillsSection(lines: string[]): ResumeItem[] {
   return items;
 }
 
-// --- Parse a generic section (non-skills) ---
-function parseGenericSection(lines: string[]): ResumeItem[] {
-  const items: ResumeItem[] = [];
+// --- Group consecutive lines into logical entries ---
+// A new entry starts when we see:
+//   - An empty line (paragraph break)
+//   - A line with a date range (indicates new job/education entry)
+//   - A bullet point that starts a new group
+// Everything else continues the current entry.
+function groupLinesIntoEntries(lines: string[]): string[][] {
+  const entries: string[][] = [];
+  let current: string[] = [];
+
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (/^[\u2022\-_\*#=\u2022\s]+$/.test(trimmed)) continue;
-    const { startDate, endDate, cleanedText } = extractDateRange(trimmed);
-    if (cleanedText.length === 0 && startDate) {
+    
+    // Empty line = paragraph break → start new entry
+    if (!trimmed) {
+      if (current.length > 0) {
+        entries.push(current);
+        current = [];
+      }
       continue;
     }
-    const text = cleanedText
-      .replace(/^[-\u2022*]\s*/, '')
+
+    // Skip pure separator lines
+    if (/^[\u2022\-_*=.\s]{3,}$/.test(trimmed)) {
+      continue;
+    }
+
+    const { startDate, endDate, cleanedText } = extractDateRange(trimmed);
+    const hasDateRange = Boolean(startDate && endDate);
+    const hasYear = YEAR_LINE_PATTERN.test(trimmed);
+
+    // Line with a date range that also has meaningful content → new entry
+    if (hasDateRange && cleanedText.length > 2) {
+      if (current.length > 0) {
+        entries.push(current);
+        current = [];
+      }
+      current.push(trimmed);
+      continue;
+    }
+
+    // Short line with just a year and a title-like pattern → new entry
+    if (hasYear && current.length > 0) {
+      // Check if current last line is empty or also has a year → new entry
+      const lastLine = current[current.length - 1]?.trim() || '';
+      if (!lastLine || YEAR_LINE_PATTERN.test(lastLine)) {
+        entries.push(current);
+        current = [];
+      }
+    }
+
+    current.push(trimmed);
+  }
+
+  if (current.length > 0) {
+    entries.push(current);
+  }
+
+  return entries;
+}
+
+// --- Parse a generic section (experience, education, etc.) ---
+// Groups multi-line entries into single items
+function parseGenericSection(lines: string[]): ResumeItem[] {
+  const items: ResumeItem[] = [];
+  const entries = groupLinesIntoEntries(lines);
+
+  for (const entryLines of entries) {
+    // The first line is usually the title/company/date line
+    const titleLine = entryLines[0];
+    const { startDate, endDate } = extractDateRange(titleLine);
+
+    // Join all lines of the entry into a single text
+    const fullText = entryLines
+      .map(l => l.trim())
+      .join(' — ')
+      .replace(/[\u2022]\s*/g, '')  // Remove bullet chars
+      .replace(/[-*]\s+/g, '')       // Remove bullet markers
+      .replace(/\s+/g, ' ')          // Normalize whitespace
+      .replace(/—\s*—/g, '—')        // Remove double dashes
       .trim();
-    if (text.length === 0) continue;
-    const item: ResumeItem = { text };
+
+    if (fullText.length === 0) continue;
+
+    const item: ResumeItem = { text: fullText };
     if (startDate) item.startDate = startDate;
     if (endDate) item.endDate = endDate;
     items.push(item);
   }
+
   return items;
 }
 
@@ -281,8 +368,9 @@ export function parseResumeText(text: string): MasterResume {
     if (isSectionHeading(trimmed)) {
       const cleaned = trimmed
         .replace(/[:]+$/, '')
-        .replace(/^[\u2022\-_\*#=]+/, '')
+        .replace(/^[\u2022\-_*\#=]+/, '')
         .replace(/[,;]+$/, '')
+        .replace(/^#{1,3}\s+/, '')  // Remove markdown hashes
         .trim();
       if (currentBlock) {
         sectionBlocks.push(currentBlock);

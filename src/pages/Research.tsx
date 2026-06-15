@@ -10,6 +10,7 @@ export default function Research() {
   const [notes, setNotes] = useState('');
 
   const [researchingId, setResearchingId] = useState<string | null>(null);
+  const [researchError, setResearchError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,9 +40,15 @@ export default function Research() {
 
   async function handleResearch(id: string) {
     setResearchingId(id);
+    setResearchError(null);
     try {
-      await requestResearch(id);
+      const result = await requestResearch(id);
+      if (result === null) {
+        setResearchError('Server AI tidak tersedia. Pastikan server proxy berjalan di port 8787.');
+      }
       await loadCards();
+    } catch {
+      setResearchError('Gagal melakukan riset. Periksa koneksi server.');
     } finally {
       setResearchingId(null);
     }
@@ -131,7 +138,7 @@ export default function Research() {
           </div>
           <button
             type="submit"
-            disabled={!company.trim() || (url.trim() && isBannedDomain(url))}
+            disabled={!company.trim() || Boolean(url.trim() && isBannedDomain(url))}
             style={{
               alignSelf: 'flex-start',
               padding: 'var(--space-3) var(--space-6)',
@@ -142,7 +149,7 @@ export default function Research() {
               fontWeight: 600,
               cursor: 'pointer',
               fontSize: 'var(--font-size-base)',
-              opacity: (!company.trim() || (url.trim() && isBannedDomain(url))) ? 0.5 : 1,
+              opacity: (!company.trim() || (url.trim() && isBannedDomain(url))) ? 0.5 : undefined,
             }}
           >
             + Tambah Kartu
@@ -150,7 +157,21 @@ export default function Research() {
         </div>
       </form>
 
-      {/* Intel Cards */}
+      {researchError && (
+        <div style={{
+          padding: 'var(--space-3) var(--space-4)',
+          background: '#FEF2F2', border: '1px solid #FECACA',
+          borderRadius: 'var(--radius-md)', color: 'var(--color-status-red)',
+          fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-6)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <span>❌ {researchError}</span>
+          <button onClick={() => setResearchError(null)} style={{
+            background: 'none', border: 'none', color: 'var(--color-status-red)',
+            cursor: 'pointer', fontSize: 'var(--font-size-lg)',
+          }}>✕</button>
+        </div>
+      )}
       {cards.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-text-muted)',
