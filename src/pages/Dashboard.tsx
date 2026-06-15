@@ -8,6 +8,7 @@ interface DashboardData {
   avgFitScore: number;
   applicationCount: number;
   intelCount: number;
+  hasMasterResume: boolean;
   recentJobs: { job: JobEntry; fitScore: FitScore | null }[];
   recentApplications: Application[];
 }
@@ -22,11 +23,12 @@ export default function Dashboard() {
 
   async function loadDashboard() {
     try {
-      const [jobs, fitScores, applications, intel] = await Promise.all([
+      const [jobs, fitScores, applications, intel, masterResume] = await Promise.all([
         db.jobEntries.toArray(),
         db.fitScores.toArray(),
         db.applications.toArray(),
         db.companyIntel.toArray(),
+        db.masterResume.toCollection().first(),
       ]);
 
       const scoresByJob = new Map<string, FitScore>();
@@ -54,6 +56,7 @@ export default function Dashboard() {
         avgFitScore: avgFit,
         applicationCount: applications.length,
         intelCount: intel.length,
+        hasMasterResume: !!masterResume,
         recentJobs,
         recentApplications: recentApps,
       });
@@ -113,27 +116,32 @@ export default function Dashboard() {
             label="Import CV"
             description="Upload CV untuk mulai scoring"
             href="/triage"
-            highlight={data.jobCount === 0}
+            done={data.hasMasterResume}
+            highlight={!data.hasMasterResume && data.jobCount === 0}
           />
           <QuickAction
             icon="💼"
             label="Tambah Lowongan"
             description="Paste deskripsi pekerjaan"
             href="/triage"
-            highlight={data.jobCount > 0 && data.scoredCount === 0}
+            done={data.jobCount > 0}
+            highlight={data.hasMasterResume && data.jobCount === 0}
           />
           <QuickAction
             icon="🔍"
             label="Riset Perusahaan"
             description="Kumpulkan intel perusahaan"
             href="/research"
+            done={data.intelCount > 0}
+            highlight={data.jobCount > 0 && data.intelCount === 0 && data.scoredCount > 0}
           />
           <QuickAction
             icon="📋"
             label="Track Lamaran"
             description="Pantau status lamaran"
             href="/visibility"
-            highlight={data.applicationCount === 0 && data.jobCount > 0}
+            done={data.applicationCount > 0}
+            highlight={!data.hasMasterResume ? false : data.jobCount > 0 && data.applicationCount === 0}
           />
         </div>
       </div>
@@ -242,8 +250,8 @@ function StatCard({ icon, label, value, sub }: { icon: string; label: string; va
   );
 }
 
-function QuickAction({ icon, label, description, href, highlight }: {
-  icon: string; label: string; description: string; href: string; highlight?: boolean;
+function QuickAction({ icon, label, description, href, highlight, done }: {
+  icon: string; label: string; description: string; href: string; highlight?: boolean; done?: boolean;
 }) {
   return (
     <a
@@ -252,17 +260,17 @@ function QuickAction({ icon, label, description, href, highlight }: {
         display: 'block',
         padding: 'var(--space-4)',
         borderRadius: 'var(--radius-md)',
-        border: `1px solid ${highlight ? 'var(--color-primary)' : 'var(--color-border)'}`,
-        background: highlight ? '#EFF6FF' : 'var(--color-bg)',
+        border: done ? '1px solid #16A34A' : highlight ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+        background: done ? '#F0FDF4' : highlight ? '#EFF6FF' : 'var(--color-bg)',
         textDecoration: 'none',
         color: 'var(--color-text)',
         flex: '1 1 200px',
         transition: 'border-color 0.15s',
       }}
     >
-      <div style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-1)' }}>{icon}</div>
+      <div style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-1)' }}>{done ? '✅' : icon}</div>
       <div style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>{label}</div>
-      <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{description}</div>
+      <div style={{ color: done ? '#16A34A' : 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{done ? 'Selesai' : description}</div>
     </a>
   );
 }

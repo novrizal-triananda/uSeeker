@@ -1,12 +1,20 @@
 import { db } from './db';
 import type { JobEntry, FitScore, CompanyIntel, TailoredResume, Application, ApplicationStatus, ResumeSection, EventLog } from '../types';
 
+const API_BASE = 'http://127.0.0.1:8787';
+
 export interface ConsolidatedView {
   jobEntry: JobEntry;
   fitScore: FitScore | null;
   companyIntel: CompanyIntel | null;
   tailoredResume: TailoredResume | null;
   application: Application | null;
+}
+
+export interface InterviewQuestion {
+  question: string;
+  category: 'teknis' | 'perilaku' | 'situasional';
+  tips: string;
 }
 
 export interface InterviewPrep {
@@ -17,6 +25,7 @@ export interface InterviewPrep {
   jobDescription: string;
   cvSections: ResumeSection[];
   eventHistory: EventLog[];
+  interviewQuestions: InterviewQuestion[];
 }
 
 export interface PipelineSummary {
@@ -158,7 +167,95 @@ export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | n
     jobDescription: jobEntry?.jobDescription ?? '',
     cvSections: masterResume?.sections ?? [],
     eventHistory,
+    interviewQuestions: [],
   };
+}
+
+/**
+ * Generate AI-powered interview questions for a specific job.
+ * Queries job data, company intel, fit score, and CV to build a contextual prompt.
+ * Returns an array of InterviewQuestion objects.
+ */
+export async function generateInterviewQuestions(jobId: string): Promise<InterviewQuestion[]> {
+  const jobEntry = await db.jobEntries.get(jobId);
+  if (!jobEntry) return [];
+
+  const [fitScore, companyIntel, masterResume] = await Promise.all([
+    db.fitScores.where('jobId').equals(jobId).first(),
+    db.companyIntel.where('jobId').equals(jobId).first(),
+    db.masterResume.toCollection().first(),
+  ]);
+
+  // Extract candidate skills from CV sections
+  const skillsSection = masterResume?.sections.find((s) => s.type === 'skills');
+  const candidateSkills = skillsSection
+    ? skillsSection.items.map((item) => item.text).join(', ')
+    : 'Tidak tersedia';
+
+  const systemPrompt =
+    'Kamu adalah konsultan karir Indonesia. Buat daftar pertanyaan interview yang mungkin ditanyakan ke kandidat untuk posisi ini. Return JSON: { "questions": [{ "question": "...", "category": "teknis|perilaku|situasional", "tips": "..." }] }. Minimum 8 pertanyaan. Semua dalam Bahasa Indonesia.';
+
+  const prompt = [
+    'Buat daftar pertanyaan interview untuk posisi berikut:',
+    '',
+    '--- POSISI ---',
+    `${jobEntry.company} - ${jobEntry.roleTitle}`,
+    '',
+    '--- JOB DESCRIPTION ---',
+    jobEntry.jobDescription,
+    '',
+  ];
+
+  if (companyIntel) {
+    prompt.push('--- COMPANY INTEL ---');
+    if (companyIntel.snapshot) prompt.push(`Snapshot: ${companyIntel.snapshot}`);
+    if (companyIntel.industry) prompt.push(`Industri: ${companyIntel.industry}`);
+    if (companyIntel.products?.length) prompt.push(`Produk: ${companyIntel.products.join(', ')}`);
+    prompt.push('');
+  }
+
+  if (fitScore) {
+    prompt.push('--- FIT SCORE ---');
+    prompt.push(`Overall: ${fitScore.overallScore}/100`);
+    prompt.push(`Skill Match: ${fitScore.skillMatch}%`);
+    prompt.push(`Missing Skills: ${fitScore.missingSkills.join(', ') || 'Tidak ada'}`);
+    prompt.push('');
+  }
+
+  prompt.push('--- SKILL KANDIDAT (dari CV) ---');
+  prompt.push(candidateSkills);
+  prompt.push('');
+  prompt.push('Pertanyaan harus relevan dengan posisi, perusahaan, dan profil kandidat.');
+  prompt.push('Kategorikan setiap pertanyaan: teknis, perilaku, atau situasional.');
+  prompt.push('Berikan tips singkat untuk setiap pertanyaan dalam Bahasa Indonesia.');
+
+  try {
+    const response = await fetch(`${API_BASE}/api/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt,
+        prompt: prompt.join('\n'),
+        task: 'interview_prep',
+      }),
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const result: string = data.result || JSON.stringify(data);
+    const parsed = JSON.parse(result);
+    if (Array.isArray(parsed.questions)) {
+      return parsed.questions.map((q: any) => ({
+        question: String(q.question || ''),
+        category: (['teknis', 'perilaku', 'situasional'].includes(q.category) ? q.category : 'teknis') as InterviewQuestion['category'],
+        tips: String(q.tips || ''),
+      }));
+    }
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 /**

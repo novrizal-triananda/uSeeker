@@ -29,6 +29,27 @@ export default function Layout() {
       <div className="app-layout">
         {/* Desktop / Tablet sidebar nav */}
         <nav className="app-nav" aria-label="Navigasi utama">
+          <a
+            href="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '1rem 1rem 0.75rem',
+              borderBottom: '1px solid var(--color-border, #e5e7eb)',
+              textDecoration: 'none',
+              color: 'var(--color-primary, #2563eb)',
+            }}
+          >
+            <img
+              src="/favicon.svg"
+              alt=""
+              width={28}
+              height={28}
+              style={{ display: 'block' }}
+            />
+            <span style={{ fontSize: '1.125rem', fontWeight: 700 }}>uSeeker</span>
+          </a>
           <ul className="app-nav__links" role="menubar" aria-label="Menu layer">
             {NAV_ITEMS.map((item) => (
               <li key={item.path} role="none">

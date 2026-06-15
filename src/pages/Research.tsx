@@ -13,6 +13,7 @@ export default function Research() {
   const [company, setCompany] = useState('');
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
+  const [enrichmentUrlsText, setEnrichmentUrlsText] = useState('');
   const [selectedJobId, setSelectedJobId] = useState('');
 
   const [researchingId, setResearchingId] = useState<string | null>(null);
@@ -51,11 +52,18 @@ export default function Research() {
       officialUrl: url.trim() || '',
       notes: notes.trim() || undefined,
       jobId: selectedJobId || undefined,
+      ...(enrichmentUrlsText.trim() ? {
+        enrichmentUrls: enrichmentUrlsText
+          .split(/[\n,]+/)
+          .map(u => u.trim())
+          .filter(u => u.length > 0),
+      } : {}),
     });
     await logEvent('create_intel', { company: company.trim(), jobId: selectedJobId || undefined });
     setCompany('');
     setUrl('');
     setNotes('');
+    setEnrichmentUrlsText('');
     setSelectedJobId('');
     await loadData();
   }
@@ -64,7 +72,9 @@ export default function Research() {
     setResearchingId(id);
     setResearchError(null);
     try {
-      const result = await requestResearch(id);
+      const card = cards.find(c => c.id === id);
+      const enrichmentUrls = card?.enrichmentUrls;
+      const result = await requestResearch(id, enrichmentUrls);
       if (result === null) {
         setResearchError('Server AI tidak tersedia. Pastikan server proxy berjalan di port 8787.');
       }
@@ -139,7 +149,25 @@ export default function Research() {
                 ⚠️ Domain ini diblokir. Gunakan situs resmi perusahaan.
               </p>
             )}
-          </div>
+            </div>
+            <div>
+            <label htmlFor="enrichment-urls" style={{ display: 'block', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
+              URL Tambahan untuk Riset (opsional)
+            </label>
+            <textarea
+              id="enrichment-urls"
+              value={enrichmentUrlsText}
+              onChange={(e) => setEnrichmentUrlsText(e.target.value)}
+              placeholder={'https://... (URL artikel, berita, atau sumber lain tentang perusahaan)\nSatu URL per baris, atau dipisah koma'}
+              rows={3}
+              style={{
+                width: '100%', padding: 'var(--space-3)',
+                border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+                fontSize: 'var(--font-size-base)', fontFamily: 'var(--font-family)',
+                resize: 'vertical',
+              }}
+            />
+            </div>
           <div>
             <label htmlFor="company-notes" style={{ display: 'block', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
               Catatan (opsional)
@@ -356,6 +384,42 @@ export default function Research() {
                           {card.redFlags.map((flag, i) => (
                             <li key={i} style={{ color: 'var(--color-status-red)', marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)' }}>
                               {flag}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {card.culture && card.culture.length > 0 && (
+                      <div style={{ marginTop: 'var(--space-4)' }}>
+                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Budaya Kerja</h4>
+                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
+                          {card.culture.map((item, i) => (
+                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {card.recentNews && card.recentNews.length > 0 && (
+                      <div style={{ marginTop: 'var(--space-4)' }}>
+                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📰 Berita Terbaru</h4>
+                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
+                          {card.recentNews.map((item, i) => (
+                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {card.interviewTips && card.interviewTips.length > 0 && (
+                      <div style={{ marginTop: 'var(--space-4)' }}>
+                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>💡 Tips Wawancara</h4>
+                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
+                          {card.interviewTips.map((item, i) => (
+                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                              {item}
                             </li>
                           ))}
                         </ul>

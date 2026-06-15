@@ -4,6 +4,7 @@ import { parseResumeText } from './cvParser';
 const API_BASE = 'http://127.0.0.1:8787';
 
 const AI_SYSTEM_PROMPT = `You are a CV/resume parser. Extract structured data from the given CV text.
+Semua output harus dalam Bahasa Indonesia. Judul section harus dalam Bahasa Indonesia (e.g., Pengalaman Kerja, Pendidikan, Keahlian).
 
 Return ONLY a valid JSON object with this exact schema:
 {

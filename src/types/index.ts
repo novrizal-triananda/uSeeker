@@ -66,10 +66,14 @@ export interface CompanyIntel {
   company: string;
   officialUrl: string;
   notes?: string;
+  enrichmentUrls?: string[];
   snapshot?: string;
   products?: string[];
   industry?: string;
   redFlags?: string[];
+  culture?: string[];
+  recentNews?: string[];
+  interviewTips?: string[];
   crawlDepth: number;
   sources: string[];
   createdAt: Date;

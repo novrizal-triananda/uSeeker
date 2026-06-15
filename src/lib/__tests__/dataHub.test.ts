@@ -6,6 +6,7 @@ import {
   getExportData,
   getInterviewPrep,
   getPipelineSummary,
+  generateInterviewQuestions,
 } from '../dataHub';
 import type {
   JobEntry,
@@ -240,6 +241,7 @@ describe('getInterviewPrep', () => {
     expect(prep!.jobDescription).toBe(sampleJob.jobDescription);
     expect(prep!.cvSections).toEqual([]);
     expect(prep!.eventHistory).toEqual([]);
+    expect(prep!.interviewQuestions).toEqual([]);
   });
 
   it('should return data even when no application exists', async () => {
@@ -256,6 +258,7 @@ describe('getInterviewPrep', () => {
     expect(prep!.jobDescription).toBe(sampleJob.jobDescription);
     expect(prep!.cvSections).toEqual([]);
     expect(prep!.eventHistory).toEqual([]);
+    expect(prep!.interviewQuestions).toEqual([]);
   });
 
   it('should handle partial intel gracefully', async () => {
@@ -272,6 +275,22 @@ describe('getInterviewPrep', () => {
     expect(prep!.jobDescription).toBe(sampleJob.jobDescription);
     expect(prep!.cvSections).toEqual([]);
     expect(prep!.eventHistory).toEqual([]);
+    expect(prep!.interviewQuestions).toEqual([]);
+  });
+});
+
+describe('generateInterviewQuestions', () => {
+  beforeEach(async () => {
+    await db.jobEntries.clear();
+    await db.fitScores.clear();
+    await db.companyIntel.clear();
+    await db.masterResume.clear();
+    await db.applications.clear();
+  });
+
+  it('should return empty array when job does not exist', async () => {
+    const questions = await generateInterviewQuestions('non-existent');
+    expect(questions).toEqual([]);
   });
 });
 

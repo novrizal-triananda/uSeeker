@@ -23,6 +23,9 @@ export interface ParsedIntelResponse {
   products: string[];
   industry: string;
   redFlags: string[];
+  culture: string[];
+  recentNews: string[];
+  interviewTips: string[];
 }
 
 /**
@@ -86,6 +89,9 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
   let products: string[] = [];
   let industry = "";
   let redFlags: string[] = [];
+  let culture: string[] = [];
+  let recentNews: string[] = [];
+  let interviewTips: string[] = [];
 
   // Try JSON first
   try {
@@ -95,6 +101,9 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
       products: Array.isArray(parsed.products) ? parsed.products : [],
       industry: parsed.industry || "",
       redFlags: Array.isArray(parsed.redFlags) ? parsed.redFlags : [],
+      culture: Array.isArray(parsed.culture) ? parsed.culture : [],
+      recentNews: Array.isArray(parsed.recentNews) ? parsed.recentNews : [],
+      interviewTips: Array.isArray(parsed.interviewTips) ? parsed.interviewTips : [],
     };
   } catch {
     // Not JSON - parse as text
@@ -133,6 +142,24 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
           .map((f) => f.trim())
           .filter(Boolean);
       }
+    } else if (/^culture[:\s]/i.test(trimmed)) {
+      currentSection = "culture";
+      const m = trimmed.match(/^culture[:\s]+(.+)/i);
+      if (m) {
+        culture = m[1].split(/[,;]\s*/).map((c) => c.trim()).filter(Boolean);
+      }
+    } else if (/^(?:recent\s*news|berita)[:\s]/i.test(trimmed)) {
+      currentSection = "recentNews";
+      const m = trimmed.match(/^(?:recent\s*news|berita)[:\s]+(.+)/i);
+      if (m) {
+        recentNews = m[1].split(/[,;]\s*/).map((n) => n.trim()).filter(Boolean);
+      }
+    } else if (/^(?:interview\s*tips?|tips\s*wawancara)[:\s]/i.test(trimmed)) {
+      currentSection = "interviewTips";
+      const m = trimmed.match(/^(?:interview\s*tips?|tips\s*wawancara)[:\s]+(.+)/i);
+      if (m) {
+        interviewTips = m[1].split(/[,;]\s*/).map((t) => t.trim()).filter(Boolean);
+      }
     } else if (/^[-*]\s+/.test(trimmed)) {
       // Bullet item under current section
       const item = trimmed.replace(/^[-*]\s+/, "").trim();
@@ -144,6 +171,15 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
         case "redFlags":
           redFlags.push(item);
           break;
+        case "culture":
+          culture.push(item);
+          break;
+        case "recentNews":
+          recentNews.push(item);
+          break;
+        case "interviewTips":
+          interviewTips.push(item);
+          break;
       }
     } else if (currentSection === "snapshot" && trimmed.length > 0 && !trimmed.includes(":")) {
       snapshot = snapshot ? snapshot + " " + trimmed : trimmed;
@@ -152,7 +188,7 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
     }
   }
 
-  return { snapshot, products, industry, redFlags };
+  return { snapshot, products, industry, redFlags, culture, recentNews, interviewTips };
 }
 
 /**
@@ -162,11 +198,18 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
  */
 export async function requestResearch(
   intelId: string,
+  enrichmentUrls?: string[],
 ): Promise<ParsedIntelResponse | null> {
   const intel = await db.companyIntel.get(intelId);
   if (!intel) return null;
 
   if (isBannedDomain(intel.officialUrl)) return null;
+
+  // Collect enrichment sources: user-provided + official URL
+  const allSources = [
+    intel.officialUrl,
+    ...(enrichmentUrls || intel.enrichmentUrls || []),
+  ].filter(Boolean);
 
   try {
     const response = await fetch(API_BASE + "/api/ai", {
@@ -174,19 +217,31 @@ export async function requestResearch(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemPrompt:
-          "You are a company research analyst helping job seekers evaluate potential employers. " +
-          "Return ONLY a valid JSON object with exactly these fields: " +
-          '{"snapshot": "...", "products": [...], "industry": "...", "redFlags": [...]}. ' +
-          "snapshot: 1-2 sentence company overview. products: array of main products/services. " +
-          "industry: sector/industry string. redFlags: array of potential concerns for job seekers " +
-          "(e.g., layoffs, financial trouble, lawsuits, poor work-life balance signals). " +
-          "Use empty strings/arrays if information is unavailable.",
+          "Kamu adalah analis riset perusahaan yang membantu pencari kerja mengevaluasi calon tempat kerja. " +
+          "SEMUA output HARUS dalam Bahasa Indonesia. " +
+          "Kembalikan HANYA objek JSON valid dengan field-field berikut: " +
+          '{"snapshot": "...", "products": [...], "industry": "...", ' +
+          '"redFlags": [...], "culture": [...], "recentNews": [...], "interviewTips": [...]}. ' +
+          "- snapshot: Ringkasan perusahaan 2-3 kalimat (sejarah, ukuran, fokus bisnis). " +
+          "- products: Array produk/layanan utama perusahaan. " +
+          "- industry: Sektor/industri perusahaan. " +
+          "- redFlags: Array potensi masalah bagi pencari kerja (PHK, masalah hukum, keuangan tidak stabil, work-life balance buruk). " +
+          "- culture: Array info budaya kerja (gaya manajemen, remote/hybrid, nilai perusahaan, kepuasan karyawan). " +
+          "- recentNews: Array berita terbaru perusahaan (peluncuran produk, akuisisi, perubahan strategi, tahun terakhir). " +
+          "- interviewTips: Array tips untuk wawancara di perusahaan ini (proses rekrutmen, pertanyaan umum, apa yang dicari, saran persiapan). " +
+          "Gunakan string kosong atau array kosong jika informasi tidak tersedia.",
         prompt:
-          "Research the company " + intel.company + " (website: " + intel.officialUrl + "). " +
-          "Provide a brief overview, list their main products/services, identify their industry, " +
-          "and flag any potential red flags for job seekers (e.g., recent layoffs, lawsuits, " +
-          "financial instability, poor employee reviews). " +
-          "Return ONLY the JSON object, no markdown or explanation.",
+          "Riset perusahaan " + intel.company + " (website: " + intel.officialUrl + "). " +
+          "Berikut sumber-sumber tambahan untuk diriset: " + allSources.join(", ") + ". " +
+          "Analisis menyeluruh harus mencakup: " +
+          "1. Sejarah singkat dan ukuran perusahaan (jumlah kantor, karyawan). " +
+          "2. Produk dan layanan utama. " +
+          "3. Industri dan posisi pasar. " +
+          "4. Potensi red flags bagi pencari kerja (PHK, masalah hukum, keuangan, budaya kerja). " +
+          "5. Budaya kerja dan lingkungan perusahaan. " +
+          "6. Berita terbaru dan perkembangan perusahaan. " +
+          "7. Tips dan saran untuk proses wawancara di perusahaan ini. " +
+          "Kembalikan HANYA objek JSON, tanpa markdown atau penjelasan tambahan.",
         task: "company_research",
       }),
     });
@@ -203,6 +258,9 @@ export async function requestResearch(
       products: parsed.products,
       industry: parsed.industry,
       redFlags: parsed.redFlags,
+      culture: parsed.culture,
+      recentNews: parsed.recentNews,
+      interviewTips: parsed.interviewTips,
       crawlDepth: 1,
       sources: [...new Set([...intel.sources, intel.officialUrl])],
     });

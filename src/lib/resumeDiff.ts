@@ -188,6 +188,7 @@ export async function generateAiSuggestions(
 
   const systemPrompt = [
     'You are a professional resume tailoring assistant.',
+    'Semua saran harus dalam Bahasa Indonesia.',
     'You MUST return ONLY a JSON array — no markdown, no explanation, no wrapping.',
     'Each item in the array must be an object with exactly these fields:',
     '  - "section": the resume section name (e.g. "Experience", "Skills", "Summary")',

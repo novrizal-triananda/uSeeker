@@ -74,6 +74,7 @@ const YEAR_LINE_PATTERN = /\b(19|20)\d{2}\b/;
 const EMAIL_PATTERN = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
 const PHONE_PATTERN = /(?:\+?\d{1,4}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}/;
 const LINKEDIN_PATTERN = /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+/i;
+const WEBSITE_PATTERN = /(?:https?:\/\/)?(?:www\.)?[A-Za-z0-9-]+\.[A-Za-z]{2,}(?:\/[^\s]*)?/i;
 
 // --- Deduplication ---
 function dedup(items: ResumeItem[]): ResumeItem[] {
@@ -204,11 +205,27 @@ function parseContactInfo(
       endIdx = i + 1;
       continue;
     }
+    const websiteMatch = line.match(WEBSITE_PATTERN);
+    if (websiteMatch && !websiteMatch[0].includes('linkedin.com')) {
+      contactItems.push({ text: `Website: ${websiteMatch[0]}`, metadata: { field: 'website', value: websiteMatch[0] } });
+      endIdx = i + 1;
+      continue;
+    }
     const phoneMatch = line.match(PHONE_PATTERN);
     if (phoneMatch && phoneMatch[0].replace(/\D/g, '').length >= 7) {
       contactItems.push({ text: `Phone: ${phoneMatch[0].trim()}`, metadata: { field: 'phone', value: phoneMatch[0].trim() } });
       endIdx = i + 1;
       continue;
+    }
+    // Location line — contains comma-separated parts that look like place names
+    // e.g. "Jakarta, Indonesia" or "San Francisco, CA"
+    if (line.length > 0 && line.length <= 60) {
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.length >= 2 && parts.every(p => /^[A-Z][a-zA-Z\s.]+$/.test(p))) {
+        contactItems.push({ text: `Location: ${line}`, metadata: { field: 'location', value: line } });
+        endIdx = i + 1;
+        continue;
+      }
     }
     // Name line — first non-empty, non-contact line that isn't a section keyword
     if (line.length > 0 && line.length <= 60) {

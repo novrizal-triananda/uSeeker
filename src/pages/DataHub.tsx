@@ -4,9 +4,10 @@ import {
   getAllConsolidatedViews,
   getExportData,
   getInterviewPrep,
+  generateInterviewQuestions,
   getPipelineSummary,
 } from '../lib/dataHub';
-import type { ConsolidatedView, InterviewPrep, PipelineSummary } from '../lib/dataHub';
+import type { ConsolidatedView, InterviewPrep, InterviewQuestion, PipelineSummary } from '../lib/dataHub';
 
 
 export default function DataHub() {
@@ -14,6 +15,8 @@ export default function DataHub() {
   const [pipeline, setPipeline] = useState<PipelineSummary | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [interviewPrep, setInterviewPrep] = useState<InterviewPrep | null>(null);
+  const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting'>('idle');
 
   useEffect(() => {
@@ -51,6 +54,18 @@ export default function DataHub() {
     setSelectedJobId(jobId);
     const prep = await getInterviewPrep(jobId);
     setInterviewPrep(prep);
+    setInterviewQuestions(prep?.interviewQuestions ?? []);
+  }
+
+  async function handleGenerateQuestions() {
+    if (!selectedJobId) return;
+    setQuestionsLoading(true);
+    try {
+      const questions = await generateInterviewQuestions(selectedJobId);
+      setInterviewQuestions(questions);
+    } finally {
+      setQuestionsLoading(false);
+    }
   }
 
   const statusColors: Record<string, string> = {
@@ -383,6 +398,74 @@ export default function DataHub() {
                     </div>
                   </div>
                 )}
+
+                {/* 🎤 Pertanyaan Interview */}
+                <div>
+                  <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🎤 Pertanyaan Interview</h4>
+                  {interviewQuestions.length === 0 && !questionsLoading && (
+                    <button
+                      onClick={handleGenerateQuestions}
+                      style={{
+                        padding: 'var(--space-2) var(--space-4)',
+                        background: '#7C3AED', color: '#FFFFFF',
+                        border: 'none', borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 600,
+                      }}
+                    >
+                      ✨ Generate Pertanyaan
+                    </button>
+                  )}
+                  {questionsLoading && (
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                      ⏳ Sedang membuat pertanyaan...
+                    </p>
+                  )}
+                  {interviewQuestions.length > 0 && !questionsLoading && (
+                    <>
+                      <button
+                        onClick={handleGenerateQuestions}
+                        style={{
+                          padding: 'var(--space-1) var(--space-3)',
+                          background: 'var(--color-bg)', color: 'var(--color-text)',
+                          border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+                          cursor: 'pointer', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)',
+                        }}
+                      >
+                        🔄 Regenerate
+                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                        {interviewQuestions.map((q, idx) => (
+                          <div key={idx} style={{
+                            padding: 'var(--space-3) var(--space-4)',
+                            background: 'var(--color-bg)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-md)',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
+                              <span style={{
+                                padding: '2px var(--space-2)',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: 'var(--font-size-xs)', fontWeight: 600,
+                                background: q.category === 'teknis' ? '#DBEAFE' : q.category === 'perilaku' ? '#D1FAE5' : '#FEF3C7',
+                                color: q.category === 'teknis' ? '#1E40AF' : q.category === 'perilaku' ? '#065F46' : '#92400E',
+                              }}>
+                                {q.category}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
+                              {q.question}
+                            </p>
+                            {q.tips && (
+                              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                                💡 {q.tips}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}

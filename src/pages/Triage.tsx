@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { logEvent } from '../lib/eventLog';
-import type { JobEntry, FitScore, MasterResume, ResumeSection } from '../types';
+import type { JobEntry, FitScore, MasterResume, ResumeSection, SectionType } from '../types';
 
 interface JobWithScore {
   job: JobEntry;
@@ -156,6 +156,13 @@ export default function Triage() {
 
   async function handleSaveEditCV() {
     if (!masterResume) return;
+    const requiredTypes: SectionType[] = ['contact', 'experience', 'education', 'skills'];
+    const presentTypes = new Set(editSections.map((s) => s.type));
+    const missing = requiredTypes.filter((t) => !presentTypes.has(t));
+    if (missing.length > 0) {
+      alert('Section berikut wajib ada: Contact, Experience, Education, Skills');
+      return;
+    }
     try {
       const existing = await db.masterResume.toCollection().first();
       if (existing) {
@@ -461,26 +468,41 @@ export default function Triage() {
           )
         ) : (
           <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
+            onDragOver={importing ? undefined : handleDragOver}
+            onDragLeave={importing ? undefined : handleDragLeave}
+            onDrop={importing ? undefined : handleDrop}
+            onClick={importing ? undefined : () => fileInputRef.current?.click()}
             style={{
-              border: `2px dashed ${isDragging ? 'var(--color-primary)' : 'var(--color-border)'}`,
+              border: `2px dashed ${importing ? 'var(--color-text-muted)' : isDragging ? 'var(--color-primary)' : 'var(--color-border)'}`,
               borderRadius: 'var(--radius-lg)',
               padding: 'var(--space-8)',
               textAlign: 'center',
-              cursor: 'pointer',
-              background: isDragging ? '#EFF6FF' : 'transparent',
+              cursor: importing ? 'not-allowed' : 'pointer',
+              background: importing ? 'var(--color-bg)' : isDragging ? '#EFF6FF' : 'transparent',
               transition: 'all 0.2s ease',
+              opacity: importing ? 0.7 : 1,
             }}
           >
-            <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-2)' }}>
-              {importing ? '⏳ Memproses...' : '📤 Import CV'}
-            </p>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-              Drag & drop file .txt/.md/.docx/.pdf atau klik untuk memilih
-            </p>
+            {importing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite' }} />
+                <p style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text)' }}>
+                  Memproses<span style={{ animation: 'cv-import-dots 1.5s steps(4, end) infinite' }}></span>
+                </p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                  Sedang membaca file CV...
+                </p>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-2)' }}>
+                  📤 Import CV
+                </p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                  Drag & drop file .txt/.md/.docx/.pdf atau klik untuk memilih
+                </p>
+              </>
+            )}
           </div>
         )}
 
