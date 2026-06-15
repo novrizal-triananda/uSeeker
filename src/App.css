@@ -1,0 +1,205 @@
+/* ========================
+   App Shell Navigation
+   ======================== */
+
+/* Mobile bottom tab bar (separate from sidebar) */
+.app-nav-mobile {
+  display: none;
+}
+
+/* ========================
+   Responsive: Desktop (≥1024px)
+   Full sidebar nav + main content
+   ======================== */
+@media (min-width: 1024px) {
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .app-nav {
+    width: 240px;
+    flex-shrink: 0;
+    padding: var(--space-6);
+    background-color: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .app-nav__links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .app-nav__link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .app-nav__link--active {
+    background: linear-gradient(135deg, var(--color-primary), #7C3AED);
+    color: #FFFFFF;
+  }
+
+  .app-nav__link:hover:not(.app-nav__link--active) {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .app-nav__label {
+    display: inline;
+  }
+
+  .app-main {
+    flex: 1;
+    padding: var(--space-6) var(--space-8);
+    max-width: 1200px;
+  }
+}
+
+/* ========================
+   Responsive: Tablet (768-1023px)
+   Icon-only sidebar nav
+   ======================== */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .app-nav {
+    width: 64px;
+    flex-shrink: 0;
+    padding: var(--space-4) var(--space-2);
+    background-color: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .app-nav__links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .app-nav__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .app-nav__link--active {
+    background: linear-gradient(135deg, var(--color-primary), #7C3AED);
+    color: #FFFFFF;
+  }
+
+  .app-nav__link:hover:not(.app-nav__link--active) {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .app-nav__label {
+    display: none;
+  }
+
+  .app-main {
+    flex: 1;
+    padding: var(--space-6);
+    max-width: 1000px;
+  }
+}
+
+/* ========================
+   Responsive: Mobile (<768px)
+   Single column + bottom tab bar
+   ======================== */
+@media (max-width: 767px) {
+  /* Hide sidebar nav on mobile */
+  .app-nav {
+    display: none;
+  }
+
+  /* Show mobile bottom tab bar */
+  .app-nav-mobile {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-2) 0;
+  }
+
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-bottom: 64px; /* Space for bottom tab bar */
+  }
+
+  .app-nav-mobile__links {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+    list-style: none;
+  }
+
+  .app-nav-mobile__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    min-width: 48px;
+    transition: color 0.15s ease;
+  }
+
+  .app-nav-mobile__link--active {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .app-nav-mobile__link:hover:not(.app-nav-mobile__link--active) {
+    color: var(--color-text);
+  }
+
+  .app-nav-mobile__label {
+    font-size: 0.625rem;
+    line-height: 1;
+  }
+
+  .app-main {
+    flex: 1;
+    padding: var(--space-4);
+  }
+}

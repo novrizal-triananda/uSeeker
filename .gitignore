@@ -1,5 +1,8 @@
 node_modules/
-.env
 dist/
+.env
 .product-os/
 *.log
+
+.hermes-tmp*
+src/lib/debug.ts
