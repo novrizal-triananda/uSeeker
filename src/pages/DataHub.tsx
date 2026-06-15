@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import {
   getAllConsolidatedViews,
-  getExportData,
   getInterviewPrep,
   generateInterviewQuestions,
   getPipelineSummary,
@@ -17,7 +16,8 @@ export default function DataHub() {
   const [interviewPrep, setInterviewPrep] = useState<InterviewPrep | null>(null);
   const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting'>('idle');
+
+  const [questionsCache, setQuestionsCache] = useState<Record<string, InterviewQuestion[]>>({});
 
   useEffect(() => {
     loadData();
@@ -34,27 +34,45 @@ export default function DataHub() {
     }
   }
 
-  async function handleExport(format: 'json' | 'text') {
-    setExportStatus('exporting');
-    try {
-      const data = await getExportData(format);
-      const blob = new Blob([data], { type: format === 'json' ? 'application/json' : 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `useeker-export-${new Date().toISOString().split('T')[0]}.${format}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setExportStatus('idle');
-    }
+  function generatePrintHTML(views: ConsolidatedView[]): string {
+    const date = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const jobCards = views.map(v => {
+      const fit = v.fitScore ? `<div style="margin:8px 0"><strong>Fit Score:</strong> ${v.fitScore.overallScore}/100 (Skill: ${v.fitScore.skillMatch}%, Experience: ${v.fitScore.experienceMatch}%)</div>` : '';
+      const matched = v.fitScore?.matchedSkills?.length ? `<div><strong>Matched Skills:</strong> ${v.fitScore.matchedSkills.join(', ')}</div>` : '';
+      const missing = v.fitScore?.missingSkills?.length ? `<div><strong>Missing Skills:</strong> ${v.fitScore.missingSkills.join(', ')}</div>` : '';
+      const intel = v.companyIntel ? `<div style="margin:8px 0"><strong>Company Intel:</strong> ${v.companyIntel.snapshot || ''}${v.companyIntel.products?.length ? ' | Products: ' + v.companyIntel.products.join(', ') : ''}</div>` : '';
+      const cached = questionsCache[v.jobEntry.id];
+      const questions = cached?.length ? `<div style="margin-top:12px"><strong>Interview Questions:</strong><ul style="margin:4px 0;padding-left:20px">${cached.map(q => `<li style="margin:4px 0"><em>[${q.category}]</em> ${q.question}${q.tips ? ` <span style="color:#666;font-size:12px">(Tip: ${q.tips})</span>` : ''}</li>`).join('')}</ul></div>` : '';
+      return `<div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin:12px 0;page-break-inside:avoid">
+        <h3 style="margin:0 0 4px">${v.jobEntry.company} — ${v.jobEntry.roleTitle}</h3>
+        ${v.application ? `<span style="font-size:12px;color:#666">Status: ${v.application.status}</span>` : ''}
+        ${fit}${matched}${missing}${intel}${questions}
+      </div>`;
+    }).join('\n');
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>uSeeker Export</title>
+      <style>@media print{body{font-family:sans-serif;margin:20px}h1{font-size:20px}}</style>
+      </head><body><h1>📄 uSeeker Export</h1><p style="color:#666">${date}</p>${jobCards}</body></html>`;
+  }
+
+  function handleExportPDF() {
+    const html = generatePrintHTML(views);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    // Safe: writing controlled HTML to our own blank popup, not to the main document
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 300);
   }
 
   async function handleShowPrep(jobId: string) {
     setSelectedJobId(jobId);
-    const prep = await getInterviewPrep(jobId);
-    setInterviewPrep(prep);
-    setInterviewQuestions(prep?.interviewQuestions ?? []);
+    if (questionsCache[jobId]) {
+      setInterviewQuestions(questionsCache[jobId]);
+    } else {
+      const prep = await getInterviewPrep(jobId);
+      setInterviewPrep(prep);
+      setInterviewQuestions(prep?.interviewQuestions ?? []);
+    }
   }
 
   async function handleGenerateQuestions() {
@@ -63,9 +81,15 @@ export default function DataHub() {
     try {
       const questions = await generateInterviewQuestions(selectedJobId);
       setInterviewQuestions(questions);
+      setQuestionsCache(prev => ({ ...prev, [selectedJobId]: questions }));
     } finally {
       setQuestionsLoading(false);
     }
+  }
+  function handleClosePrep() {
+    setInterviewPrep(null);
+    setSelectedJobId(null);
+    setInterviewQuestions([]);
   }
 
   const statusColors: Record<string, string> = {
@@ -162,30 +186,15 @@ export default function DataHub() {
           {/* Export Buttons */}
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <button
-              onClick={() => handleExport('json')}
-              disabled={exportStatus === 'exporting'}
+              onClick={handleExportPDF}
               style={{
                 padding: 'var(--space-3) var(--space-5)',
                 background: 'var(--color-primary)', color: '#FFFFFF',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontWeight: 600, cursor: 'pointer',
-                opacity: exportStatus === 'exporting' ? 0.5 : 1,
               }}
             >
-              📥 Export JSON
-            </button>
-            <button
-              onClick={() => handleExport('text')}
-              disabled={exportStatus === 'exporting'}
-              style={{
-                padding: 'var(--space-3) var(--space-5)',
-                background: 'var(--color-surface)', color: 'var(--color-text)',
-                border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
-                fontWeight: 600, cursor: 'pointer',
-                opacity: exportStatus === 'exporting' ? 0.5 : 1,
-              }}
-            >
-              📥 Export Teks
+              📄 Export PDF
             </button>
           </div>
 
@@ -271,9 +280,20 @@ export default function DataHub() {
               borderRadius: 'var(--radius-lg)',
               padding: 'var(--space-6)',
             }}>
-              <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: '#7C3AED' }}>
-                🎯 Persiapan Interview
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+                <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: '#7C3AED', margin: 0 }}>
+                  🎯 Persiapan Interview
+                </h3>
+                <button
+                  onClick={handleClosePrep}
+                  style={{
+                    background: 'none', border: 'none', fontSize: '20px',
+                    cursor: 'pointer', color: 'var(--color-text-muted)',
+                    padding: '4px 8px', lineHeight: 1, borderRadius: 'var(--radius-sm)',
+                  }}
+                  title="Tutup"
+                >✕</button>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 {interviewPrep.companyIntel && (
                   <div>

@@ -192,8 +192,28 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
 }
 
 /**
+ * Fetch text content of a URL via the server-side proxy.
+ * Returns null if the fetch fails.
+ */
+async function fetchUrlContent(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(API_BASE + "/api/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.text || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Request AI research for a company intel card.
- * Calls server proxy POST /api/ai with task=company_research.
+ * Fetches the official website and all enrichment URLs to get their actual
+ * text content, then sends that content to the AI for deep analysis.
  * Returns null if server is down, intel not found, or URL is banned.
  */
 export async function requestResearch(
@@ -205,43 +225,139 @@ export async function requestResearch(
 
   if (isBannedDomain(intel.officialUrl)) return null;
 
-  // Collect enrichment sources: user-provided + official URL
-  const allSources = [
+  // Collect enrichment URLs (filter out banned domains)
+  const allUrls = [
     intel.officialUrl,
     ...(enrichmentUrls || intel.enrichmentUrls || []),
-  ].filter(Boolean);
+  ]
+    .filter(Boolean)
+    .filter((url) => !isBannedDomain(url));
+
+  // Fetch content from each URL in parallel
+  const fetchResults = await Promise.allSettled(
+    allUrls.map(async (url) => ({
+      url,
+      content: await fetchUrlContent(url),
+    })),
+  );
+
+  // Build content sections for the prompt
+  const contentSections: string[] = [];
+
+  for (const result of fetchResults) {
+    if (result.status !== "fulfilled") continue;
+    const { url, content } = result.value;
+    if (!content) continue;
+
+    // Truncate very long content to stay within prompt limits
+    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n...[truncated]" : content;
+
+    if (url === intel.officialUrl) {
+      contentSections.push(
+        `=== KONTEN WEBSITE RESMI ${intel.company} (${url}) ===\n${truncated}\n=== AKHIR WEBSITE RESMI ===`,
+      );
+    } else {
+      contentSections.push(
+        `=== KONTEN SUMBER: ${url} ===\n${truncated}\n=== AKHIR SUMBER ===`,
+      );
+    }
+  }
+
+  // Determine which URLs had content fetched
+  const fetchedSources = allUrls.filter((url) => {
+    const result = fetchResults.find(
+      (r) => r.status === "fulfilled" && r.value.url === url && r.value.content,
+    );
+    return !!result;
+  });
+
+  const systemPrompt =
+    "Kamu adalah analis riset perusahaan senior yang membantu pencari kerja Indonesia " +
+    "mengevaluasi calon tempat kerja secara mendalam dan akurat. " +
+    "SEMUA output HARUS dalam Bahasa Indonesia. " +
+    "Tugasmu adalah melakukan analisis KOMPREHENSIF — bukan sekadar ringkasan permukaan. " +
+    "Gunakan SEMUA informasi dari konten website dan sumber yang diberikan untuk mengisi setiap field sejelas mungkin. " +
+    "Kembalikan HANYA objek JSON valid dengan field-field berikut:\n\n" +
+    '{\n' +
+    '  "snapshot": "...",\n' +
+    '  "products": [...],\n' +
+    '  "industry": "...",\n' +
+    '  "redFlags": [...],\n' +
+    '  "culture": [...],\n' +
+    '  "recentNews": [...],\n' +
+    '  "interviewTips": [...]\n' +
+    '}\n\n' +
+    "Panduan pengisian setiap field:\n\n" +
+    "**snapshot** (string, 3-5 kalimat): " +
+    "Ringkasan mendalam perusahaan yang mencakup: sejarah pendirian (tahun, founder, visi awal), " +
+    "ukuran perusahaan (jumlah karyawan estimasi, kantor di kota/negara mana saja), " +
+    "fokus bisnis utama, dan pencapaian/signifikansi perusahaan di industrinya. " +
+    "Jangan sekadar sebut nama — ceritakan KONTEKS perusahaan itu sendiri.\n\n" +
+    "**products** (array of string): " +
+    "Daftar produk/layanan UTAMA perusahaan. Untuk setiap item, sebutkan nama produk + penjelasan singkat apa fungsinya. " +
+    "Contoh yang benar: \"[ nama produk ] — [ apa yang dilakukan ]\". " +
+    "Jangan cuma daftar nama tanpa konteks.\n\n" +
+    "**industry** (string): " +
+    "Sektor/industri perusahaan, posisi di pasar (leader/challenger/niche), " +
+    "dan competitor utama yang disebutkan di sumber. " +
+    "Contoh: \"Fintech — salah satu pemain terbesar di Southeast Asia, bersaing dengan [competitor]\".\n\n" +
+    "**redFlags** (array of string): " +
+    "Potensi MASALAH nyata bagi pencari kerja. Cari indikator seperti: " +
+    "masa kerja karyawan rata-rata sangat pendek (high turnover), " +
+    "berita PHK massal atau restructuring, " +
+    "masalah hukum/litigasi/perdata, " +
+    "keuangan tidak stabil (burn rate tinggi, kerugian berturut-turut untuk startup), " +
+    "work-life balance buruk (pulang larut, kerja Sabtu), " +
+    "budaya micromanagement atau toxic. " +
+    "Jika tidak ada red flags, tulis \"Tidak ditemukan red flags signifikan dari sumber yang tersedia\".\n\n" +
+    "**culture** (array of string): " +
+    "Info budaya kerja SPESIFIK berdasarkan sumber: " +
+    "gaya manajemen (hierarkis vs flat), " +
+    "model kerja (remote/hybrid/onsite), " +
+    "nilai-nilai perusahaan yang ditekankan, " +
+    "feedback dari karyawan tentang lingkungan kerja, " +
+    "program kesejahteraan (benefits, training, wellness). " +
+    "Jika ada informasi spesifik dari sumber, gunakan itu — jangan generalisir.\n\n" +
+    "**recentNews** (array of string): " +
+    "Perkembangan terbaru perusahaan (12 bulan terakhir): " +
+    "peluncuran produk baru, akuisisi/merger, " +
+    "perubahan kepemimpinan (CEO baru, dll), " +
+    "pendanaan/seri investasi, " +
+    "ekspansi pasar, " +
+    "perubahan strategi bisnis. " +
+    "Setiap item harus jelas: apa yang terjadi + kapan (perkiraan waktu jika ada).\n\n" +
+    "**interviewTips** (array of string): " +
+    "Tips SPESIFIK untuk wawancara di perusahaan ini: " +
+    "proses rekrutmen (berapa tahap, apa formatnya), " +
+    "pertanyaan umum yang sering ditanyakan, " +
+    "apa yang perusahaan cari dari kandidat, " +
+    "saran persiapan (teknologi yang perlu dipelajari, portofolio yang relevan), " +
+    "etika bisnis perusahaan yang perlu dipahami kandidat. " +
+    "Jika informasi spesifik tidak tersedia dari sumber, berikan tips umum namun relevan dengan industri perusahaan.\n\n" +
+    "Jika informasi benar-benar tidak tersedia untuk suatu field, gunakan string kosong atau array kosong — " +
+    "TIDAK BOLEH mengarang informasi yang tidak ada di sumber yang diberikan.";
+
+  const prompt =
+    "Lakukan riset mendalam tentang perusahaan \"" + intel.company + "\".\n\n" +
+    "=== INFORMASI DASAR ===\n" +
+    "Nama perusahaan: " + intel.company + "\n" +
+    "Website resmi: " + intel.officialUrl + "\n" +
+    "Sumber yang berhasil diakses: " + (fetchedSources.length > 0 ? fetchedSources.join(", ") : "tidak ada") + "\n\n" +
+    (contentSections.length > 0
+      ? "=== KONTEN DARI SUMBER ===\n" + contentSections.join("\n\n") + "\n=== AKHIR KONTEN ===\n\n"
+      : "") +
+    "Gunakan informasi di atas untuk mengisi setiap field dengan SEJUJUR dan SEDETAIL mungkin. " +
+    "Jangan mengarang informasi — gunakan HANYA data dari sumber yang diberikan. " +
+    "Jika sumber tidak menyediakan informasi untuk field tertentu, tulis \"Informasi tidak tersedia dari sumber yang ada\".\n" +
+    "Kembalikan HANYA objek JSON, tanpa markdown formatting atau penjelasan tambahan.";
 
   try {
     const response = await fetch(API_BASE + "/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        systemPrompt:
-          "Kamu adalah analis riset perusahaan yang membantu pencari kerja mengevaluasi calon tempat kerja. " +
-          "SEMUA output HARUS dalam Bahasa Indonesia. " +
-          "Kembalikan HANYA objek JSON valid dengan field-field berikut: " +
-          '{"snapshot": "...", "products": [...], "industry": "...", ' +
-          '"redFlags": [...], "culture": [...], "recentNews": [...], "interviewTips": [...]}. ' +
-          "- snapshot: Ringkasan perusahaan 2-3 kalimat (sejarah, ukuran, fokus bisnis). " +
-          "- products: Array produk/layanan utama perusahaan. " +
-          "- industry: Sektor/industri perusahaan. " +
-          "- redFlags: Array potensi masalah bagi pencari kerja (PHK, masalah hukum, keuangan tidak stabil, work-life balance buruk). " +
-          "- culture: Array info budaya kerja (gaya manajemen, remote/hybrid, nilai perusahaan, kepuasan karyawan). " +
-          "- recentNews: Array berita terbaru perusahaan (peluncuran produk, akuisisi, perubahan strategi, tahun terakhir). " +
-          "- interviewTips: Array tips untuk wawancara di perusahaan ini (proses rekrutmen, pertanyaan umum, apa yang dicari, saran persiapan). " +
-          "Gunakan string kosong atau array kosong jika informasi tidak tersedia.",
-        prompt:
-          "Riset perusahaan " + intel.company + " (website: " + intel.officialUrl + "). " +
-          "Berikut sumber-sumber tambahan untuk diriset: " + allSources.join(", ") + ". " +
-          "Analisis menyeluruh harus mencakup: " +
-          "1. Sejarah singkat dan ukuran perusahaan (jumlah kantor, karyawan). " +
-          "2. Produk dan layanan utama. " +
-          "3. Industri dan posisi pasar. " +
-          "4. Potensi red flags bagi pencari kerja (PHK, masalah hukum, keuangan, budaya kerja). " +
-          "5. Budaya kerja dan lingkungan perusahaan. " +
-          "6. Berita terbaru dan perkembangan perusahaan. " +
-          "7. Tips dan saran untuk proses wawancara di perusahaan ini. " +
-          "Kembalikan HANYA objek JSON, tanpa markdown atau penjelasan tambahan.",
+        systemPrompt,
+        prompt,
         task: "company_research",
       }),
     });
@@ -262,7 +378,7 @@ export async function requestResearch(
       recentNews: parsed.recentNews,
       interviewTips: parsed.interviewTips,
       crawlDepth: 1,
-      sources: [...new Set([...intel.sources, intel.officialUrl])],
+      sources: [...new Set([...intel.sources, ...fetchedSources])],
     });
 
     return parsed;

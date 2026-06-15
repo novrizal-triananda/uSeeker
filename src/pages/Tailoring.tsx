@@ -15,6 +15,23 @@ export default function Tailoring() {
     loadData();
   }, []);
 
+  // Load saved suggestions when job selection changes
+  useEffect(() => {
+    async function loadSavedSuggestions() {
+      if (!selectedJobId) {
+        setAiSuggestions(null);
+        return;
+      }
+      const saved = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
+      if (saved) {
+        setAiSuggestions(saved.suggestions);
+      } else {
+        setAiSuggestions(null);
+      }
+    }
+    loadSavedSuggestions();
+  }, [selectedJobId]);
+
   async function loadData() {
     const master = await db.masterResume.toCollection().first();
     if (master) setResume(master);
@@ -39,6 +56,21 @@ export default function Tailoring() {
       if (!job) return;
       const suggestions = await generateAiSuggestions(resume, job.jobDescription || '', selectedJobId);
       setAiSuggestions(suggestions);
+      // Persist AI suggestions to DB
+      if (suggestions && suggestions.length > 0) {
+        const existing = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
+        const resumeData = {
+          jobId: selectedJobId,
+          masterResumeId: resume.id,
+          suggestions: suggestions,
+          createdAt: existing?.createdAt || new Date(),
+        };
+        if (existing) {
+          await db.tailoredResumes.update(existing.id, resumeData);
+        } else {
+          await db.tailoredResumes.add({ id: crypto.randomUUID(), ...resumeData });
+        }
+      }
     } finally {
       setAiLoading(false);
     }
@@ -142,7 +174,6 @@ export default function Tailoring() {
               onChange={(e) => {
                 setSelectedJobId(e.target.value);
                 setDiffResult(null);
-                setAiSuggestions(null);
               }}
               style={{
                 flex: 1, minWidth: 200, padding: 'var(--space-3)',

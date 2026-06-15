@@ -121,6 +121,86 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // URL fetcher for enrichment research
+  if (req.url === '/api/fetch-url' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { url } = JSON.parse(body || '{}');
+        if (!url || typeof url !== 'string') {
+          jsonResponse(res, 400, { error: 'url is required' });
+          return;
+        }
+
+        // Validate URL
+        let parsed: URL;
+        try {
+          parsed = new URL(url);
+        } catch {
+          jsonResponse(res, 400, { error: 'Invalid URL' });
+          return;
+        }
+
+        // Only allow http/https
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          jsonResponse(res, 400, { error: 'Only http/https URLs allowed' });
+          return;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; uSeeker/1.0)',
+            'Accept': 'text/html,application/xhtml+xml,text/plain',
+          },
+        });
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          jsonResponse(res, 502, { error: `Fetch failed: ${response.status}` });
+          return;
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        const raw = await response.text();
+
+        let text: string;
+        if (contentType.includes('text/html')) {
+          // Strip HTML tags, scripts, styles
+          text = raw
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+            .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+            .replace(/<header[\s\S]*?<\/header>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/\s+/g, ' ')
+            .trim();
+        } else {
+          text = raw.trim();
+        }
+
+        // Limit to ~3000 chars to keep prompts manageable
+        if (text.length > 3000) {
+          text = text.substring(0, 3000) + '...[truncated]';
+        }
+
+        jsonResponse(res, 200, { text, length: text.length });
+      } catch (err: any) {
+        jsonResponse(res, 500, { error: err.message || 'Failed to fetch URL' });
+      }
+    });
+    return;
+  }
+
   jsonResponse(res, 404, { error: 'Not Found' });
 });
 
