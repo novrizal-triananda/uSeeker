@@ -105,7 +105,7 @@ export default function DataHub() {
         tailoredResume: v.tailoredResume ? {
           acceptedCount: v.tailoredResume.suggestions.filter(s => s.accepted).length,
           pendingCount: v.tailoredResume.suggestions.filter(s => !s.accepted).length,
-          suggestions: v.tailoredResume.suggestions.filter(s => s.accepted).map(s => s.text),
+          suggestions: v.tailoredResume.suggestions.filter(s => s.accepted).map(s => s.suggested),
         } : null,
       }));
 

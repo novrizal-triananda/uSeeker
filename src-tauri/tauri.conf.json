@@ -1,24 +1,23 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicholasrice/tauri/dev/crates/tauri-cli/schema.json",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
   "productName": "uSeeker",
   "version": "2.0.0",
   "identifier": "com.useeker.app",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "withGlobalTauri": false,
     "windows": [
       {
-        "title": "uSeeker — Job Hunt Intelligence",
+        "title": "uSeeker — Pelacak Lamaran Kerja",
         "width": 1200,
         "height": 800,
         "resizable": true,
-        "minWidth": 800,
-        "minHeight": 600,
-        "center": true
+        "fullscreen": false
       }
     ],
     "security": {
@@ -34,17 +33,6 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ],
-    "linux": {
-      "deb": {
-        "depends": []
-      }
-    }
-  },
-  "plugins": {
-    "shell": {
-      "open": true,
-      "sidecar": true
-    }
+    ]
   }
 }

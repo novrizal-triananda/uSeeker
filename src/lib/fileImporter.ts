@@ -92,8 +92,8 @@ async function extractPdfText(file: File): Promise<string> {
       // Detect if next item needs a space (gap in x position or different font)
       const nextItem = content.items[content.items.indexOf(item) + 1];
       if (nextItem) {
-        const currentX = (item.transform?.[4] ?? 0) + (item.width ?? 0);
-        const nextX = nextItem.transform?.[4] ?? 0;
+        const currentX = (('transform' in item ? item.transform?.[4] : undefined) ?? 0) + (item.width ?? 0);
+        const nextX = ('transform' in nextItem ? nextItem.transform?.[4] : undefined) ?? 0;
         // If there's a gap > 2px, add a space
         if (nextX - currentX > 2) {
           line += ' ';

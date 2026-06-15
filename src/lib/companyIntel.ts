@@ -258,7 +258,7 @@ async function scrapeUrl(url: string): Promise<{ text: string; links: { url: str
 function filterRelevantLinks(
   links: { url: string; text: string }[],
   baseUrl: string,
-  company: string,
+  _company: string,
 ): string[] {
   const baseHost = new URL(baseUrl).hostname;
   const keywords = ['about', 'tentang', 'product', 'produk', 'service', 'layanan',
