@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import { addApplication, updateStatus, getOutcome, getPipelineStats } from '../lib/pipeline';
-import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats } from '../types';
+import { logEvent } from '../lib/eventLog';
+import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats, JobEntry } from '../types';
 
 const PIPELINE_STAGES: { key: ApplicationStatus; label: string; icon: string }[] = [
   { key: 'applied', label: 'Applied', icon: '📨' },
@@ -27,16 +28,16 @@ const STAGE_COLORS: Record<ApplicationStatus, string> = {
 };
 
 interface FormData {
-  company: string;
-  roleTitle: string;
+  jobId: string;
   status: ApplicationStatus;
   notes: string;
 }
 
-const emptyForm: FormData = { company: '', roleTitle: '', status: 'applied', notes: '' };
+const emptyForm: FormData = { jobId: '', status: 'applied', notes: '' };
 
 export default function Visibility() {
   const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<JobEntry[]>([]);
   const [stats, setStats] = useState<PipelineStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -45,14 +46,19 @@ export default function Visibility() {
 
   async function loadData() {
     try {
-      const apps = await db.applications.toArray();
+      const [apps, allJobs] = await Promise.all([
+        db.applications.toArray(),
+        db.jobEntries.toArray(),
+      ]);
       const sorted = apps.sort(
         (a, b) => new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime()
       );
       setApplications(sorted);
+      setJobs(allJobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
       setStats(getPipelineStats(sorted));
     } catch {
       setApplications([]);
+      setJobs([]);
       setStats(null);
     } finally {
       setLoading(false);
@@ -65,26 +71,22 @@ export default function Visibility() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.company.trim() || !form.roleTitle.trim()) return;
+    if (!form.jobId) return;
 
     setSubmitting(true);
     try {
-      // Try to match an existing job entry by company + roleTitle
-      const jobs = await db.jobEntries.toArray();
-      const matched = jobs.find(
-        (j) =>
-          j.company.toLowerCase() === form.company.trim().toLowerCase() &&
-          j.roleTitle.toLowerCase() === form.roleTitle.trim().toLowerCase()
-      );
+      const selectedJob = jobs.find(j => j.id === form.jobId);
+      if (!selectedJob) return;
 
       await addApplication({
-        jobId: matched?.id || crypto.randomUUID(),
-        company: form.company.trim(),
-        roleTitle: form.roleTitle.trim(),
+        jobId: selectedJob.id,
+        company: selectedJob.company,
+        roleTitle: selectedJob.roleTitle,
         status: form.status,
         notes: form.notes.trim() || undefined,
       });
 
+      await logEvent('add_application', { jobId: selectedJob.id, company: selectedJob.company });
       setForm(emptyForm);
       setShowForm(false);
       await loadData();
@@ -98,6 +100,7 @@ export default function Visibility() {
   async function handleStatusChange(id: string, newStatus: ApplicationStatus) {
     try {
       await updateStatus(id, newStatus);
+      await logEvent('update_status', { applicationId: id, status: newStatus });
       await loadData();
     } catch {
       alert('Gagal memperbarui status.');
@@ -107,6 +110,7 @@ export default function Visibility() {
   async function handleOutcomeChange(id: string, outcome: ApplicationOutcome) {
     try {
       await getOutcome(id, outcome);
+      await logEvent('update_status', { applicationId: id, outcome });
       await loadData();
     } catch {
       alert('Gagal memperbarui outcome.');
@@ -142,56 +146,54 @@ export default function Visibility() {
       {/* Add Application Form */}
       {showForm && (
         <form onSubmit={handleAdd} style={styles.form}>
-          <div style={styles.formGrid}>
-            <div style={styles.formField}>
-              <label style={styles.label}>Perusahaan *</label>
-              <input
-                type="text"
-                value={form.company}
-                onChange={(e) => setForm({ ...form, company: e.target.value })}
-                placeholder="Contoh: Google"
-                style={styles.input}
-                required
-              />
+          {jobs.length === 0 ? (
+            <div style={{ padding: 'var(--space-4)', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 'var(--radius-md)', color: '#92400E', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
+              ⚠️ Belum ada lowongan. Tambah lowongan melalui tab <strong>Triage</strong> terlebih dahulu.
             </div>
-            <div style={styles.formField}>
-              <label style={styles.label}>Posisi *</label>
-              <input
-                type="text"
-                value={form.roleTitle}
-                onChange={(e) => setForm({ ...form, roleTitle: e.target.value })}
-                placeholder="Contoh: Frontend Developer"
-                style={styles.input}
-                required
-              />
+          ) : (
+            <div style={styles.formGrid}>
+              <div style={styles.formField}>
+                <label style={styles.label}>Pilih Lowongan *</label>
+                <select
+                  value={form.jobId}
+                  onChange={(e) => setForm({ ...form, jobId: e.target.value })}
+                  style={styles.select}
+                  required
+                >
+                  <option value="">— Pilih lowongan dari Triage —</option>
+                  {jobs.map(job => (
+                    <option key={job.id} value={job.id}>{job.company} — {job.roleTitle}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={styles.formField}>
+                <label style={styles.label}>Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as ApplicationStatus })}
+                  style={styles.select}
+                >
+                  {PIPELINE_STAGES.map((s) => (
+                    <option key={s.key} value={s.key}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={styles.formField}>
+                <label style={styles.label}>Catatan</label>
+                <input
+                  type="text"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Catatan opsional..."
+                  style={styles.input}
+                />
+              </div>
             </div>
-            <div style={styles.formField}>
-              <label style={styles.label}>Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value as ApplicationStatus })}
-                style={styles.select}
-              >
-                {PIPELINE_STAGES.map((s) => (
-                  <option key={s.key} value={s.key}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div style={styles.formField}>
-              <label style={styles.label}>Catatan</label>
-              <input
-                type="text"
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Catatan opsional..."
-                style={styles.input}
-              />
-            </div>
-          </div>
+          )}
           <button
             type="submit"
             style={styles.submitButton}
-            disabled={submitting || !form.company.trim() || !form.roleTitle.trim()}
+            disabled={submitting || !form.jobId}
           >
             {submitting ? 'Menyimpan...' : '💾 Simpan Lamaran'}
           </button>

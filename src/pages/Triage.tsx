@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { parseResumeWithAI } from '../lib/aiParser';
+import { logEvent } from '../lib/eventLog';
 import type { JobEntry, FitScore, MasterResume } from '../types';
 
 interface JobWithScore {
@@ -96,6 +97,7 @@ export default function Triage() {
       }
       setMasterResume(parsed);
       setImportSuccess(true);
+      await logEvent('import_cv', { sections: parsed.sections.length, ai: useAI });
       setTimeout(() => setImportSuccess(false), 3000);
     } catch (err: any) {
       setImportError(err.message || 'Gagal mengimport CV');
@@ -144,6 +146,7 @@ export default function Triage() {
         createdAt: new Date(),
       };
       await db.jobEntries.add(newJob);
+      await logEvent('add_job', { company: newJob.company, roleTitle: newJob.roleTitle });
       setJobForm({ company: '', roleTitle: '', sourceUrl: '', jobDescription: '', notes: '' });
       setShowJobForm(false);
       await loadData();
@@ -169,6 +172,7 @@ export default function Triage() {
       // Delete old score for this job to avoid duplicates
       await db.fitScores.where('jobId').equals(jobId).delete();
       await db.fitScores.add(fitScore);
+      await logEvent('generate_score', { jobId, score: fitScore.overallScore });
       await loadData();
     } catch (err) {
       console.error('Failed to generate score:', err);

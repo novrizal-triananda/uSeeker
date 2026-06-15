@@ -1,25 +1,32 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import { createIntelCard, requestResearch, isBannedDomain } from '../lib/companyIntel';
-import type { CompanyIntel } from '../types';
+import { logEvent } from '../lib/eventLog';
+import type { CompanyIntel, JobEntry } from '../types';
 
 export default function Research() {
   const [cards, setCards] = useState<CompanyIntel[]>([]);
+  const [jobs, setJobs] = useState<JobEntry[]>([]);
   const [company, setCompany] = useState('');
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState('');
 
   const [researchingId, setResearchingId] = useState<string | null>(null);
   const [researchError, setResearchError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadCards();
+    loadData();
   }, []);
 
-  async function loadCards() {
-    const all = await db.companyIntel.toArray();
+  async function loadData() {
+    const [all, allJobs] = await Promise.all([
+      db.companyIntel.toArray(),
+      db.jobEntries.toArray(),
+    ]);
     setCards(all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+    setJobs(allJobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -31,11 +38,18 @@ export default function Research() {
       return;
     }
 
-    await createIntelCard({ company: company.trim(), officialUrl: url.trim() || '', notes: notes.trim() || undefined });
+    await createIntelCard({
+      company: company.trim(),
+      officialUrl: url.trim() || '',
+      notes: notes.trim() || undefined,
+      jobId: selectedJobId || undefined,
+    });
+    await logEvent('create_intel', { company: company.trim(), jobId: selectedJobId || undefined });
     setCompany('');
     setUrl('');
     setNotes('');
-    await loadCards();
+    setSelectedJobId('');
+    await loadData();
   }
 
   async function handleResearch(id: string) {
@@ -46,7 +60,7 @@ export default function Research() {
       if (result === null) {
         setResearchError('Server AI tidak tersedia. Pastikan server proxy berjalan di port 8787.');
       }
-      await loadCards();
+      await loadData();
     } catch {
       setResearchError('Gagal melakukan riset. Periksa koneksi server.');
     } finally {
@@ -56,7 +70,7 @@ export default function Research() {
 
   async function handleDelete(id: string) {
     await db.companyIntel.delete(id);
-    await loadCards();
+    await loadData();
   }
 
   return (
@@ -136,6 +150,29 @@ export default function Research() {
               }}
             />
           </div>
+          {jobs.length > 0 && (
+            <div>
+              <label htmlFor="link-job" style={{ display: 'block', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
+                Hubungkan ke Lowongan (opsional)
+              </label>
+              <select
+                id="link-job"
+                value={selectedJobId}
+                onChange={(e) => setSelectedJobId(e.target.value)}
+                style={{
+                  width: '100%', padding: 'var(--space-3)',
+                  border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--font-size-base)', fontFamily: 'var(--font-family)',
+                  background: 'var(--color-bg)',
+                }}
+              >
+                <option value="">— Tidak dihubungkan —</option>
+                {jobs.map(job => (
+                  <option key={job.id} value={job.id}>{job.company} — {job.roleTitle}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="submit"
             disabled={!company.trim() || Boolean(url.trim() && isBannedDomain(url))}
@@ -219,6 +256,20 @@ export default function Research() {
                         🏭 {card.industry}
                       </span>
                     )}
+                    {card.jobId && (() => {
+                      const linkedJob = jobs.find(j => j.id === card.jobId);
+                      return linkedJob ? (
+                        <span style={{
+                          display: 'inline-block', marginTop: 'var(--space-2)', marginLeft: 'var(--space-2)',
+                          padding: 'var(--space-1) var(--space-3)',
+                          background: '#EFF6FF', borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--font-size-sm)', color: 'var(--color-primary)',
+                          border: '1px solid #BFDBFE',
+                        }}>
+                          🔗 {linkedJob.company} — {linkedJob.roleTitle}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                   <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     <button
