@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 // Load .env manually (no dotenv dependency)
 try {
-  const envPath = resolve(import.meta.dirname ?? '.', '.env');
+  const envPath = resolve(import.meta.dirname ?? '.', '..', '.env');
   const envText = readFileSync(envPath, 'utf8');
   for (const line of envText.split('\n')) {
     const trimmed = line.trim();
