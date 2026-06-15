@@ -2,36 +2,39 @@ import { parseResumeText } from './cvParser';
 import type { MasterResume } from '../types';
 
 /**
- * Import a CV file (TXT, MD, DOCX, PDF) and return a parsed MasterResume.
- * Handles file reading + format detection + text extraction.
+ * Extract raw text from a CV file (any supported format).
+ * Used by both local parser and AI parser.
  */
-export async function importCVFile(file: File): Promise<MasterResume> {
+export async function extractTextFromFile(file: File): Promise<string> {
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
-  
-  let text: string;
-  
+
   switch (ext) {
     case 'txt':
     case 'md':
-      text = await file.text();
-      break;
-    
+      return await file.text();
+
     case 'docx':
-      text = await extractDocxText(file);
-      break;
-    
+      return await extractDocxText(file);
+
     case 'pdf':
-      text = await extractPdfText(file);
-      break;
-    
+      return await extractPdfText(file);
+
     default:
       throw new Error(`Format file tidak didukung: .${ext}. Gunakan .txt, .md, .docx, atau .pdf`);
   }
-  
+}
+
+/**
+ * Import a CV file (TXT, MD, DOCX, PDF) and return a parsed MasterResume.
+ * Handles file reading + format detection + text extraction + local parsing.
+ */
+export async function importCVFile(file: File): Promise<MasterResume> {
+  const text = await extractTextFromFile(file);
+
   if (!text || text.trim().length === 0) {
     throw new Error('File kosong atau tidak dapat dibaca.');
   }
-  
+
   return parseResumeText(text);
 }
 

@@ -1,18 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import { importCVFile } from '../lib/fileImporter';
 import { generateLocalDiff, generateAiSuggestions } from '../lib/resumeDiff';
-import type { MasterResume, ResumeSection, JobEntry, TailorSuggestion } from '../types';
+import type { MasterResume, JobEntry, TailorSuggestion } from '../types';
 
-export default function Presentation() {
+export default function Tailoring() {
   const [resume, setResume] = useState<MasterResume | null>(null);
   const [jobs, setJobs] = useState<JobEntry[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [diffResult, setDiffResult] = useState<{ keywordMatch: string[]; skillGaps: string[] } | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<TailorSuggestion[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -20,55 +17,16 @@ export default function Presentation() {
 
   async function loadData() {
     const master = await db.masterResume.toCollection().first();
-    if (master) {
-      // Never overwrite master resume - load it as read-only reference
-      setResume(master);
-    }
+    if (master) setResume(master);
     const allJobs = await db.jobEntries.toArray();
     setJobs(allJobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
-  }
-
-  const handleFile = useCallback(async (file: File) => {
-    try {
-      const parsed = await importCVFile(file);
-      // Store as a new master resume (first import only - never overwrite existing)
-      const existing = await db.masterResume.toCollection().first();
-      if (!existing) {
-        await db.masterResume.add(parsed);
-      }
-      // Set display state from the parsed result
-      setResume(parsed);
-    } catch (err: any) {
-      alert(err.message || 'Gagal mengimport file');
-    }
-  }, []);
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave() {
-    setIsDragging(false);
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }
-
-  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
   }
 
   async function handleDiff() {
     if (!resume || !selectedJobId) return;
     const job = jobs.find(j => j.id === selectedJobId);
     if (!job) return;
-    const result = generateLocalDiff(resume, job.jobDescription);
+    const result = generateLocalDiff(resume, job.jobDescription || '');
     setDiffResult(result);
     setAiSuggestions(null);
   }
@@ -79,7 +37,7 @@ export default function Presentation() {
     try {
       const job = jobs.find(j => j.id === selectedJobId);
       if (!job) return;
-      const suggestions = await generateAiSuggestions(resume, job.jobDescription, selectedJobId);
+      const suggestions = await generateAiSuggestions(resume, job.jobDescription || '', selectedJobId);
       setAiSuggestions(suggestions);
     } finally {
       setAiLoading(false);
@@ -89,44 +47,67 @@ export default function Presentation() {
   const selectedJob = jobs.find(j => j.id === selectedJobId);
 
   return (
-    <section style={{ padding: 'var(--space-6)' }}>
-      <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, marginBottom: 'var(--space-4)' }}>
-        📝 Presentasi & Resume
+    <section style={{ padding: 'var(--space-6)', maxWidth: 900, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+        ✂️ Tailoring
       </h2>
+      <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-6)' }}>
+        Bandingkan CV dengan lowongan, dapatkan saran tailoring.
+      </p>
 
-      {/* CV Upload Area */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        style={{
-          border: `2px dashed ${isDragging ? 'var(--color-primary)' : 'var(--color-border)'}`,
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-8)',
-          textAlign: 'center',
-          cursor: 'pointer',
-          background: isDragging ? '#EFF6FF' : 'var(--color-surface)',
-          marginBottom: 'var(--space-8)',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".txt,.md,.docx,.pdf"
-          onChange={handleFileInput}
-          style={{ display: 'none' }}
-        />
-        <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-2)' }}>
-          {resume ? '📂 CV sudah diimport' : '📤 Import CV'}
-        </p>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-          {resume
-            ? 'Klik atau drag file baru untuk mengganti'
-            : 'Drag & drop file .txt/.md atau klik untuk memilih'
-          }
-        </p>
+      {/* CV Status — read-only, imported from Triage */}
+      <div style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: 'var(--space-5)',
+        marginBottom: 'var(--space-6)',
+      }}>
+        <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-3)' }}>
+          📄 Master CV
+        </h3>
+        {resume ? (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+              <span style={{ color: 'var(--color-status-green)', fontWeight: 600 }}>✓ CV tersedia</span>
+              <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                {resume.sections.length} sections • {resume.sections.reduce((acc, s) => acc + s.items.length, 0)} items
+              </span>
+            </div>
+            {/* Section preview */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              {resume.sections.map((s) => (
+                <span
+                  key={s.type}
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-bg)',
+                    border: '1px solid var(--color-border)',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
+                  {s.title} ({s.items.length})
+                </span>
+              ))}
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-3)' }}>
+              Import CV melalui tab <strong>Triage</strong> untuk mengubah data master.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            padding: 'var(--space-4)',
+            background: '#FEF3C7',
+            border: '1px solid #FCD34D',
+            borderRadius: 'var(--radius-md)',
+            color: '#92400E',
+            fontSize: 'var(--font-size-sm)',
+          }}>
+            ⚠️ Belum ada CV. Import CV melalui tab <strong>Triage</strong> terlebih dahulu.
+          </div>
+        )}
       </div>
 
       {/* Empty state */}
@@ -139,44 +120,7 @@ export default function Presentation() {
           <p style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-2)' }}>
             Import CV terlebih dahulu
           </p>
-          <p>Upload CV Anda untuk memulai analisis dan tailoring.</p>
-        </div>
-      )}
-
-      {/* Parsed Resume Sections */}
-      {resume && resume.sections.length > 0 && (
-        <div style={{
-          background: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-6)',
-          marginBottom: 'var(--space-8)',
-        }}>
-          <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
-            📋 Sektion Resume (Master)
-          </h3>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
-            Master resume tidak akan ditimpa. Data ini hanya referensi.
-          </p>
-          {resume.sections.map((section: ResumeSection) => (
-            <div key={section.type} style={{ marginBottom: 'var(--space-4)' }}>
-              <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)', color: 'var(--color-primary)' }}>
-                {section.title}
-              </h4>
-              <ul style={{ paddingLeft: 'var(--space-5)' }}>
-                {section.items.map((item, i) => (
-                  <li key={i} style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-1)' }}>
-                    {item.text}
-                    {item.startDate && (
-                      <span style={{ color: 'var(--color-text-muted)', marginLeft: 'var(--space-2)' }}>
-                        ({item.startDate}{item.endDate ? ` – ${item.endDate}` : ''})
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <p>Upload CV di tab Triage untuk memulai analisis dan tailoring.</p>
         </div>
       )}
 
@@ -187,7 +131,7 @@ export default function Presentation() {
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg)',
           padding: 'var(--space-6)',
-          marginBottom: 'var(--space-8)',
+          marginBottom: 'var(--space-6)',
         }}>
           <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
             🔄 Resume vs Job Description
@@ -222,7 +166,7 @@ export default function Presentation() {
                 background: 'var(--color-primary)', color: '#FFFFFF',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontWeight: 600, cursor: 'pointer',
-                opacity: !selectedJobId ? 0.5 : 1,
+                opacity: !selectedJobId ? 0.5 : undefined,
               }}
             >
               Bandingkan
@@ -235,7 +179,7 @@ export default function Presentation() {
                 background: '#7C3AED', color: '#FFFFFF',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontWeight: 600, cursor: 'pointer',
-                opacity: (!selectedJobId || aiLoading) ? 0.5 : 1,
+                opacity: (!selectedJobId || aiLoading) ? 0.5 : undefined,
               }}
             >
               {aiLoading ? '⏳ AI...' : '🤖 AI Tailor'}
@@ -250,7 +194,6 @@ export default function Presentation() {
               gap: 'var(--space-4)',
               marginTop: 'var(--space-4)',
             }}>
-              {/* Your Resume Keywords */}
               <div style={{
                 padding: 'var(--space-4)',
                 background: '#F0FDF4',
@@ -271,7 +214,6 @@ export default function Presentation() {
                 </div>
               </div>
 
-              {/* Skill Gaps */}
               <div style={{
                 padding: 'var(--space-4)',
                 background: '#FEF2F2',
@@ -348,7 +290,7 @@ export default function Presentation() {
           background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--color-border)',
         }}>
-          <p>Belum ada lowongan. Tambah lowongan terlebih dahulu untuk melakukan perbandingan.</p>
+          <p>Belum ada lowongan. Tambah lowongan di tab <strong>Triage</strong> untuk melakukan perbandingan.</p>
         </div>
       )}
     </section>

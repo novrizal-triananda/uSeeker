@@ -4,7 +4,7 @@ const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/triage', label: 'Triage', icon: '📋' },
   { path: '/research', label: 'Research', icon: '🔍' },
-  { path: '/presentation', label: 'Presentation', icon: '🎤' },
+  { path: '/tailoring', label: 'Tailoring', icon: '🎤' },
   { path: '/visibility', label: 'Visibility', icon: '👁️' },
   { path: '/insights', label: 'Insights', icon: '💡' },
   { path: '/data-hub', label: 'Data Hub', icon: '🗄️' },

@@ -6,7 +6,7 @@ import OfflineIndicator from './components/OfflineIndicator';
 import Dashboard from './pages/Dashboard';
 import Triage from './pages/Triage';
 import Research from './pages/Research';
-import Presentation from './pages/Presentation';
+import Tailoring from './pages/Tailoring';
 import Visibility from './pages/Visibility';
 import Insights from './pages/Insights';
 import DataHub from './pages/DataHub';
@@ -27,7 +27,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="triage" element={<Triage />} />
           <Route path="research" element={<Research />} />
-          <Route path="presentation" element={<Presentation />} />
+          <Route path="tailoring" element={<Tailoring />} />
           <Route path="visibility" element={<Visibility />} />
           <Route path="insights" element={<Insights />} />
           <Route path="data-hub" element={<DataHub />} />

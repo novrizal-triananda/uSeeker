@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
-import { importCVFile } from '../lib/fileImporter';
+import { parseResumeWithAI } from '../lib/aiParser';
 import type { JobEntry, FitScore, MasterResume } from '../types';
 
 interface JobWithScore {
@@ -22,6 +22,7 @@ export default function Triage() {
   const [importSuccess, setImportSuccess] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [useAI, setUseAI] = useState(true);
 
   // Job entry form state
   const [showJobForm, setShowJobForm] = useState(false);
@@ -74,7 +75,15 @@ export default function Triage() {
     setImportError(null);
     setImportSuccess(false);
     try {
-      const parsed = await importCVFile(file);
+      // Extract text from file first
+      const { extractTextFromFile } = await import('../lib/fileImporter');
+      const text = await extractTextFromFile(file);
+
+      // Parse with AI or local regex
+      const parsed = useAI
+        ? await parseResumeWithAI(text)
+        : await import('../lib/cvParser').then(m => m.parseResumeText(text));
+
       // Save to DB (overwrite existing)
       const existing = await db.masterResume.toCollection().first();
       if (existing) {
@@ -277,6 +286,28 @@ export default function Triage() {
             </p>
           </div>
         )}
+
+        {/* AI Parse Toggle */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+          marginTop: 'var(--space-3)', padding: 'var(--space-3)',
+          background: useAI ? '#EFF6FF' : 'var(--color-bg)',
+          borderRadius: 'var(--radius-md)',
+          border: `1px solid ${useAI ? 'var(--color-primary)' : 'var(--color-border)'}`,
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--font-size-sm)' }}>
+            <input
+              type="checkbox"
+              checked={useAI}
+              onChange={(e) => setUseAI(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: 'var(--color-primary)' }}
+            />
+            <span style={{ fontWeight: 500 }}>🤖 Parse dengan AI (Deepseek)</span>
+          </label>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+            {useAI ? '→ Hasil lebih akurat, butuh server aktif' : '→ Offline, regex-based'}
+          </span>
+        </div>
 
         <input
           ref={fileInputRef}
