@@ -318,6 +318,71 @@ export default function DataHub() {
                     </p>
                   </div>
                 )}
+
+                {/* Job Description */}
+                {interviewPrep.jobDescription && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📄 Job Description</h4>
+                    <p style={{
+                      fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)',
+                      whiteSpace: 'pre-wrap', maxHeight: '120px', overflow: 'auto',
+                      padding: 'var(--space-3)', background: 'var(--color-bg)',
+                      borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
+                    }}>
+                      {interviewPrep.jobDescription}
+                    </p>
+                  </div>
+                )}
+
+                {/* CV Summary */}
+                {interviewPrep.cvSections.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🎓 CV Summary</h4>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                      {interviewPrep.cvSections.map((section) => (
+                        <span key={section.type} style={{
+                          padding: 'var(--space-1) var(--space-3)',
+                          background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--font-size-sm)', border: '1px solid var(--color-border)',
+                        }}>
+                          {section.title} ({section.items.length})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Event History */}
+                {interviewPrep.eventHistory.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📋 Riwayat Aktivitas</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                      {interviewPrep.eventHistory.slice(0, 10).map((event) => (
+                        <div key={event.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                          padding: 'var(--space-2) var(--space-3)',
+                          background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--font-size-sm)', border: '1px solid var(--color-border)',
+                        }}>
+                          <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+                            {event.timestamp.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                          </span>
+                          <span>{event.type.replace(/_/g, ' ')}</span>
+                          {event.metadata?.score !== undefined && (
+                            <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#7C3AED' }}>
+                              {event.metadata.score}/100
+                            </span>
+                          )}
+                          {event.metadata?.status && (
+                            <span style={{ marginLeft: 'auto', color: 'var(--color-status-amber)' }}>
+                              {event.metadata.status}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

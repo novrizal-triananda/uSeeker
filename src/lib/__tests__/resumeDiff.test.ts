@@ -286,7 +286,7 @@ describe('generateAiSuggestions', () => {
     expect(JSON.stringify(sampleResume.sections)).toBe(originalSections);
   });
 
-  it('should include job ID in context', async () => {
+  it('should include systemPrompt and task in request', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ result: '[]' }),
@@ -295,7 +295,7 @@ describe('generateAiSuggestions', () => {
     await generateAiSuggestions(sampleResume, sampleJD, 'job-5');
 
     const callBody = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(callBody.context).toBe('Job ID: job-5');
+    expect(callBody.systemPrompt).toBeDefined();
     expect(callBody.task).toBe('resume_tailor');
   });
 });

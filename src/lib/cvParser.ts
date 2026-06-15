@@ -64,7 +64,7 @@ const MONTH_PATTERN = MONTH_NAMES.join('|');
 const YEAR_PATTERN = '\\d{4}';
 const DATE_PART = `(?:${MONTH_PATTERN})\\s+${YEAR_PATTERN}|${YEAR_PATTERN}`;
 const DATE_RANGE_PATTERN = new RegExp(
-  `(${DATE_PART})\\s*[\\u2013\\u2014-]\\s*(${DATE_PART}|Present|Current|Now|present|current|now)`,
+  `(${DATE_PART})\\s*[–—-]\\s*(${DATE_PART}|Present|Current|Now|present|current|now)`,
   'i',
 );
 // Looser date pattern — a line that contains a year (used to detect new entries)

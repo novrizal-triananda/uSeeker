@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#1E40AF"/>
+  <!-- Magnifying glass body -->
+  <circle cx="28" cy="28" r="14" stroke="#F59E0B" stroke-width="4" fill="none"/>
+  <!-- Magnifying glass handle -->
+  <line x1="38" y1="38" x2="52" y2="52" stroke="#F59E0B" stroke-width="4" stroke-linecap="round"/>
+  <!-- Arrow up inside magnifying glass (opportunity/seeking) -->
+  <path d="M28 18 L28 34 M22 24 L28 18 L34 24" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

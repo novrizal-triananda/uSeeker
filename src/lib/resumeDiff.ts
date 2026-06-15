@@ -181,14 +181,34 @@ export async function generateAiSuggestions(
   jobDescription: string,
   jobId: string,
 ): Promise<TailorSuggestion[] | null> {
+  void jobId; // kept for API stability; server ignores it
   const resumeText = masterResume.sections
     .flatMap(s => s.items.map(i => i.text))
     .join('\n');
 
+  const systemPrompt = [
+    'You are a professional resume tailoring assistant.',
+    'You MUST return ONLY a JSON array — no markdown, no explanation, no wrapping.',
+    'Each item in the array must be an object with exactly these fields:',
+    '  - "section": the resume section name (e.g. "Experience", "Skills", "Summary")',
+    '  - "original": the exact original text from the resume',
+    '  - "suggested": the improved text',
+    '  - "reason": a brief explanation of why this change helps',
+    '',
+    'Focus on:',
+    '  1. Adding missing keywords from the job description',
+    '  2. Strengthening weak bullet points with stronger action verbs or metrics',
+    '  3. Reordering sections if a more relevant section should appear first',
+    '',
+    'Rules:',
+    '  - Do NOT fabricate experience, dates, or qualifications not in the original resume',
+    '  - Only suggest wording improvements, not new content',
+    '  - Keep suggestions concise and professional',
+    '  - Return an empty array [] if no improvements are possible',
+  ].join('\n');
+
   const prompt = [
-    'Tailor this resume for the job description below.',
-    'Return a JSON array of suggestions.',
-    'Each suggestion must have: section, original, suggested, reason.',
+    'Analyze this resume against the job description and suggest tailoring improvements.',
     '',
     '--- RESUME ---',
     resumeText,
@@ -202,8 +222,8 @@ export async function generateAiSuggestions(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        systemPrompt,
         prompt,
-        context: `Job ID: ${jobId}`,
         task: 'resume_tailor',
       }),
     });

@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
-import { parseResumeWithAI } from '../lib/aiParser';
 import { logEvent } from '../lib/eventLog';
-import type { JobEntry, FitScore, MasterResume } from '../types';
+import type { JobEntry, FitScore, MasterResume, ResumeSection } from '../types';
 
 interface JobWithScore {
   job: JobEntry;
@@ -19,6 +18,7 @@ export default function Triage() {
   const [loading, setLoading] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [scoreSuccess, setScoreSuccess] = useState<string | null>(null);
 
   // CV Import state
   const [importing, setImporting] = useState(false);
@@ -26,7 +26,10 @@ export default function Triage() {
   const [importSuccess, setImportSuccess] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [useAI, setUseAI] = useState(true);
+
+  // CV Edit state
+  const [editingCV, setEditingCV] = useState(false);
+  const [editSections, setEditSections] = useState<ResumeSection[]>([]);
 
   // Job entry form state
   const [showJobForm, setShowJobForm] = useState(false);
@@ -88,10 +91,9 @@ export default function Triage() {
       const { extractTextFromFile } = await import('../lib/fileImporter');
       const text = await extractTextFromFile(file);
 
-      // Parse with AI or local regex
-      const parsed = useAI
-        ? await parseResumeWithAI(text)
-        : await import('../lib/cvParser').then(m => m.parseResumeText(text));
+      // Parse with local regex
+      const { parseResumeText } = await import('../lib/cvParser');
+      const parsed = await parseResumeText(text);
 
       // Save to DB (overwrite existing)
       const existing = await db.masterResume.toCollection().first();
@@ -105,7 +107,7 @@ export default function Triage() {
       }
       setMasterResume(parsed);
       setImportSuccess(true);
-      await logEvent('import_cv', { sections: parsed.sections.length, ai: useAI });
+      await logEvent('import_cv', { sections: parsed.sections.length });
       setTimeout(() => setImportSuccess(false), 3000);
     } catch (err: any) {
       setImportError(err.message || 'Gagal mengimport CV');
@@ -134,6 +136,67 @@ export default function Triage() {
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) handleFileImport(file);
+  }
+
+  // ── CV Edit Handlers ──
+  function handleStartEditCV() {
+    if (!masterResume) return;
+    // Deep clone sections so edits don't mutate the live state
+    setEditSections(masterResume.sections.map((s) => ({
+      ...s,
+      items: s.items.map((item) => ({ ...item })),
+    })));
+    setEditingCV(true);
+  }
+
+  function handleCancelEditCV() {
+    setEditingCV(false);
+    setEditSections([]);
+  }
+
+  async function handleSaveEditCV() {
+    if (!masterResume) return;
+    try {
+      const existing = await db.masterResume.toCollection().first();
+      if (existing) {
+        await db.masterResume.update(existing.id, {
+          sections: editSections,
+          updatedAt: new Date(),
+        });
+      }
+      setMasterResume({ ...masterResume, sections: editSections, updatedAt: new Date() });
+      setEditingCV(false);
+      setEditSections([]);
+      await logEvent('import_cv', { sections: editSections.length, action: 'edit' });
+    } catch (err: any) {
+      console.error('Failed to save CV edits:', err);
+    }
+  }
+
+  function handleEditItemText(sectionIdx: number, itemIdx: number, value: string) {
+    setEditSections((prev) =>
+      prev.map((s, si) =>
+        si === sectionIdx
+          ? { ...s, items: s.items.map((item, ii) => (ii === itemIdx ? { ...item, text: value } : item)) }
+          : s
+      )
+    );
+  }
+
+  function handleDeleteEditItem(sectionIdx: number, itemIdx: number) {
+    setEditSections((prev) =>
+      prev.map((s, si) =>
+        si === sectionIdx ? { ...s, items: s.items.filter((_, ii) => ii !== itemIdx) } : s
+      )
+    );
+  }
+
+  function handleAddEditItem(sectionIdx: number) {
+    setEditSections((prev) =>
+      prev.map((s, si) =>
+        si === sectionIdx ? { ...s, items: [...s.items, { text: '' }] } : s
+      )
+    );
   }
 
   // ── Job Entry Handlers ──
@@ -182,6 +245,8 @@ export default function Triage() {
       await db.fitScores.add(fitScore);
       await logEvent('generate_score', { jobId, score: fitScore.overallScore });
       await loadData();
+      setScoreSuccess(jobId);
+      setTimeout(() => setScoreSuccess(null), 2000);
     } catch (err) {
       console.error('Failed to generate score:', err);
     } finally {
@@ -234,46 +299,166 @@ export default function Triage() {
         </h3>
 
         {masterResume ? (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-              <span style={{ color: 'var(--color-status-green)', fontWeight: 600 }}>✓ CV sudah diimport</span>
-              <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                {masterResume.sections.length} sections • {masterResume.sections.reduce((acc, s) => acc + s.items.length, 0)} items
-              </span>
-            </div>
-            {/* Section preview */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-              {masterResume.sections.map((s) => (
-                <span
-                  key={s.type}
+          editingCV ? (
+            <div>
+              {editSections.map((section, sIdx) => (
+                <div
+                  key={sIdx}
                   style={{
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--color-bg)',
                     border: '1px solid var(--color-border)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-muted)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-4)',
+                    marginBottom: 'var(--space-3)',
+                    background: 'var(--color-bg)',
                   }}
                 >
-                  {s.title} ({s.items.length})
-                </span>
+                  <h4 style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', marginBottom: 'var(--space-3)' }}>
+                    {section.title}
+                  </h4>
+                  {section.items.map((item, iIdx) => (
+                    <div key={iIdx} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', alignItems: 'flex-start' }}>
+                      <textarea
+                        value={item.text}
+                        onChange={(e) => handleEditItemText(sIdx, iIdx, e.target.value)}
+                        rows={2}
+                        style={{
+                          flex: 1,
+                          padding: 'var(--space-2)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--font-size-sm)',
+                          fontFamily: 'var(--font-family)',
+                          background: 'var(--color-surface)',
+                          color: 'var(--color-text)',
+                          resize: 'vertical',
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        onClick={() => handleDeleteEditItem(sIdx, iIdx)}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--color-status-red)',
+                          background: 'transparent',
+                          color: 'var(--color-status-red)',
+                          cursor: 'pointer',
+                          fontSize: 'var(--font-size-sm)',
+                          flexShrink: 0,
+                        }}
+                        title="Hapus item"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => handleAddEditItem(sIdx)}
+                    style={{
+                      padding: 'var(--space-1) var(--space-3)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px dashed var(--color-border)',
+                      background: 'transparent',
+                      color: 'var(--color-text-muted)',
+                      cursor: 'pointer',
+                      fontSize: 'var(--font-size-sm)',
+                    }}
+                  >
+                    + Tambah Item
+                  </button>
+                </div>
               ))}
+              <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+                <button
+                  onClick={handleCancelEditCV}
+                  style={{
+                    padding: 'var(--space-2) var(--space-4)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveEditCV}
+                  style={{
+                    padding: 'var(--space-2) var(--space-4)',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: 'var(--color-primary)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 600,
+                  }}
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                padding: 'var(--space-2) var(--space-4)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg)',
-                color: 'var(--color-text)',
-                cursor: 'pointer',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              Ganti CV
-            </button>
-          </div>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <span style={{ color: 'var(--color-status-green)', fontWeight: 600 }}>✓ CV sudah diimport</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                  {masterResume.sections.length} sections • {masterResume.sections.reduce((acc, s) => acc + s.items.length, 0)} items
+                </span>
+              </div>
+              {/* Section preview */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                {masterResume.sections.map((s) => (
+                  <span
+                    key={s.type}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--color-bg)',
+                      border: '1px solid var(--color-border)',
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    {s.title} ({s.items.length})
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    padding: 'var(--space-2) var(--space-4)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                  }}
+                >
+                  Ganti CV
+                </button>
+                <button
+                  onClick={handleStartEditCV}
+                  style={{
+                    padding: 'var(--space-2) var(--space-4)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-primary)',
+                    background: 'transparent',
+                    color: 'var(--color-primary)',
+                    cursor: 'pointer',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 600,
+                  }}
+                >
+                  ✎ Edit CV
+                </button>
+              </div>
+            </div>
+          )
         ) : (
           <div
             onDragOver={handleDragOver}
@@ -298,28 +483,6 @@ export default function Triage() {
             </p>
           </div>
         )}
-
-        {/* AI Parse Toggle */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-          marginTop: 'var(--space-3)', padding: 'var(--space-3)',
-          background: useAI ? '#EFF6FF' : 'var(--color-bg)',
-          borderRadius: 'var(--radius-md)',
-          border: `1px solid ${useAI ? 'var(--color-primary)' : 'var(--color-border)'}`,
-        }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--font-size-sm)' }}>
-            <input
-              type="checkbox"
-              checked={useAI}
-              onChange={(e) => setUseAI(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: 'var(--color-primary)' }}
-            />
-            <span style={{ fontWeight: 500 }}>🤖 Parse dengan AI (Deepseek)</span>
-          </label>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-            {useAI ? '→ Hasil lebih akurat, butuh server aktif' : '→ Offline, regex-based'}
-          </span>
-        </div>
 
         <input
           ref={fileInputRef}
@@ -400,10 +563,9 @@ export default function Triage() {
               style={{ ...inputStyle, marginBottom: 'var(--space-3)', width: '100%' }}
             />
             <textarea
-              placeholder="Deskripsi Posisi (Job Description) *"
+              placeholder="Deskripsi Posisi (Job Description)"
               value={jobForm.jobDescription}
               onChange={(e) => setJobForm({ ...jobForm, jobDescription: e.target.value })}
-              required
               rows={8}
               style={{ ...inputStyle, width: '100%', resize: 'vertical', fontFamily: 'var(--font-family)' }}
             />
@@ -634,6 +796,16 @@ export default function Triage() {
                       >
                         🔄 Hitung Ulang Skor
                       </button>
+                      {scoreSuccess === job.id && (
+                        <span style={{
+                          marginLeft: 'var(--space-3)',
+                          color: 'var(--color-status-green)',
+                          fontSize: 'var(--font-size-sm)',
+                          fontWeight: 600,
+                        }}>
+                          ✓ Skor berhasil dihitung ulang
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

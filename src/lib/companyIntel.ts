@@ -173,8 +173,20 @@ export async function requestResearch(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: "Research company: " + intel.company + " (" + intel.officialUrl + ")",
-        context: "Company: " + intel.company + ", Website: " + intel.officialUrl,
+        systemPrompt:
+          "You are a company research analyst helping job seekers evaluate potential employers. " +
+          "Return ONLY a valid JSON object with exactly these fields: " +
+          '{"snapshot": "...", "products": [...], "industry": "...", "redFlags": [...]}. ' +
+          "snapshot: 1-2 sentence company overview. products: array of main products/services. " +
+          "industry: sector/industry string. redFlags: array of potential concerns for job seekers " +
+          "(e.g., layoffs, financial trouble, lawsuits, poor work-life balance signals). " +
+          "Use empty strings/arrays if information is unavailable.",
+        prompt:
+          "Research the company " + intel.company + " (website: " + intel.officialUrl + "). " +
+          "Provide a brief overview, list their main products/services, identify their industry, " +
+          "and flag any potential red flags for job seekers (e.g., recent layoffs, lawsuits, " +
+          "financial instability, poor employee reviews). " +
+          "Return ONLY the JSON object, no markdown or explanation.",
         task: "company_research",
       }),
     });

@@ -219,6 +219,8 @@ describe('getInterviewPrep', () => {
     await db.companyIntel.clear();
     await db.tailoredResumes.clear();
     await db.applications.clear();
+    await db.masterResume.clear();
+    await db.eventLog.clear();
   });
 
   it('should return interview prep data when application exists', async () => {
@@ -235,6 +237,9 @@ describe('getInterviewPrep', () => {
     expect(prep!.fitScore?.overallScore).toBe(85);
     expect(prep!.tailoredResume?.suggestions.length).toBe(2);
     expect(prep!.application?.status).toBe('interview');
+    expect(prep!.jobDescription).toBe(sampleJob.jobDescription);
+    expect(prep!.cvSections).toEqual([]);
+    expect(prep!.eventHistory).toEqual([]);
   });
 
   it('should return data even when no application exists', async () => {
@@ -248,6 +253,9 @@ describe('getInterviewPrep', () => {
     expect(prep!.application).toBeNull();
     expect(prep!.fitScore).not.toBeNull();
     expect(prep!.companyIntel).not.toBeNull();
+    expect(prep!.jobDescription).toBe(sampleJob.jobDescription);
+    expect(prep!.cvSections).toEqual([]);
+    expect(prep!.eventHistory).toEqual([]);
   });
 
   it('should handle partial intel gracefully', async () => {
@@ -261,6 +269,9 @@ describe('getInterviewPrep', () => {
     expect(prep!.fitScore).toBeNull();
     expect(prep!.tailoredResume).toBeNull();
     expect(prep!.application).toBeDefined();
+    expect(prep!.jobDescription).toBe(sampleJob.jobDescription);
+    expect(prep!.cvSections).toEqual([]);
+    expect(prep!.eventHistory).toEqual([]);
   });
 });
 

@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { JobEntry, FitScore, CompanyIntel, TailoredResume, Application, ApplicationStatus } from '../types';
+import type { JobEntry, FitScore, CompanyIntel, TailoredResume, Application, ApplicationStatus, ResumeSection, EventLog } from '../types';
 
 export interface ConsolidatedView {
   jobEntry: JobEntry;
@@ -14,6 +14,9 @@ export interface InterviewPrep {
   fitScore: FitScore | null;
   tailoredResume: TailoredResume | null;
   application: Application | null;
+  jobDescription: string;
+  cvSections: ResumeSection[];
+  eventHistory: EventLog[];
 }
 
 export interface PipelineSummary {
@@ -130,12 +133,21 @@ export async function getExportData(format: 'json' | 'text'): Promise<string> {
  * Get interview prep view for a specific job.
  */
 export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | null> {
-  const [fitScore, companyIntel, tailoredResume, application] = await Promise.all([
+  const jobEntry = await db.jobEntries.get(jobId);
+
+  const [fitScore, companyIntel, tailoredResume, application, masterResume, allEvents] = await Promise.all([
     db.fitScores.where('jobId').equals(jobId).first(),
     db.companyIntel.where('jobId').equals(jobId).first(),
     db.tailoredResumes.where('jobId').equals(jobId).first(),
     db.applications.where('jobId').equals(jobId).first(),
+    db.masterResume.toCollection().first(),
+    db.eventLog.toArray(),
   ]);
+
+  // Filter events related to this job (where metadata.jobId matches)
+  const eventHistory = allEvents
+    .filter((e) => e.metadata?.jobId === jobId)
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
   // Return intel even without an application — shows what's available
   return {
@@ -143,6 +155,9 @@ export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | n
     fitScore: fitScore ?? null,
     tailoredResume: tailoredResume ?? null,
     application: application ?? null,
+    jobDescription: jobEntry?.jobDescription ?? '',
+    cvSections: masterResume?.sections ?? [],
+    eventHistory,
   };
 }
 
