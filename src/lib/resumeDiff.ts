@@ -1,4 +1,5 @@
 import type { MasterResume, ResumeSection, TailorSuggestion, TailoredResume } from '../types';
+import { isUrlOrDomain } from './fitScoring';
 
 const API_BASE = 'http://127.0.0.1:8787';
 
@@ -29,11 +30,16 @@ export interface LocalDiffResult {
 }
 
 export function extractKeywords(text: string): string[] {
-  const words = text
+  // Strip full URLs before extracting words
+  const cleaned = text
+    .replace(/https?:\/\/[^\s]+/g, ' ')
+    .replace(/www\.[^\s]+/g, ' ');
+
+  const words = cleaned
     .toLowerCase()
     .replace(/[^a-z0-9+\s]/g, ' ')
     .split(/\s+/)
-    .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+    .filter(w => w.length >= 2 && !STOP_WORDS.has(w) && !isUrlOrDomain(w));
 
   const freq = new Map<string, number>();
   for (const w of words) {
@@ -73,6 +79,8 @@ export function generateLocalDiff(
   const skillGaps: string[] = [];
 
   for (const kw of jdKeywords) {
+    // Skip URL/domain fragments that slipped through
+    if (isUrlOrDomain(kw)) continue;
     if (keywordInText(kw, resumeText)) {
       keywordMatch.push(kw);
     } else {
@@ -96,6 +104,13 @@ export function generateLocalDiff(
   return { keywordMatch, skillGaps, sectionScores };
 }
 
+const URL_PATTERN = /https?:|www\.|\.com|\.co\.|\.id|\.org|\.net|\.io|\.dev|\.app|\.gov|\.edu/i;
+
+function isUrlFragment(s: string): boolean {
+  if (!s) return false;
+  return URL_PATTERN.test(s);
+}
+
 export function parseAiSuggestions(response: string): TailorSuggestion[] {
   if (!response || response.trim().length === 0) return [];
 
@@ -115,7 +130,14 @@ export function parseAiSuggestions(response: string): TailorSuggestion[] {
           suggested: s.suggested as string,
           reason: (typeof s.reason === 'string' ? s.reason : '') as string,
           accepted: undefined as boolean | undefined,
-        }));
+        }))
+        // Post-process: filter out suggestions containing URL fragments
+        .filter(s =>
+          !isUrlFragment(s.section) &&
+          !isUrlFragment(s.original) &&
+          !isUrlFragment(s.suggested) &&
+          !isUrlFragment(s.reason)
+        );
     }
   } catch {
     // Not JSON - fall through to line-based parsing
@@ -206,6 +228,8 @@ export async function generateAiSuggestions(
     '  - Only suggest wording improvements, not new content',
     '  - Keep suggestions concise and professional',
     '  - Return an empty array [] if no improvements are possible',
+    '  - Jangan pernah menyertakan URL, domain, atau fragment seperti https, http, www, .com, .id dalam saran.',
+    '  - Fokus hanya pada kata kunci profesional dan skill.',
   ].join('\n');
 
   const prompt = [

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicholasrice/tauri/dev/crates/tauri-cli/schema.json",
+  "productName": "uSeeker",
+  "version": "2.0.0",
+  "identifier": "com.useeker.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "uSeeker — Job Hunt Intelligence",
+        "width": 1200,
+        "height": 800,
+        "resizable": true,
+        "minWidth": 800,
+        "minHeight": 600,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true,
+      "sidecar": true
+    }
+  }
+}

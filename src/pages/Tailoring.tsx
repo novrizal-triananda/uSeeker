@@ -10,6 +10,8 @@ export default function Tailoring() {
   const [diffResult, setDiffResult] = useState<{ keywordMatch: string[]; skillGaps: string[] } | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<TailorSuggestion[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -20,57 +22,73 @@ export default function Tailoring() {
     async function loadSavedSuggestions() {
       if (!selectedJobId) {
         setAiSuggestions(null);
+        setDiffResult(null);
         return;
       }
       const saved = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
       if (saved) {
         setAiSuggestions(saved.suggestions);
+        if (saved.keywordMatch && saved.skillGaps) {
+          setDiffResult({ keywordMatch: saved.keywordMatch, skillGaps: saved.skillGaps });
+        }
       } else {
         setAiSuggestions(null);
+        setDiffResult(null);
       }
     }
     loadSavedSuggestions();
   }, [selectedJobId]);
 
   async function loadData() {
-    const master = await db.masterResume.toCollection().first();
-    if (master) setResume(master);
-    const allJobs = await db.jobEntries.toArray();
-    setJobs(allJobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+    try {
+      const master = await db.masterResume.toCollection().first();
+      if (master) setResume(master);
+      const allJobs = await db.jobEntries.toArray();
+      setJobs(allJobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+    } catch (err) {
+      console.error('Failed to load tailoring data:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function handleDiff() {
-    if (!resume || !selectedJobId) return;
-    const job = jobs.find(j => j.id === selectedJobId);
-    if (!job) return;
-    const result = generateLocalDiff(resume, job.jobDescription || '');
-    setDiffResult(result);
-    setAiSuggestions(null);
-  }
-
-  async function handleAiTailor() {
+  async function handleAnalyze() {
     if (!resume || !selectedJobId) return;
     setAiLoading(true);
+    setAiError(null);
     try {
       const job = jobs.find(j => j.id === selectedJobId);
       if (!job) return;
-      const suggestions = await generateAiSuggestions(resume, job.jobDescription || '', selectedJobId);
-      setAiSuggestions(suggestions);
-      // Persist AI suggestions to DB
-      if (suggestions && suggestions.length > 0) {
-        const existing = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
-        const resumeData = {
-          jobId: selectedJobId,
-          masterResumeId: resume.id,
-          suggestions: suggestions,
-          createdAt: existing?.createdAt || new Date(),
-        };
-        if (existing) {
-          await db.tailoredResumes.update(existing.id, resumeData);
-        } else {
-          await db.tailoredResumes.add({ id: crypto.randomUUID(), ...resumeData });
-        }
+      // Run local diff (synchronous, fast)
+      const diff = generateLocalDiff(resume, job.jobDescription || '');
+      setDiffResult(diff);
+      // Run AI suggestions (async, slower)
+      let suggestions: TailorSuggestion[] | null = null;
+      try {
+        suggestions = await generateAiSuggestions(resume, job.jobDescription || '', selectedJobId);
+      } catch (err: any) {
+        console.error('AI suggestion error:', err);
+        setAiError('Gagal mengambil saran AI. Pastikan server AI berjalan. Analisis lokal tetap tersedia.');
       }
+      setAiSuggestions(suggestions);
+      // Persist diffResult and suggestions to DB
+      const existing = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
+      const resumeData = {
+        jobId: selectedJobId,
+        masterResumeId: resume.id,
+        suggestions: suggestions || [],
+        keywordMatch: diff.keywordMatch,
+        skillGaps: diff.skillGaps,
+        createdAt: existing?.createdAt || new Date(),
+      };
+      if (existing) {
+        await db.tailoredResumes.update(existing.id, resumeData);
+      } else {
+        await db.tailoredResumes.add({ id: crypto.randomUUID(), ...resumeData });
+      }
+    } catch (err: any) {
+      console.error('Analysis failed:', err);
+      setAiError('Gagal menganalisis. Silakan coba lagi.');
     } finally {
       setAiLoading(false);
     }
@@ -87,6 +105,15 @@ export default function Tailoring() {
         Bandingkan CV dengan lowongan, dapatkan saran tailoring.
       </p>
 
+      {loading ? (
+        <div style={{
+          textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-text-muted)',
+          background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--color-border)',
+        }}>
+          <p style={{ fontSize: 'var(--font-size-lg)' }}>Memuat data...</p>
+        </div>
+      ) : (<>
       {/* CV Status — read-only, imported from Triage */}
       <div style={{
         background: 'var(--color-surface)',
@@ -173,7 +200,6 @@ export default function Tailoring() {
               value={selectedJobId}
               onChange={(e) => {
                 setSelectedJobId(e.target.value);
-                setDiffResult(null);
               }}
               style={{
                 flex: 1, minWidth: 200, padding: 'var(--space-3)',
@@ -190,20 +216,7 @@ export default function Tailoring() {
               ))}
             </select>
             <button
-              onClick={handleDiff}
-              disabled={!selectedJobId}
-              style={{
-                padding: 'var(--space-2) var(--space-5)',
-                background: 'var(--color-primary)', color: '#FFFFFF',
-                border: 'none', borderRadius: 'var(--radius-md)',
-                fontWeight: 600, cursor: 'pointer',
-                opacity: !selectedJobId ? 0.5 : undefined,
-              }}
-            >
-              Bandingkan
-            </button>
-            <button
-              onClick={handleAiTailor}
+              onClick={handleAnalyze}
               disabled={!selectedJobId || aiLoading}
               style={{
                 padding: 'var(--space-2) var(--space-5)',
@@ -213,9 +226,24 @@ export default function Tailoring() {
                 opacity: (!selectedJobId || aiLoading) ? 0.5 : undefined,
               }}
             >
-              {aiLoading ? '⏳ AI...' : '🤖 AI Tailor'}
+              {aiLoading ? '⏳ Menganalisis...' : '🤖 Analisis'}
             </button>
           </div>
+
+          {/* AI Error Message */}
+          {aiError && (
+            <div style={{
+              padding: 'var(--space-3) var(--space-4)',
+              background: '#FEF3C7',
+              border: '1px solid #FCD34D',
+              borderRadius: 'var(--radius-md)',
+              color: '#92400E',
+              fontSize: 'var(--font-size-sm)',
+              marginBottom: 'var(--space-4)',
+            }}>
+              ⚠️ {aiError}
+            </div>
+          )}
 
           {/* Side-by-side diff result */}
           {diffResult && selectedJob && (
@@ -323,6 +351,8 @@ export default function Tailoring() {
         }}>
           <p>Belum ada lowongan. Tambah lowongan di tab <strong>Triage</strong> untuk melakukan perbandingan.</p>
         </div>
+      )}
+      </>
       )}
     </section>
   );

@@ -197,7 +197,7 @@ describe('getExportData', () => {
 
     const text = await getExportData('text');
 
-    expect(text).toContain('Company Intel:');
+    expect(text).toContain('Profil Perusahaan:');
     expect(text).toContain('Technology');
     expect(text).toContain('Product A');
     expect(text).toContain('Red Flags: High turnover');

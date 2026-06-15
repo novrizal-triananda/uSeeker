@@ -107,10 +107,10 @@ export default function Visibility() {
     }
   }
 
-  async function handleOutcomeChange(id: string, outcome: ApplicationOutcome) {
+  async function handleOutcomeChange(id: string, outcome: ApplicationOutcome | undefined) {
     try {
       await getOutcome(id, outcome);
-      await logEvent('update_status', { applicationId: id, outcome });
+      await logEvent('update_status', { applicationId: id, outcome: outcome ?? null });
       await loadData();
     } catch {
       alert('Gagal memperbarui outcome.');
@@ -297,8 +297,8 @@ export default function Visibility() {
                             <select
                               value={app.outcome || ''}
                               onChange={(e) => {
-                                const val = e.target.value as ApplicationOutcome;
-                                if (val) handleOutcomeChange(app.id, val);
+                                const val = e.target.value as ApplicationOutcome | '';
+                                handleOutcomeChange(app.id, val || undefined);
                               }}
                               style={styles.statusSelect}
                             >

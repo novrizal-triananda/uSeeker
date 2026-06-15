@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { logEvent } from '../lib/eventLog';
-import type { JobEntry, FitScore, MasterResume, ResumeSection, SectionType } from '../types';
+import type { JobEntry, FitScore, MasterResume } from '../types';
 
 interface JobWithScore {
   job: JobEntry;
@@ -26,10 +26,6 @@ export default function Triage() {
   const [importSuccess, setImportSuccess] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // CV Edit state
-  const [editingCV, setEditingCV] = useState(false);
-  const [editSections, setEditSections] = useState<ResumeSection[]>([]);
 
   // Job entry form state
   const [showJobForm, setShowJobForm] = useState(false);
@@ -107,6 +103,7 @@ export default function Triage() {
       }
       setMasterResume(parsed);
       setImportSuccess(true);
+      await loadData();
       await logEvent('import_cv', { sections: parsed.sections.length });
       setTimeout(() => setImportSuccess(false), 3000);
     } catch (err: any) {
@@ -136,74 +133,6 @@ export default function Triage() {
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) handleFileImport(file);
-  }
-
-  // ── CV Edit Handlers ──
-  function handleStartEditCV() {
-    if (!masterResume) return;
-    // Deep clone sections so edits don't mutate the live state
-    setEditSections(masterResume.sections.map((s) => ({
-      ...s,
-      items: s.items.map((item) => ({ ...item })),
-    })));
-    setEditingCV(true);
-  }
-
-  function handleCancelEditCV() {
-    setEditingCV(false);
-    setEditSections([]);
-  }
-
-  async function handleSaveEditCV() {
-    if (!masterResume) return;
-    const requiredTypes: SectionType[] = ['contact', 'experience', 'education', 'skills'];
-    const presentTypes = new Set(editSections.map((s) => s.type));
-    const missing = requiredTypes.filter((t) => !presentTypes.has(t));
-    if (missing.length > 0) {
-      alert('Section berikut wajib ada: Contact, Experience, Education, Skills');
-      return;
-    }
-    try {
-      const existing = await db.masterResume.toCollection().first();
-      if (existing) {
-        await db.masterResume.update(existing.id, {
-          sections: editSections,
-          updatedAt: new Date(),
-        });
-      }
-      setMasterResume({ ...masterResume, sections: editSections, updatedAt: new Date() });
-      setEditingCV(false);
-      setEditSections([]);
-      await logEvent('import_cv', { sections: editSections.length, action: 'edit' });
-    } catch (err: any) {
-      console.error('Failed to save CV edits:', err);
-    }
-  }
-
-  function handleEditItemText(sectionIdx: number, itemIdx: number, value: string) {
-    setEditSections((prev) =>
-      prev.map((s, si) =>
-        si === sectionIdx
-          ? { ...s, items: s.items.map((item, ii) => (ii === itemIdx ? { ...item, text: value } : item)) }
-          : s
-      )
-    );
-  }
-
-  function handleDeleteEditItem(sectionIdx: number, itemIdx: number) {
-    setEditSections((prev) =>
-      prev.map((s, si) =>
-        si === sectionIdx ? { ...s, items: s.items.filter((_, ii) => ii !== itemIdx) } : s
-      )
-    );
-  }
-
-  function handleAddEditItem(sectionIdx: number) {
-    setEditSections((prev) =>
-      prev.map((s, si) =>
-        si === sectionIdx ? { ...s, items: [...s.items, { text: '' }] } : s
-      )
-    );
   }
 
   // ── Job Entry Handlers ──
@@ -241,11 +170,26 @@ export default function Triage() {
       alert('Impor CV terlebih dahulu.');
       return;
     }
+    const job = await db.jobEntries.get(jobId);
+    if (!job) return;
+
+    // Edge case: warn if job description is empty
+    if (!job.jobDescription || job.jobDescription.trim().length === 0) {
+      const proceed = confirm('Deskripsi pekerjaan kosong. Skor kesesuaian akan menjadi 0. Lanjutkan?');
+      if (!proceed) return;
+    }
+
+    // Edge case: warn if CV has no experience section
+    const hasExperience = masterResume.sections.some(
+      s => s.type === 'experience' && s.items.length > 0
+    );
+    if (!hasExperience) {
+      const proceed = confirm('CV tidak memiliki bagian pengalaman kerja. Skor pengalaman akan rendah. Lanjutkan?');
+      if (!proceed) return;
+    }
+
     setGeneratingId(jobId);
     try {
-      const job = await db.jobEntries.get(jobId);
-      if (!job) return;
-
       const fitScore = generateFitScore(masterResume, job.jobDescription || '', jobId);
       // Delete old score for this job to avoid duplicates
       await db.fitScores.where('jobId').equals(jobId).delete();
@@ -306,108 +250,17 @@ export default function Triage() {
         </h3>
 
         {masterResume ? (
-          editingCV ? (
-            <div>
-              {editSections.map((section, sIdx) => (
-                <div
-                  key={sIdx}
-                  style={{
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-4)',
-                    marginBottom: 'var(--space-3)',
-                    background: 'var(--color-bg)',
-                  }}
-                >
-                  <h4 style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', marginBottom: 'var(--space-3)' }}>
-                    {section.title}
-                  </h4>
-                  {section.items.map((item, iIdx) => (
-                    <div key={iIdx} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', alignItems: 'flex-start' }}>
-                      <textarea
-                        value={item.text}
-                        onChange={(e) => handleEditItemText(sIdx, iIdx, e.target.value)}
-                        rows={2}
-                        style={{
-                          flex: 1,
-                          padding: 'var(--space-2)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: 'var(--radius-sm)',
-                          fontSize: 'var(--font-size-sm)',
-                          fontFamily: 'var(--font-family)',
-                          background: 'var(--color-surface)',
-                          color: 'var(--color-text)',
-                          resize: 'vertical',
-                          outline: 'none',
-                        }}
-                      />
-                      <button
-                        onClick={() => handleDeleteEditItem(sIdx, iIdx)}
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: '1px solid var(--color-status-red)',
-                          background: 'transparent',
-                          color: 'var(--color-status-red)',
-                          cursor: 'pointer',
-                          fontSize: 'var(--font-size-sm)',
-                          flexShrink: 0,
-                        }}
-                        title="Hapus item"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => handleAddEditItem(sIdx)}
-                    style={{
-                      padding: 'var(--space-1) var(--space-3)',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px dashed var(--color-border)',
-                      background: 'transparent',
-                      color: 'var(--color-text-muted)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--font-size-sm)',
-                    }}
-                  >
-                    + Tambah Item
-                  </button>
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-                <button
-                  onClick={handleCancelEditCV}
-                  style={{
-                    padding: 'var(--space-2) var(--space-4)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    background: 'var(--color-bg)',
-                    color: 'var(--color-text)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                  }}
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSaveEditCV}
-                  style={{
-                    padding: 'var(--space-2) var(--space-4)',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    background: 'var(--color-primary)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 600,
-                  }}
-                >
-                  Simpan Perubahan
-                </button>
+            importing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-6)' }}>
+                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite' }} />
+                <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--color-text)' }}>
+                  Memproses<span style={{ animation: 'cv-import-dots 1.5s steps(4, end) infinite' }}></span>
+                </p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                  Mengganti CV...
+                </p>
               </div>
-            </div>
-          ) : (
+            ) : (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
                 <span style={{ color: 'var(--color-status-green)', fontWeight: 600 }}>✓ CV sudah diimport</span>
@@ -448,21 +301,7 @@ export default function Triage() {
                 >
                   Ganti CV
                 </button>
-                <button
-                  onClick={handleStartEditCV}
-                  style={{
-                    padding: 'var(--space-2) var(--space-4)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-primary)',
-                    background: 'transparent',
-                    color: 'var(--color-primary)',
-                    cursor: 'pointer',
-                    fontSize: 'var(--font-size-sm)',
-                    fontWeight: 600,
-                  }}
-                >
-                  ✎ Edit CV
-                </button>
+
               </div>
             </div>
           )
@@ -499,7 +338,7 @@ export default function Triage() {
                   📤 Import CV
                 </p>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                  Drag & drop file .txt/.md/.docx/.pdf atau klik untuk memilih
+                  Drag & drop file .docx atau klik untuk memilih
                 </p>
               </>
             )}
@@ -509,10 +348,14 @@ export default function Triage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.md,.docx,.pdf"
+          accept=".docx"
           onChange={handleFileInput}
           style={{ display: 'none' }}
         />
+
+        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-2)' }}>
+          Format yang diterima: .docx (Microsoft Word)
+        </p>
 
         {importError && (
           <p style={{ color: 'var(--color-status-red)', marginTop: 'var(--space-3)', fontSize: 'var(--font-size-sm)' }}>
@@ -578,7 +421,7 @@ export default function Triage() {
               />
             </div>
             <input
-              type="url"
+              type="text"
               placeholder="URL Lowongan (opsional)"
               value={jobForm.sourceUrl}
               onChange={(e) => setJobForm({ ...jobForm, sourceUrl: e.target.value })}

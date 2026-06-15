@@ -111,7 +111,7 @@ export async function getExportData(format: 'json' | 'text'): Promise<string> {
     }
 
     if (view.companyIntel) {
-      lines.push(`Company Intel:`);
+      lines.push(`Profil Perusahaan:`);
       if (view.companyIntel.snapshot) {
         lines.push(`  ${view.companyIntel.snapshot}`);
       }

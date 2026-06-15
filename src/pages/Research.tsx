@@ -107,7 +107,7 @@ export default function Research() {
         boxShadow: 'var(--shadow-sm)',
       }}>
         <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
-          Tambah Kartu Intel Perusahaan
+          Tambah Profil Perusahaan
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <div>
@@ -252,7 +252,7 @@ export default function Research() {
           border: '1px solid var(--color-border)',
         }}>
           <p style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-2)' }}>Belum ada riset perusahaan</p>
-          <p>Tambahkan kartu intel perusahaan untuk memulai riset.</p>
+          <p>Tambahkan profil perusahaan untuk memulai riset.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -320,6 +320,7 @@ export default function Research() {
                     >
                       {researchingId === card.id ? '⏳ Riset...' : hasIntel ? '🔄 Riset Ulang' : '🔍 Riset'}
                     </button>
+                    {hasIntel && (
                     <button
                       onClick={() => {
                         const newId = isExpanded ? null : card.id;
@@ -335,6 +336,7 @@ export default function Research() {
                     >
                       {isExpanded ? 'Tutup' : 'Detail'}
                     </button>
+                    )}
                     <button
                       onClick={() => handleDelete(card.id)}
                       style={{

@@ -55,6 +55,7 @@ async function extractDocxText(file: File): Promise<string> {
 
 /**
  * Extract text from a .pdf file using pdfjs-dist.
+ * Preserves line structure by detecting y-position changes between text items.
  */
 async function extractPdfText(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
@@ -73,10 +74,36 @@ async function extractPdfText(file: File): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item: any) => item.str)
-      .join(' ');
-    textParts.push(pageText);
+    
+    let lastY: number | null = null;
+    let line = '';
+    
+    for (const item of content.items as any[]) {
+      const y = item.transform?.[5] ?? 0;
+      
+      // If y changed significantly, it's a new line
+      if (lastY !== null && Math.abs(y - lastY) > 2) {
+        textParts.push(line.trimEnd());
+        line = '';
+      }
+      
+      line += item.str;
+      
+      // Detect if next item needs a space (gap in x position or different font)
+      const nextItem = content.items[content.items.indexOf(item) + 1];
+      if (nextItem) {
+        const currentX = (item.transform?.[4] ?? 0) + (item.width ?? 0);
+        const nextX = nextItem.transform?.[4] ?? 0;
+        // If there's a gap > 2px, add a space
+        if (nextX - currentX > 2) {
+          line += ' ';
+        }
+      }
+      
+      lastY = y;
+    }
+    
+    if (line.trim()) textParts.push(line.trimEnd());
   }
   
   return textParts.join('\n\n');

@@ -52,7 +52,7 @@ export async function updateStatus(id: string, newStatus: ApplicationStatus): Pr
   return (await db.applications.get(id))!;
 }
 
-export async function getOutcome(id: string, outcome: ApplicationOutcome): Promise<Application> {
+export async function getOutcome(id: string, outcome: ApplicationOutcome | undefined): Promise<Application> {
   const app = await db.applications.get(id);
   if (!app) {
     throw new Error(`Application ${id} not found`);

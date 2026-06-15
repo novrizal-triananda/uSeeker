@@ -63,6 +63,7 @@ export async function createIntelCard(data: {
   company: string;
   officialUrl: string;
   notes?: string;
+  enrichmentUrls?: string[];
 }): Promise<CompanyIntel> {
   const intel: CompanyIntel = {
     id: crypto.randomUUID(),
@@ -70,6 +71,7 @@ export async function createIntelCard(data: {
     company: data.company,
     officialUrl: data.officialUrl,
     notes: data.notes,
+    enrichmentUrls: data.enrichmentUrls,
     crawlDepth: 0,
     sources: [],
     createdAt: new Date(),
@@ -211,9 +213,84 @@ async function fetchUrlContent(url: string): Promise<string | null> {
 }
 
 /**
+ * Search via DuckDuckGo as fallback when scraping fails.
+ * Calls server-side /api/search endpoint which scrapes DuckDuckGo HTML results.
+ */
+async function searchViaDuckDuckGo(query: string): Promise<{ title: string; url: string; content: string }[]> {
+  try {
+    const res = await fetch(API_BASE + '/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).slice(0, 5).map((r: any) => ({
+      title: r.title || '',
+      url: r.url || '',
+      content: r.content || ''
+    }));
+  } catch { return []; }
+}
+
+/**
+ * Scrape a URL and return both text content and extracted links.
+ */
+async function scrapeUrl(url: string): Promise<{ text: string; links: { url: string; text: string }[] } | null> {
+  try {
+    const res = await fetch(API_BASE + "/api/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return { text: data.text || "", links: data.links || [] };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Filter and rank links by relevance for company research.
+ * Prioritizes: about, products, news, career, investor pages.
+ */
+function filterRelevantLinks(
+  links: { url: string; text: string }[],
+  baseUrl: string,
+  company: string,
+): string[] {
+  const baseHost = new URL(baseUrl).hostname;
+  const keywords = ['about', 'tentang', 'product', 'produk', 'service', 'layanan',
+    'news', 'berita', 'press', 'career', 'karir', 'investor', 'report', 'annual',
+    'profile', 'profil', 'company', 'perusahaan'];
+
+  return links
+    .filter(l => {
+      try {
+        const host = new URL(l.url).hostname;
+        // Same domain only
+        if (!host.includes(baseHost.replace('www.', ''))) return false;
+        // Skip fragments, downloads, images
+        if (l.url.includes('#') || l.url.match(/\.(pdf|jpg|png|gif|zip)$/i)) return false;
+        return true;
+      } catch { return false; }
+    })
+    .sort((a, b) => {
+      // Rank by keyword relevance
+      const aText = (a.text + a.url).toLowerCase();
+      const bText = (b.text + b.url).toLowerCase();
+      const aScore = keywords.filter(k => aText.includes(k)).length;
+      const bScore = keywords.filter(k => bText.includes(k)).length;
+      return bScore - aScore;
+    })
+    .slice(0, 5) // Top 5 links
+    .map(l => l.url);
+}
+
+/**
  * Request AI research for a company intel card.
- * Fetches the official website and all enrichment URLs to get their actual
- * text content, then sends that content to the AI for deep analysis.
+ * Multi-page scraping: fetches main page, extracts links, follows top pages.
  * Returns null if server is down, intel not found, or URL is banned.
  */
 export async function requestResearch(
@@ -225,51 +302,108 @@ export async function requestResearch(
 
   if (isBannedDomain(intel.officialUrl)) return null;
 
-  // Collect enrichment URLs (filter out banned domains)
-  const allUrls = [
-    intel.officialUrl,
-    ...(enrichmentUrls || intel.enrichmentUrls || []),
-  ]
-    .filter(Boolean)
-    .filter((url) => !isBannedDomain(url));
-
-  // Fetch content from each URL in parallel
-  const fetchResults = await Promise.allSettled(
-    allUrls.map(async (url) => ({
-      url,
-      content: await fetchUrlContent(url),
-    })),
-  );
-
-  // Build content sections for the prompt
   const contentSections: string[] = [];
+  const fetchedSources: string[] = [];
 
-  for (const result of fetchResults) {
-    if (result.status !== "fulfilled") continue;
-    const { url, content } = result.value;
-    if (!content) continue;
-
-    // Truncate very long content to stay within prompt limits
-    const truncated = content.length > 8000 ? content.slice(0, 8000) + "\n...[truncated]" : content;
-
-    if (url === intel.officialUrl) {
+  // Step 1: Scrape main website (get text + links)
+  if (intel.officialUrl) {
+    const mainScrape = await scrapeUrl(intel.officialUrl);
+    if (mainScrape?.text) {
       contentSections.push(
-        `=== KONTEN WEBSITE RESMI ${intel.company} (${url}) ===\n${truncated}\n=== AKHIR WEBSITE RESMI ===`,
+        `=== KONTEN WEBSITE RESMI ${intel.company} (${intel.officialUrl}) ===\n${mainScrape.text}\n=== AKHIR WEBSITE RESMI ===`
       );
-    } else {
-      contentSections.push(
-        `=== KONTEN SUMBER: ${url} ===\n${truncated}\n=== AKHIR SUMBER ===`,
-      );
+      fetchedSources.push(intel.officialUrl);
+
+      // Step 2: Follow top relevant links for deeper scraping
+      if (mainScrape.links.length > 0) {
+        const relevantUrls = filterRelevantLinks(mainScrape.links, intel.officialUrl, intel.company);
+        const subResults = await Promise.allSettled(
+          relevantUrls.map(async (url) => {
+            const result = await fetchUrlContent(url);
+            return { url, content: result };
+          }),
+        );
+        for (const r of subResults) {
+          if (r.status === "fulfilled" && r.value.content) {
+            const truncated = r.value.content.length > 4000
+              ? r.value.content.slice(0, 4000) + "\n...[truncated]"
+              : r.value.content;
+            contentSections.push(
+              `=== KONTEN HALAMAN: ${r.value.url} ===\n${truncated}\n=== AKHIR HALAMAN ===`
+            );
+            fetchedSources.push(r.value.url);
+          }
+        }
+      }
     }
   }
 
-  // Determine which URLs had content fetched
-  const fetchedSources = allUrls.filter((url) => {
-    const result = fetchResults.find(
-      (r) => r.status === "fulfilled" && r.value.url === url && r.value.content,
+  // Step 2b: DuckDuckGo fallback if main scrape yielded little content
+  const totalContentLength = contentSections.join('').length;
+  if (totalContentLength < 200) {
+    const [profileResults, newsResults] = await Promise.all([
+      searchViaDuckDuckGo(`${intel.company} company profile`),
+      searchViaDuckDuckGo(`${intel.company} news`),
+    ]);
+    for (const r of profileResults) {
+      if (r.content) {
+        contentSections.push(
+          `=== DUCKDUCKGO HASIL: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR DUCKDUCKGO ===`
+        );
+        fetchedSources.push(r.url);
+      }
+    }
+    for (const r of newsResults) {
+      if (r.content && !fetchedSources.includes(r.url)) {
+        contentSections.push(
+          `=== DUCKDUCKGO HASIL: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR DUCKDUCKGO ===`
+        );
+        fetchedSources.push(r.url);
+      }
+    }
+  }
+
+  // Step 3: Fetch enrichment URLs
+  const enrichmentList = enrichmentUrls || intel.enrichmentUrls || [];
+  const failedEnrichmentUrls: string[] = [];
+  if (enrichmentList.length > 0) {
+    const enrichResults = await Promise.allSettled(
+      enrichmentList
+        .filter((url) => !isBannedDomain(url))
+        .map(async (url) => ({ url, content: await fetchUrlContent(url) })),
     );
-    return !!result;
-  });
+    for (const r of enrichResults) {
+      if (r.status === "fulfilled" && r.value.content) {
+        const truncated = r.value.content.length > 4000
+          ? r.value.content.slice(0, 4000) + "\n...[truncated]"
+          : r.value.content;
+        contentSections.push(
+          `=== KONTEN SUMBER: ${r.value.url} ===\n${truncated}\n=== AKHIR SUMBER ===`
+        );
+        fetchedSources.push(r.value.url);
+      } else if (r.status === "fulfilled" && !r.value.content) {
+        failedEnrichmentUrls.push(r.value.url);
+      }
+    }
+  }
+
+  // Step 3b: DuckDuckGo fallback for failed enrichment URLs
+  if (failedEnrichmentUrls.length > 0) {
+    for (const failedUrl of failedEnrichmentUrls.slice(0, 3)) {
+      let domain = '';
+      try { domain = new URL(failedUrl).hostname.replace('www.', ''); } catch { continue; }
+      const searchQuery = `${intel.company} site:${domain}`;
+      const results = await searchViaDuckDuckGo(searchQuery);
+      for (const r of results) {
+        if (r.content && !fetchedSources.includes(r.url)) {
+          contentSections.push(
+            `=== DUCKDUCKGO HASIL: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR DUCKDUCKGO ===`
+          );
+          fetchedSources.push(r.url);
+        }
+      }
+    }
+  }
 
   const systemPrompt =
     "Kamu adalah analis riset perusahaan senior yang membantu pencari kerja Indonesia " +

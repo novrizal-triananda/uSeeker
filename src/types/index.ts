@@ -92,6 +92,8 @@ export interface TailoredResume {
   jobId: string;
   masterResumeId: string;
   suggestions: TailorSuggestion[];
+  keywordMatch?: string[];
+  skillGaps?: string[];
   createdAt: Date;
 }
 

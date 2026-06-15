@@ -94,7 +94,7 @@ export default function Dashboard() {
         <StatCard icon="💼" label="Lowongan" value={data.jobCount} sub={`${data.scoredCount} sudah discoring`} />
         <StatCard icon="🎯" label="Rata-rata Skor" value={data.avgFitScore} sub={data.scoredCount > 0 ? `${data.scoredCount} lowongan` : 'Belum ada skor'} />
         <StatCard icon="📋" label="Lamaran" value={data.applicationCount} sub="ter tracking" />
-        <StatCard icon="🔍" label="Company Intel" value={data.intelCount} sub="kartu riset" />
+        <StatCard icon="🔍" label="Profil Perusahaan" value={data.intelCount} sub="kartu riset" />
       </div>
 
       {/* ── Quick Actions ── */}
@@ -130,7 +130,7 @@ export default function Dashboard() {
           <QuickAction
             icon="🔍"
             label="Riset Perusahaan"
-            description="Kumpulkan intel perusahaan"
+            description="Kumpulkan profil perusahaan"
             href="/research"
             done={data.intelCount > 0}
             highlight={data.jobCount > 0 && data.intelCount === 0 && data.scoredCount > 0}
