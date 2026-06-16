@@ -1,6 +1,15 @@
 import Dexie, { type Table } from 'dexie';
 import type { MasterResume, JobEntry, Application, FitScore, CompanyIntel, TailoredResume, EventLog } from '../types';
 
+export interface InterviewQuestion {
+  id: string;
+  jobId: string;
+  question: string;
+  tips: string;
+  category: 'teknis' | 'perilaku' | 'situasional';
+  createdAt: Date;
+}
+
 export class USeekerDB extends Dexie {
   masterResume!: Table<MasterResume>;
   jobEntries!: Table<JobEntry>;
@@ -8,6 +17,7 @@ export class USeekerDB extends Dexie {
   fitScores!: Table<FitScore>;
   companyIntel!: Table<CompanyIntel>;
   tailoredResumes!: Table<TailoredResume>;
+  interviewQuestions!: Table<InterviewQuestion>;
   eventLog!: Table<EventLog>;
 
   constructor() {
@@ -19,6 +29,7 @@ export class USeekerDB extends Dexie {
       fitScores: 'id, jobId',
       companyIntel: 'id, jobId, company',
       tailoredResumes: 'id, jobId, masterResumeId',
+      interviewQuestions: 'id, jobId',
       eventLog: 'id, type, timestamp',
     });
   }

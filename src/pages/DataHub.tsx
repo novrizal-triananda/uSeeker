@@ -7,6 +7,7 @@ import {
   getPipelineSummary,
 } from '../lib/dataHub';
 import type { ConsolidatedView, InterviewPrep, InterviewQuestion, PipelineSummary } from '../lib/dataHub';
+import html2pdf from 'html2pdf.js';
 
 const AI_API_BASE = 'http://127.0.0.1:8787';
 
@@ -38,6 +39,16 @@ export default function DataHub() {
         const summary = await getPipelineSummary(apps);
         setPipeline(summary);
       }
+
+      // Load persisted interview questions from IndexedDB
+      const persistedQuestions = await db.interviewQuestions.toArray();
+      const questionsMap = new Map<string, InterviewQuestion[]>();
+      for (const q of persistedQuestions) {
+        const existing = questionsMap.get(q.jobId) || [];
+        existing.push(q);
+        questionsMap.set(q.jobId, existing);
+      }
+      setQuestionsCache(questionsMap);
     } catch (err) {
       console.error('Failed to load DataHub data:', err);
     } finally {
@@ -55,7 +66,22 @@ export default function DataHub() {
     try {
       const prep = await getInterviewPrep(jobId);
       setInterviewPrep(prep);
-      setInterviewQuestions(cachedQuestions ?? prep?.interviewQuestions ?? []);
+      // Load from cache or IndexedDB
+      let questions = cachedQuestions ?? [];
+      if (questions.length === 0) {
+        // Try loading from IndexedDB
+        const dbQuestions = await db.interviewQuestions.where('jobId').equals(jobId).toArray();
+        if (dbQuestions.length > 0) {
+          questions = dbQuestions.map(q => ({
+            question: q.question,
+            tips: q.tips,
+            category: q.category,
+          }));
+          // Update cache
+          setQuestionsCache(prev => new Map(prev).set(jobId, questions));
+        }
+      }
+      setInterviewQuestions(questions);
     } catch (err) {
       console.error('Failed to load interview prep:', err);
     } finally {
@@ -72,6 +98,17 @@ export default function DataHub() {
       setInterviewQuestions(questions);
       // Persist in cache so they survive tab switches
       setQuestionsCache(prev => new Map(prev).set(selectedJobId, questions));
+      // Persist to IndexedDB
+      for (const q of questions) {
+        await db.interviewQuestions.add({
+          id: crypto.randomUUID(),
+          jobId: selectedJobId,
+          question: q.question,
+          tips: q.tips,
+          category: q.category,
+          createdAt: new Date(),
+        });
+      }
     } catch (err: any) {
       console.error('Failed to generate questions:', err);
       setQuestionsError('Gagal generate pertanyaan interview. Pastikan server AI berjalan.');
@@ -231,7 +268,26 @@ export default function DataHub() {
       if (w) {
         w.document.write(html);
         w.document.close();
-        setTimeout(() => w.print(), 500);
+        // Wait for content to load, then generate PDF
+        setTimeout(() => {
+          const element = w.document.body;
+          if (element) {
+            html2pdf()
+              .set({
+                margin: 10,
+                filename: `uSeeker-Laporan-${new Date().toISOString().slice(0, 10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+              })
+              .from(element)
+              .save()
+              .then(() => w.close())
+              .catch(() => w.print());
+          } else {
+            w.print();
+          }
+        }, 1000);
       }
     } catch (err: any) {
       console.error('PDF export failed:', err);
@@ -554,6 +610,7 @@ export default function DataHub() {
                 {interviewPrep.cvSections.length > 0 && (() => {
                   const contact = interviewPrep.cvSections.find(s => s.type === 'contact');
                   const skills = interviewPrep.cvSections.find(s => s.type === 'skills');
+                  const languages = interviewPrep.cvSections.find(s => s.type === 'languages');
                   const experience = interviewPrep.cvSections.find(s => s.type === 'experience');
                   return (
                     <div>
@@ -592,6 +649,26 @@ export default function DataHub() {
                                   +{skills.items.length - 10} lainnya
                                 </span>
                               )}
+                            </div>
+                          </div>
+                        )}
+                        {/* Languages */}
+                        {languages && languages.items.length > 0 && (
+                          <div style={{ fontSize: 'var(--font-size-sm)' }}>
+                            <p style={{ fontWeight: 600, marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>Bahasa</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)' }}>
+                              {languages.items.map((item, i) => (
+                                <span key={i} style={{
+                                  padding: '2px var(--space-2)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  fontSize: 'var(--font-size-xs)',
+                                  background: '#EEF2FF',
+                                  border: '1px solid #C7D2FE',
+                                  color: '#3730A3',
+                                }}>
+                                  {item.text}
+                                </span>
+                              ))}
                             </div>
                           </div>
                         )}

@@ -263,6 +263,112 @@ export async function generateAiSuggestions(
   }
 }
 
+export interface SkillAnalysis {
+  matchedSkills: string[];
+  gapSkills: string[];
+  suggestions: TailorSuggestion[];
+}
+
+export async function generateSkillAnalysis(
+  masterResume: MasterResume,
+  jobDescription: string,
+  jobId: string,
+): Promise<SkillAnalysis | null> {
+  void jobId;
+  const resumeText = masterResume.sections
+    .flatMap(s => s.items.map(i => i.text))
+    .join('\n');
+
+  const systemPrompt = [
+    'Kamu adalah ahli analisis kecocokan CV dengan lowongan kerja.',
+    'Tugas kamu: analisis CV pelamar dan bandingkan dengan job description.',
+    '',
+    'OUTPUT FORMAT — JSON saja, tanpa markdown atau penjelasan:',
+    '{',
+    '  "matchedSkills": ["skill yang ada di CV dan dibutuhkan lowongan"],',
+    '  "gapSkills": ["skill yang dibutuhkan lowongan tapi TIDAK ada di CV"],',
+    '  "suggestions": [',
+    '    {',
+    '      "section": "nama section CV (misal: Experience, Skills)",',
+    '      "original": "teks asli dari CV",',
+    '      "suggested": "teks yang sudah di-tailor",',
+    '      "reason": "alasan perubahan"',
+    '    }',
+    '  ]',
+    '}',
+    '',
+    'ATURAN:',
+    '- matchedSkills: skill teknis, tools, framework, bahasa pemrograman, soft skill yang relevan',
+    '- gapSkills: skill yang disebutkan di JD tapi tidak ditemukan di CV',
+    '- Jangan menyertakan keyword umum seperti "team", "communication", "problem solving"',
+    '- Fokus pada skill spesifik: React, Python, AWS, dll',
+    '- suggestions: perubahan konkret untuk CV agar lebih cocok dengan lowongan',
+    '- Jangan mengarang pengalaman baru, hanya tingkatkan wording yang sudah ada',
+    '- Semua output dalam Bahasa Indonesia',
+    '- Return empty array [] jika tidak ada perubahan',
+  ].join('\n');
+
+  const prompt = [
+    'Analisis CV ini dan bandingkan dengan job description.',
+    'Identifikasi skill yang cocok dan skill yang gap.',
+    'Berikan saran tailoring untuk CV.',
+    '',
+    '--- CV ---',
+    resumeText,
+    '',
+    '--- JOB DESCRIPTION ---',
+    jobDescription,
+  ].join('\n');
+
+  try {
+    const response = await fetch(`${API_BASE}/api/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt,
+        prompt,
+        task: 'skill_analysis',
+      }),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    const result: string = data.result || JSON.stringify(data);
+    return parseSkillAnalysis(result);
+  } catch {
+    return null;
+  }
+}
+
+function parseSkillAnalysis(response: string): SkillAnalysis | null {
+  if (!response || response.trim().length === 0) return null;
+
+  try {
+    const parsed = JSON.parse(response);
+    return {
+      matchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
+      gapSkills: Array.isArray(parsed.gapSkills) ? parsed.gapSkills : [],
+      suggestions: Array.isArray(parsed.suggestions)
+        ? parsed.suggestions
+            .filter((s: Record<string, unknown>) =>
+              typeof s.section === 'string' &&
+              typeof s.original === 'string' &&
+              typeof s.suggested === 'string'
+            )
+            .map((s: Record<string, unknown>) => ({
+              section: s.section as string,
+              original: s.original as string,
+              suggested: s.suggested as string,
+              reason: (typeof s.reason === 'string' ? s.reason : '') as string,
+              accepted: undefined as boolean | undefined,
+            }))
+        : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function applyAcceptedSuggestions(tailoredResume: TailoredResume): string {
   const sections = new Map<string, { original: string; suggested: string }[]>();
 

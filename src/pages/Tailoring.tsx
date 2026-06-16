@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import { generateLocalDiff, generateAiSuggestions } from '../lib/resumeDiff';
-import type { MasterResume, JobEntry, TailorSuggestion } from '../types';
+import { generateLocalDiff, generateSkillAnalysis } from '../lib/resumeDiff';
+import type { SkillAnalysis } from '../lib/resumeDiff';
+import type { MasterResume, JobEntry } from '../types';
 
 export default function Tailoring() {
   const [resume, setResume] = useState<MasterResume | null>(null);
   const [jobs, setJobs] = useState<JobEntry[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [diffResult, setDiffResult] = useState<{ keywordMatch: string[]; skillGaps: string[] } | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<TailorSuggestion[] | null>(null);
+  const [skillAnalysis, setSkillAnalysis] = useState<SkillAnalysis | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,18 +22,25 @@ export default function Tailoring() {
   useEffect(() => {
     async function loadSavedSuggestions() {
       if (!selectedJobId) {
-        setAiSuggestions(null);
+        setSkillAnalysis(null);
         setDiffResult(null);
         return;
       }
       const saved = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
       if (saved) {
-        setAiSuggestions(saved.suggestions);
+        // Load skill analysis from saved data if available
+        if (saved.matchedSkills && saved.gapSkills) {
+          setSkillAnalysis({
+            matchedSkills: saved.matchedSkills,
+            gapSkills: saved.gapSkills,
+            suggestions: saved.suggestions || [],
+          });
+        }
         if (saved.keywordMatch && saved.skillGaps) {
           setDiffResult({ keywordMatch: saved.keywordMatch, skillGaps: saved.skillGaps });
         }
       } else {
-        setAiSuggestions(null);
+        setSkillAnalysis(null);
         setDiffResult(null);
       }
     }
@@ -59,24 +67,26 @@ export default function Tailoring() {
     try {
       const job = jobs.find(j => j.id === selectedJobId);
       if (!job) return;
-      // Run local diff (synchronous, fast)
+      // Run local diff (synchronous, fast) for fallback
       const diff = generateLocalDiff(resume, job.jobDescription || '');
       setDiffResult(diff);
-      // Run AI suggestions (async, slower)
-      let suggestions: TailorSuggestion[] | null = null;
+      // Run AI skill analysis (async, slower)
+      let analysis: SkillAnalysis | null = null;
       try {
-        suggestions = await generateAiSuggestions(resume, job.jobDescription || '', selectedJobId);
+        analysis = await generateSkillAnalysis(resume, job.jobDescription || '', selectedJobId);
       } catch (err: any) {
-        console.error('AI suggestion error:', err);
-        setAiError('Gagal mengambil saran AI. Pastikan server AI berjalan. Analisis lokal tetap tersedia.');
+        console.error('AI skill analysis error:', err);
+        setAiError('Gagal mengambil analisis AI. Pastikan server AI berjalan. Analisis lokal tetap tersedia.');
       }
-      setAiSuggestions(suggestions);
-      // Persist diffResult and suggestions to DB
+      setSkillAnalysis(analysis);
+      // Persist to DB
       const existing = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
       const resumeData = {
         jobId: selectedJobId,
         masterResumeId: resume.id,
-        suggestions: suggestions || [],
+        suggestions: analysis?.suggestions || [],
+        matchedSkills: analysis?.matchedSkills || [],
+        gapSkills: analysis?.gapSkills || [],
         keywordMatch: diff.keywordMatch,
         skillGaps: diff.skillGaps,
         createdAt: existing?.createdAt || new Date(),
@@ -297,8 +307,8 @@ export default function Tailoring() {
         </div>
       )}
 
-      {/* AI Suggestions */}
-      {aiSuggestions && (
+      {/* AI Skill Analysis */}
+      {skillAnalysis && (
         <div style={{
           background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
@@ -306,39 +316,84 @@ export default function Tailoring() {
           padding: 'var(--space-6)',
         }}>
           <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
-            🤖 Saran AI untuk Tailoring
+            🤖 Analisis Skill oleh AI
           </h3>
-          {aiSuggestions.length === 0 ? (
-            <p style={{ color: 'var(--color-text-muted)' }}>Tidak ada saran tailoring dari AI.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              {aiSuggestions.map((s, i) => (
-                <div key={i} style={{
-                  padding: 'var(--space-4)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                }}>
-                  <span style={{
-                    display: 'inline-block', padding: 'var(--space-1) var(--space-3)',
-                    background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
-                    fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: 'var(--space-2)',
-                  }}>{s.section}</span>
-                  <div style={{ marginTop: 'var(--space-2)' }}>
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-red)', textDecoration: 'line-through' }}>
-                      ❌ {s.original}
-                    </p>
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-green)', marginTop: 'var(--space-1)' }}>
-                      ✅ {s.suggested}
-                    </p>
-                  </div>
-                  {s.reason && (
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)', fontStyle: 'italic' }}>
-                      💡 {s.reason}
-                    </p>
-                  )}
-                </div>
-              ))}
+          
+          {/* Matched Skills */}
+          {skillAnalysis.matchedSkills.length > 0 && (
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)', color: 'var(--color-status-green)' }}>
+                ✅ Skill Cocok ({skillAnalysis.matchedSkills.length})
+              </h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                {skillAnalysis.matchedSkills.map((skill, i) => (
+                  <span key={i} style={{
+                    padding: 'var(--space-1) var(--space-3)',
+                    background: '#DCFCE7', borderRadius: 'var(--radius-sm)',
+                    fontSize: 'var(--font-size-sm)',
+                  }}>{skill}</span>
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Gap Skills */}
+          {skillAnalysis.gapSkills.length > 0 && (
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)', color: 'var(--color-status-red)' }}>
+                ❌ Skill Gap ({skillAnalysis.gapSkills.length})
+              </h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                {skillAnalysis.gapSkills.map((skill, i) => (
+                  <span key={i} style={{
+                    padding: 'var(--space-1) var(--space-3)',
+                    background: '#FEE2E2', borderRadius: 'var(--radius-sm)',
+                    fontSize: 'var(--font-size-sm)',
+                  }}>{skill}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tailoring Suggestions */}
+          {skillAnalysis.suggestions.length > 0 && (
+            <div style={{ marginTop: 'var(--space-4)' }}>
+              <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)' }}>
+                💡 Saran Tailoring
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                {skillAnalysis.suggestions.map((s, i) => (
+                  <div key={i} style={{
+                    padding: 'var(--space-4)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                  }}>
+                    <span style={{
+                      display: 'inline-block', padding: 'var(--space-1) var(--space-3)',
+                      background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                      fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: 'var(--space-2)',
+                    }}>{s.section}</span>
+                    <div style={{ marginTop: 'var(--space-2)' }}>
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-red)', textDecoration: 'line-through' }}>
+                        ❌ {s.original}
+                      </p>
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-green)', marginTop: 'var(--space-1)' }}>
+                        ✅ {s.suggested}
+                      </p>
+                    </div>
+                    {s.reason && (
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)', fontStyle: 'italic' }}>
+                        💡 {s.reason}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {skillAnalysis.matchedSkills.length === 0 && skillAnalysis.gapSkills.length === 0 && (
+            <p style={{ color: 'var(--color-text-muted)' }}>Tidak ada analisis skill dari AI.</p>
           )}
         </div>
       )}

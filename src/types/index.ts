@@ -1,4 +1,4 @@
-export type SectionType = 'contact' | 'summary' | 'experience' | 'education' | 'skills' | 'certifications' | 'projects' | 'links';
+export type SectionType = 'contact' | 'summary' | 'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'projects' | 'links';
 export type ApplicationStatus = 'applied' | 'screen' | 'interview' | 'offer' | 'rejected';
 export type ApplicationOutcome = 'accepted' | 'rejected' | 'ghosted' | 'withdrawn';
 export type EventType = 'import_cv' | 'add_job' | 'add_application' | 'update_status' | 'generate_score' | 'generate_diff' | 'create_intel' | 'export';
@@ -92,6 +92,8 @@ export interface TailoredResume {
   jobId: string;
   masterResumeId: string;
   suggestions: TailorSuggestion[];
+  matchedSkills?: string[];
+  gapSkills?: string[];
   keywordMatch?: string[];
   skillGaps?: string[];
   createdAt: Date;

@@ -13,8 +13,8 @@ export interface ConsolidatedView {
 
 export interface InterviewQuestion {
   question: string;
-  category: 'teknis' | 'perilaku' | 'situasional';
   tips: string;
+  category: 'teknis' | 'perilaku' | 'situasional';
 }
 
 export interface InterviewPrep {
