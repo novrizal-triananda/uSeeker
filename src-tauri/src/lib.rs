@@ -1,5 +1,4 @@
 use std::sync::Mutex;
-use tauri::Manager;
 
 /// State holding the sidecar child process handle
 struct SidecarState {
