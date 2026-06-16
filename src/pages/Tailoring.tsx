@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import { generateLocalDiff, generateSkillAnalysis } from '../lib/resumeDiff';
+import { generateSkillAnalysis } from '../lib/resumeDiff';
 import type { SkillAnalysis } from '../lib/resumeDiff';
 import type { MasterResume, JobEntry } from '../types';
 
@@ -8,7 +8,6 @@ export default function Tailoring() {
   const [resume, setResume] = useState<MasterResume | null>(null);
   const [jobs, setJobs] = useState<JobEntry[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
-  const [diffResult, setDiffResult] = useState<{ keywordMatch: string[]; skillGaps: string[] } | null>(null);
   const [skillAnalysis, setSkillAnalysis] = useState<SkillAnalysis | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -23,7 +22,6 @@ export default function Tailoring() {
     async function loadSavedSuggestions() {
       if (!selectedJobId) {
         setSkillAnalysis(null);
-        setDiffResult(null);
         return;
       }
       const saved = await db.tailoredResumes.where('jobId').equals(selectedJobId).first();
@@ -36,12 +34,8 @@ export default function Tailoring() {
             suggestions: saved.suggestions || [],
           });
         }
-        if (saved.keywordMatch && saved.skillGaps) {
-          setDiffResult({ keywordMatch: saved.keywordMatch, skillGaps: saved.skillGaps });
-        }
       } else {
         setSkillAnalysis(null);
-        setDiffResult(null);
       }
     }
     loadSavedSuggestions();
@@ -67,9 +61,6 @@ export default function Tailoring() {
     try {
       const job = jobs.find(j => j.id === selectedJobId);
       if (!job) return;
-      // Run local diff (synchronous, fast) for fallback
-      const diff = generateLocalDiff(resume, job.jobDescription || '');
-      setDiffResult(diff);
       // Run AI skill analysis (async, slower)
       let analysis: SkillAnalysis | null = null;
       try {
@@ -87,8 +78,6 @@ export default function Tailoring() {
         suggestions: analysis?.suggestions || [],
         matchedSkills: analysis?.matchedSkills || [],
         gapSkills: analysis?.gapSkills || [],
-        keywordMatch: diff.keywordMatch,
-        skillGaps: diff.skillGaps,
         createdAt: existing?.createdAt || new Date(),
       };
       if (existing) {
@@ -102,9 +91,7 @@ export default function Tailoring() {
     } finally {
       setAiLoading(false);
     }
-  }
-
-  const selectedJob = jobs.find(j => j.id === selectedJobId);
+  };
 
   return (
     <section style={{ padding: 'var(--space-6)', maxWidth: 900, margin: '0 auto' }}>
@@ -255,55 +242,7 @@ export default function Tailoring() {
             </div>
           )}
 
-          {/* Side-by-side diff result */}
-          {diffResult && selectedJob && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 'var(--space-4)',
-              marginTop: 'var(--space-4)',
-            }}>
-              <div style={{
-                padding: 'var(--space-4)',
-                background: '#F0FDF4',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid #BBF7D0',
-              }}>
-                <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)', color: 'var(--color-status-green)' }}>
-                  ✅ Keyword Cocok ({diffResult.keywordMatch.length})
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                  {diffResult.keywordMatch.slice(0, 20).map(kw => (
-                    <span key={kw} style={{
-                      padding: 'var(--space-1) var(--space-3)',
-                      background: '#DCFCE7', borderRadius: 'var(--radius-sm)',
-                      fontSize: 'var(--font-size-sm)',
-                    }}>{kw}</span>
-                  ))}
-                </div>
-              </div>
 
-              <div style={{
-                padding: 'var(--space-4)',
-                background: '#FEF2F2',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid #FECACA',
-              }}>
-                <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)', color: 'var(--color-status-red)' }}>
-                  ❌ Skill Gap ({diffResult.skillGaps.length})
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                  {diffResult.skillGaps.slice(0, 20).map(kw => (
-                    <span key={kw} style={{
-                      padding: 'var(--space-1) var(--space-3)',
-                      background: '#FEE2E2', borderRadius: 'var(--radius-sm)',
-                      fontSize: 'var(--font-size-sm)',
-                    }}>{kw}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -316,7 +255,7 @@ export default function Tailoring() {
           padding: 'var(--space-6)',
         }}>
           <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
-            🤖 Analisis Skill oleh AI
+            🤖 Hasil Analisis & Saran Tailoring
           </h3>
           
           {/* Matched Skills */}

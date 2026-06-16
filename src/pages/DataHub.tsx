@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/db';
 import {
   getAllConsolidatedViews,
@@ -24,6 +24,7 @@ export default function DataHub() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [questionsCache, setQuestionsCache] = useState<Map<string, InterviewQuestion[]>>(new Map());
   const [loading, setLoading] = useState(true);
+  const pdfContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     loadData();
@@ -264,30 +265,29 @@ export default function DataHub() {
         </body>
         </html>`;
 
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.write(html);
-        w.document.close();
-        // Wait for content to load, then generate PDF
-        setTimeout(() => {
-          const element = w.document.body;
-          if (element) {
-            html2pdf()
-              .set({
-                margin: 10,
-                filename: `uSeeker-Laporan-${new Date().toISOString().slice(0, 10)}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-              })
-              .from(element)
-              .save()
-              .then(() => w.close())
-              .catch(() => w.print());
-          } else {
-            w.print();
-          }
-        }, 1000);
+      // Render HTML into a hidden div on the current page (avoids popup blockers)
+      const container = pdfContainerRef.current;
+      if (!container) {
+        throw new Error('PDF container not found');
+      }
+      container.innerHTML = html;
+      container.style.display = 'block';
+      // Wait for rendering to settle
+      await new Promise(resolve => setTimeout(resolve, 500));
+      try {
+        await html2pdf()
+          .set({
+            margin: 10,
+            filename: `uSeeker-Laporan-${new Date().toISOString().slice(0, 10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          })
+          .from(container)
+          .save();
+      } finally {
+        container.style.display = 'none';
+        container.innerHTML = '';
       }
     } catch (err: any) {
       console.error('PDF export failed:', err);
@@ -315,6 +315,7 @@ export default function DataHub() {
   };
 
   return (
+    <>
     <section style={{ padding: 'var(--space-6)' }}>
       <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, marginBottom: 'var(--space-4)' }}>
         📊 Data Hub
@@ -774,5 +775,18 @@ export default function DataHub() {
         </div>
       )}
     </section>
+    {/* Hidden container for PDF generation — content is safe (AI-generated, no user XSS) */}
+    <div
+      ref={pdfContainerRef}
+      style={{
+        position: 'fixed',
+        top: -9999,
+        left: -9999,
+        width: '210mm',
+        display: 'none',
+        background: '#fff',
+      }}
+    />
+    </>
   );
 }
