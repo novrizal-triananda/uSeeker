@@ -29,8 +29,12 @@ export default function Tailoring() {
         // Load skill analysis from saved data if available
         if (saved.matchedSkills && saved.gapSkills) {
           setSkillAnalysis({
+            fundamentalFit: { experienceLevel: 'partial', note: '' },
             matchedSkills: saved.matchedSkills,
-            gapSkills: saved.gapSkills,
+            gapSkills: saved.gapSkills || [],
+            requiredGapSkills: saved.requiredGapSkills || saved.gapSkills || [],
+            niceToHaveGapSkills: saved.niceToHaveGapSkills || [],
+            confidence: saved.confidence ?? 0.5,
             suggestions: saved.suggestions || [],
           });
         }
@@ -76,8 +80,12 @@ export default function Tailoring() {
         jobId: selectedJobId,
         masterResumeId: resume.id,
         suggestions: analysis?.suggestions || [],
+        fundamentalFit: analysis?.fundamentalFit || { experienceLevel: 'partial', note: '' },
         matchedSkills: analysis?.matchedSkills || [],
         gapSkills: analysis?.gapSkills || [],
+        requiredGapSkills: analysis?.requiredGapSkills || analysis?.gapSkills || [],
+        niceToHaveGapSkills: analysis?.niceToHaveGapSkills || [],
+        confidence: analysis?.confidence ?? 0.5,
         createdAt: existing?.createdAt || new Date(),
       };
       if (existing) {

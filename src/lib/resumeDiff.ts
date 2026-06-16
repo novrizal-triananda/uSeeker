@@ -263,9 +263,18 @@ export async function generateAiSuggestions(
   }
 }
 
+
 export interface SkillAnalysis {
+  fundamentalFit: {
+    experienceLevel: 'match' | 'mismatch' | 'partial';
+    note: string;
+  };
   matchedSkills: string[];
+  /** @deprecated Use requiredGapSkills and niceToHaveGapSkills instead */
   gapSkills: string[];
+  requiredGapSkills: string[];
+  niceToHaveGapSkills: string[];
+  confidence: number;
   suggestions: TailorSuggestion[];
 }
 
@@ -280,16 +289,40 @@ export async function generateSkillAnalysis(
     .join('\n');
 
   const systemPrompt = [
-    'Kamu adalah ahli analisis kecocokan CV dengan lowongan kerja.',
-    'Tugas kamu: analisis CV pelamar dan bandingkan dengan job description.',
+    '## ROLE',
+    'Ahli analisis kecocokan CV dengan lowongan kerja Indonesia.',
     '',
-    'OUTPUT FORMAT — JSON saja, tanpa markdown atau penjelasan:',
+    '## INSTRUCTIONS',
+    'Analisis CV pelamar dan bandingkan dengan job description.',
+    'Evaluasi: (1) fundamental fit — apakah level pengalaman cocok?, (2) skill match — skill mana yang benar-benar ada di CV DAN disebutkan di JD?, (3) skill gaps — bedakan hard requirement vs nice-to-have, (4) saran tailoring — perbaikan wording tanpa mengarang pengalaman baru.',
+    '',
+    '## INPUTS',
+    'CV pelamar dan job description yang diberikan.',
+    '',
+    '## CONSTRAINTS',
+    '- Hanya gunakan informasi yang ada di CV dan JD. Jangan mengarang pengalaman baru.',
+    '- matchedSkills: skill yang BENAR-BENAR ada di CV DAN disebutkan di JD sebagai requirement. Jangan match skill yang tidak disebutkan di JD.',
+    '- Jangan match skill yang cuma "nice to have" di JD sebagai matchedSkills.',
+    '- Jangan menyertakan keyword umum: team, communication, problem solving, leadership.',
+    '- Bedakan hard requirement (kualifikasi wajib) vs nice-to-have (kualifikasi tambahan) dari teks JD.',
+    '- suggestions: HANYA tingkatkan wording yang sudah ada di CV. Jangan tambah pengalaman, skill, atau proyek yang tidak ada di CV asli.',
+    '- Jika CV pelamar tidak ada pengalaman yang relevan sama sekali, jangan paksa saran — cukup flag di fundamentalFit.',
+    '- Semua output dalam Bahasa Indonesia.',
+    '',
+    '## OUTPUT FORMAT',
+    'JSON saja, tanpa markdown atau penjelasan:',
     '{',
-    '  "matchedSkills": ["skill yang ada di CV dan dibutuhkan lowongan"],',
-    '  "gapSkills": ["skill yang dibutuhkan lowongan tapi TIDAK ada di CV"],',
+    '  "fundamentalFit": {',
+    '    "experienceLevel": "match|mismatch|partial",',
+    '    "note": "penjelasan singkat (misal: fresh grad tapi JD minta 2 tahun)"',
+    '  },',
+    '  "matchedSkills": ["skill yang ada di CV DAN disebutkan di JD"],',
+    '  "requiredGapSkills": ["skill hard requirement di JD tapi tidak ada di CV"],',
+    '  "niceToHaveGapSkills": ["skill nice-to-have di JD tapi tidak ada di CV"],',
+    '  "confidence": 0.0-1.0,',
     '  "suggestions": [',
     '    {',
-    '      "section": "nama section CV (misal: Experience, Skills)",',
+    '      "section": "nama section CV",',
     '      "original": "teks asli dari CV",',
     '      "suggested": "teks yang sudah di-tailor",',
     '      "reason": "alasan perubahan"',
@@ -297,15 +330,13 @@ export async function generateSkillAnalysis(
     '  ]',
     '}',
     '',
-    'ATURAN:',
-    '- matchedSkills: skill teknis, tools, framework, bahasa pemrograman, soft skill yang relevan',
-    '- gapSkills: skill yang disebutkan di JD tapi tidak ditemukan di CV',
-    '- Jangan menyertakan keyword umum seperti "team", "communication", "problem solving"',
-    '- Fokus pada skill spesifik: React, Python, AWS, dll',
-    '- suggestions: perubahan konkret untuk CV agar lebih cocok dengan lowongan',
-    '- Jangan mengarang pengalaman baru, hanya tingkatkan wording yang sudah ada',
-    '- Semua output dalam Bahasa Indonesia',
-    '- Return empty array [] jika tidak ada perubahan',
+    '## SUCCESS CRITERIA',
+    '- fundamentalFit terisi dengan level pengalaman yang akurat.',
+    '- matchedSkills hanya berisi skill yang benar-benar ada di CV DAN disebutkan di JD.',
+    '- requiredGapSkills berisi hard requirement yang benar-benar missing.',
+    '- niceToHaveGapSkills berisi nice-to-have yang missing.',
+    '- confidence mencerminkan kualitas match (tinggi jika banyak skill cocok, rendah jika banyak gap fundamental).',
+    '- suggestions HANYA memperbaiki wording, tidak mengarang experience baru.',
   ].join('\n');
 
   const prompt = [
@@ -346,8 +377,20 @@ function parseSkillAnalysis(response: string): SkillAnalysis | null {
   try {
     const parsed = JSON.parse(response);
     return {
+      fundamentalFit: {
+        experienceLevel: ['match', 'mismatch', 'partial'].includes(parsed.fundamentalFit?.experienceLevel)
+          ? parsed.fundamentalFit.experienceLevel
+          : 'partial',
+        note: typeof parsed.fundamentalFit?.note === 'string' ? parsed.fundamentalFit.note : '',
+      },
       matchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
-      gapSkills: Array.isArray(parsed.gapSkills) ? parsed.gapSkills : [],
+      requiredGapSkills: Array.isArray(parsed.requiredGapSkills) ? parsed.requiredGapSkills : [],
+      niceToHaveGapSkills: Array.isArray(parsed.niceToHaveGapSkills) ? parsed.niceToHaveGapSkills : [],
+      confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
+      gapSkills: [
+        ...(Array.isArray(parsed.requiredGapSkills) ? parsed.requiredGapSkills : []),
+        ...(Array.isArray(parsed.niceToHaveGapSkills) ? parsed.niceToHaveGapSkills : []),
+      ],
       suggestions: Array.isArray(parsed.suggestions)
         ? parsed.suggestions
             .filter((s: Record<string, unknown>) =>

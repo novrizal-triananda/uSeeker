@@ -94,6 +94,13 @@ export interface TailoredResume {
   suggestions: TailorSuggestion[];
   matchedSkills?: string[];
   gapSkills?: string[];
+  requiredGapSkills?: string[];
+  niceToHaveGapSkills?: string[];
+  confidence?: number;
+  fundamentalFit?: {
+    experienceLevel: 'match' | 'mismatch' | 'partial';
+    note: string;
+  };
   keywordMatch?: string[];
   skillGaps?: string[];
   createdAt: Date;
