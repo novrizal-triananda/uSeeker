@@ -17,7 +17,6 @@
   "dependencies": {
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
-    "html2pdf.js": "^0.14.0",
     "mammoth": "^1.12.0",
     "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",

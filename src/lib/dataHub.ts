@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { JobEntry, FitScore, CompanyIntel, TailoredResume, Application, ApplicationStatus, ResumeSection, EventLog } from '../types';
+import type { JobEntry, FitScore, CompanyIntel, TailoredResume, TailorSuggestion, Application, ApplicationStatus, ResumeSection, EventLog } from '../types';
 
 const API_BASE = 'http://127.0.0.1:8787';
 
@@ -26,6 +26,9 @@ export interface InterviewPrep {
   cvSections: ResumeSection[];
   eventHistory: EventLog[];
   interviewQuestions: InterviewQuestion[];
+  gapSkills: string[];
+  tailoringSuggestions: TailorSuggestion[];
+  pipeline: PipelineSummary | null;
 }
 
 export interface PipelineSummary {
@@ -144,19 +147,30 @@ export async function getExportData(format: 'json' | 'text'): Promise<string> {
 export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | null> {
   const jobEntry = await db.jobEntries.get(jobId);
 
-  const [fitScore, companyIntel, tailoredResume, application, masterResume, allEvents] = await Promise.all([
+  const [fitScore, companyIntel, tailoredResume, application, masterResume, allEvents, allApplications] = await Promise.all([
     db.fitScores.where('jobId').equals(jobId).first(),
     db.companyIntel.where('jobId').equals(jobId).first(),
     db.tailoredResumes.where('jobId').equals(jobId).first(),
     db.applications.where('jobId').equals(jobId).first(),
     db.masterResume.toCollection().first(),
     db.eventLog.toArray(),
+    db.applications.toArray(),
   ]);
 
   // Filter events related to this job (where metadata.jobId matches)
   const eventHistory = allEvents
-    .filter((e) => e.metadata?.jobId === jobId)
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    .filter((e: EventLog) => e.metadata?.jobId === jobId)
+    .sort((a: EventLog, b: EventLog) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  // Extract gapSkills and tailoring suggestions from tailored resume
+  const gapSkills = tailoredResume?.gapSkills ?? [];
+  const tailoringSuggestions = tailoredResume?.suggestions ?? [];
+
+  // Build pipeline summary
+  let pipeline: PipelineSummary | null = null;
+  if (allApplications.length > 0) {
+    pipeline = await getPipelineSummary(allApplications);
+  }
 
   // Return intel even without an application — shows what's available
   return {
@@ -168,6 +182,9 @@ export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | n
     cvSections: masterResume?.sections ?? [],
     eventHistory,
     interviewQuestions: [],
+    gapSkills,
+    tailoringSuggestions,
+    pipeline,
   };
 }
 

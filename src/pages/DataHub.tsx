@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
 import {
   getAllConsolidatedViews,
@@ -7,9 +7,6 @@ import {
   getPipelineSummary,
 } from '../lib/dataHub';
 import type { ConsolidatedView, InterviewPrep, InterviewQuestion, PipelineSummary } from '../lib/dataHub';
-import html2pdf from 'html2pdf.js';
-
-const AI_API_BASE = 'http://127.0.0.1:8787';
 
 
 export default function DataHub() {
@@ -20,11 +17,8 @@ export default function DataHub() {
   const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting'>('idle');
-  const [exportError, setExportError] = useState<string | null>(null);
   const [questionsCache, setQuestionsCache] = useState<Map<string, InterviewQuestion[]>>(new Map());
   const [loading, setLoading] = useState(true);
-  const pdfContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     loadData();
@@ -117,186 +111,6 @@ export default function DataHub() {
       setQuestionsLoading(false);
     }
   }
-  async function handleExportPdf() {
-    setExportStatus('exporting');
-    setExportError(null);
-    try {
-      // Gather all data from views
-      const allData = views.map((v) => ({
-        company: v.jobEntry.company,
-        role: v.jobEntry.roleTitle,
-        status: v.application?.status ?? 'N/A',
-        outcome: v.application?.outcome,
-        fitScore: v.fitScore ? {
-          overall: v.fitScore.overallScore,
-          skill: v.fitScore.skillMatch,
-          experience: v.fitScore.experienceMatch,
-          matchedSkills: v.fitScore.matchedSkills,
-          missingSkills: v.fitScore.missingSkills,
-        } : null,
-        companyIntel: v.companyIntel ? {
-          snapshot: v.companyIntel.snapshot,
-          industry: v.companyIntel.industry,
-          products: v.companyIntel.products,
-          redFlags: v.companyIntel.redFlags,
-        } : null,
-        tailoredResume: v.tailoredResume ? {
-          acceptedCount: v.tailoredResume.suggestions.filter(s => s.accepted).length,
-          pendingCount: v.tailoredResume.suggestions.filter(s => !s.accepted).length,
-          suggestions: v.tailoredResume.suggestions.filter(s => s.accepted).map(s => s.suggested),
-        } : null,
-      }));
-
-      // Get interview questions from cache for each view
-      const interviewData: Record<string, InterviewQuestion[]> = {};
-      for (const [jobId, qs] of questionsCache.entries()) {
-        if (qs.length > 0) {
-          interviewData[jobId] = qs;
-        }
-      }
-
-      const pipelineSummary = pipeline ? {
-        total: pipeline.total,
-        responseRate: pipeline.responseRate,
-        avgFitScore: pipeline.avgFitScore,
-        byStatus: pipeline.byStatus,
-      } : null;
-
-      const systemPrompt = `Kamu adalah konsultan karir profesional Indonesia. Buat laporan ringkasan komprehensif dari data pelamar kerja berikut. Gunakan Bahasa Indonesia yang profesional dengan emoji untuk membuat laporan yang menarik dan mudah dibaca. Format output dalam HTML yang rapi dengan styling inline. Jangan menggunakan tag <html>, <head>, atau <body> — cukup konten HTML saja yang bisa di-embed langsung.`;
-
-      const prompt = [
-        'Buat laporan ringkasan komprehensif untuk pelamar kerja berikut:',
-        '',
-        '--- DATA APLIKASI ---',
-        JSON.stringify(allData, null, 2),
-        '',
-      ];
-
-      if (pipelineSummary) {
-        prompt.push('--- RINGKASAN PIPELINE ---');
-        prompt.push(JSON.stringify(pipelineSummary, null, 2));
-        prompt.push('');
-      }
-
-      if (Object.keys(interviewData).length > 0) {
-        prompt.push('--- PERTANYAAN INTERVIEW ---');
-        prompt.push(JSON.stringify(interviewData, null, 2));
-        prompt.push('');
-      }
-
-      prompt.push('--- INSTRUKSI LAPORAN ---');
-      prompt.push('Laporan harus mencakup:');
-      prompt.push('1. 📊 Ringkasan Executive — gambaran umum semua aplikasi');
-      prompt.push('2. 🏢 Status Aplikasi — detail untuk setiap perusahaan (status, fit score, company intel)');
-      prompt.push('3. 📈 Analisis Fit Score — breakdown skill match, experience, dan area yang perlu diperdalam');
-      prompt.push('4. 💡 Rekomendasi Tailoring — saran berdasarkan data resume tailoring');
-      prompt.push('5. 🎤 Persiapan Interview — ringkasan pertanyaan interview dan tips');
-      prompt.push('6. ⚠️ Red Flags & Catatan — hal-hal yang perlu diperhatikan');
-      prompt.push('7. 🎯 Action Items — langkah-langkah selanjutnya yang direkomendasikan');
-      prompt.push('');
-      prompt.push('Gunakan heading (<h2>, <h3>), bullet points, table, dan styling yang profesional.');
-      prompt.push('Semua konten dalam Bahasa Indonesia.');
-
-      const response = await fetch(`${AI_API_BASE}/api/ai`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemPrompt,
-          prompt: prompt.join('\n'),
-          task: 'export_summary',
-        }),
-      });
-
-      if (!response.ok) {
-        let errorMsg = `AI API error: ${response.status}`;
-        if (response.status === 429) {
-          errorMsg = 'Terlalu banyak permintaan ke AI server. Coba lagi dalam beberapa menit.';
-        } else if (response.status >= 500) {
-          errorMsg = 'AI server mengalami gangguan. Pastikan server berjalan.';
-        }
-        throw new Error(errorMsg);
-      }
-
-      const result = await response.json();
-      const aiContent: string = result.result || result.content || '';
-
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>uSeeker — Laporan Ringkasan</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              font-size: 11pt; line-height: 1.6; color: #1a1a1a;
-              padding: 15mm; max-width: 210mm; margin: 0 auto;
-            }
-            h1 {
-              font-size: 20pt; margin-bottom: 6mm;
-              border-bottom: 3px solid #7C3AED; padding-bottom: 3mm;
-              color: #7C3AED;
-            }
-            h2 { font-size: 14pt; color: #7C3AED; margin-top: 8mm; margin-bottom: 3mm; border-bottom: 1px solid #E5E7EB; padding-bottom: 2mm; }
-            h3 { font-size: 12pt; color: #374151; margin-top: 5mm; margin-bottom: 2mm; }
-            p { margin-bottom: 2mm; }
-            ul, ol { margin-left: 5mm; margin-bottom: 3mm; }
-            li { margin-bottom: 1mm; }
-            table { width: 100%; border-collapse: collapse; margin: 3mm 0; font-size: 10pt; }
-            th, td { border: 1px solid #E5E7EB; padding: 2mm 3mm; text-align: left; }
-            th { background: #F3F4F6; font-weight: 600; }
-            .meta { font-size: 9pt; color: #6B7280; margin-bottom: 5mm; }
-            .footer { margin-top: 10mm; padding-top: 3mm; border-top: 1px solid #E5E7EB; font-size: 8pt; color: #9CA3AF; text-align: center; }
-            @media print {
-              body { padding: 10mm; }
-              h2 { page-break-after: avoid; }
-              table { page-break-inside: avoid; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>📊 uSeeker — Laporan Ringkasan</h1>
-          <p class="meta">📅 Generated: ${new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} | 📋 Total Aplikasi: ${views.length}</p>
-          ${aiContent}
-          <div class="footer">
-            Generated by uSeeker AI 🤖 — ${new Date().toLocaleDateString('id-ID')}
-          </div>
-        </body>
-        </html>`;
-
-      // Render HTML into a hidden div on the current page (avoids popup blockers)
-      const container = pdfContainerRef.current;
-      if (!container) {
-        throw new Error('PDF container not found');
-      }
-      container.innerHTML = html;
-      container.style.display = 'block';
-      // Wait for rendering to settle
-      await new Promise(resolve => setTimeout(resolve, 500));
-      try {
-        await html2pdf()
-          .set({
-            margin: 10,
-            filename: `uSeeker-Laporan-${new Date().toISOString().slice(0, 10)}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          })
-          .from(container)
-          .save();
-      } finally {
-        container.style.display = 'none';
-        container.innerHTML = '';
-      }
-    } catch (err: any) {
-      console.error('PDF export failed:', err);
-      const msg = err.message || 'Gagal membuat laporan PDF.';
-      setExportError(msg);
-    } finally {
-      setExportStatus('idle');
-    }
-  }
 
   const statusColors: Record<string, string> = {
     applied: 'var(--color-status-blue)',
@@ -315,7 +129,6 @@ export default function DataHub() {
   };
 
   return (
-    <>
     <section style={{ padding: 'var(--space-6)' }}>
       <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, marginBottom: 'var(--space-4)' }}>
         📊 Data Hub
@@ -398,37 +211,6 @@ export default function DataHub() {
             </div>
           )}
 
-          {/* Export Buttons */}
-          <div style={{ display: 'flex', gap: 'var(--space-3)', flexDirection: 'column' }}>
-            <button
-              onClick={handleExportPdf}
-              disabled={exportStatus === 'exporting'}
-              style={{
-                padding: 'var(--space-3) var(--space-5)',
-                background: exportStatus === 'exporting' ? '#7C3AED' : 'var(--color-primary)',
-                color: '#FFFFFF',
-                border: 'none', borderRadius: 'var(--radius-md)',
-                fontWeight: 600, cursor: exportStatus === 'exporting' ? 'wait' : 'pointer',
-                opacity: exportStatus === 'exporting' ? 0.7 : 1,
-                display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-              }}
-            >
-              {exportStatus === 'exporting' ? '⏳ AI Sedang Membuat Laporan...' : '🖨️ Export PDF (AI-Powered)'}
-            </button>
-            {exportError && (
-              <div style={{
-                padding: 'var(--space-3) var(--space-4)',
-                background: '#FEF3C7',
-                border: '1px solid #FCD34D',
-                borderRadius: 'var(--radius-md)',
-                color: '#92400E',
-                fontSize: 'var(--font-size-sm)',
-              }}>
-                ⚠️ {exportError}
-              </div>
-            )}
-          </div>
-
           {/* Consolidated Per-Role View */}
           <div style={{
             background: 'var(--color-surface)',
@@ -497,7 +279,7 @@ export default function DataHub() {
                         opacity: prepLoading ? 0.6 : 1,
                       }}
                     >
-                      {prepLoading && selectedJobId === view.jobEntry.id ? '⏳ Memuat...' : '🎯 Interview Prep'}
+                      {prepLoading && selectedJobId === view.jobEntry.id ? '⏳ Memuat...' : '📋 Detail Lowongan'}
                     </button>
                   </div>
                 </div>
@@ -505,7 +287,7 @@ export default function DataHub() {
             </div>
           </div>
 
-          {/* Interview Prep View */}
+          {/* Detail Lowongan View */}
           {interviewPrep && (
             <div style={{
               background: 'var(--color-surface)',
@@ -525,17 +307,17 @@ export default function DataHub() {
                   fontSize: 'var(--font-size-lg)', color: 'var(--color-text-muted)',
                   lineHeight: 1,
                 }}
-                title="Tutup Interview Prep"
+                title="Tutup Detail Lowongan"
               >
                 ✕
               </button>
               <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: '#7C3AED' }}>
-                🎯 Persiapan Interview
+                📋 Detail Lowongan
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 {interviewPrep.companyIntel && (
                   <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Company Intel</h4>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Company Overview</h4>
                     {interviewPrep.companyIntel.snapshot && (
                       <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
                         {interviewPrep.companyIntel.snapshot}
@@ -559,6 +341,17 @@ export default function DataHub() {
                     )}
                   </div>
                 )}
+                {/* Pipeline Summary */}
+                {interviewPrep.pipeline && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📈 Ringkasan Pipeline</h4>
+                    <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', fontSize: 'var(--font-size-sm)' }}>
+                      <span>Total: <strong>{interviewPrep.pipeline.total}</strong></span>
+                      <span>Response Rate: <strong>{interviewPrep.pipeline.responseRate}%</strong></span>
+                      <span>Avg Fit Score: <strong>{interviewPrep.pipeline.avgFitScore}</strong></span>
+                    </div>
+                  </div>
+                )}
                 {interviewPrep.fitScore && (
                   <div>
                     <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📊 Fit Score Breakdown</h4>
@@ -570,14 +363,23 @@ export default function DataHub() {
                         </p>
                       </div>
                     </div>
-                    {interviewPrep.fitScore.missingSkills.length > 0 && (
+                    {interviewPrep.gapSkills.length > 0 && (
                       <div style={{ marginTop: 'var(--space-2)' }}>
                         <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-status-red)' }}>
                           ⚠️ Skill yang perlu diperdalam:
                         </p>
-                        <p style={{ fontSize: 'var(--font-size-sm)' }}>
-                          {interviewPrep.fitScore.missingSkills.join(', ')}
-                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)', marginTop: 'var(--space-1)' }}>
+                          {interviewPrep.gapSkills.map((skill, i) => (
+                            <span key={i} style={{
+                              padding: '2px var(--space-2)',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: 'var(--font-size-xs)',
+                              background: '#FEE2E2',
+                              border: '1px solid #FECACA',
+                              color: '#991B1B',
+                            }}>{skill}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -607,87 +409,41 @@ export default function DataHub() {
                   </div>
                 )}
 
-                {/* CV Summary */}
-                {interviewPrep.cvSections.length > 0 && (() => {
-                  const contact = interviewPrep.cvSections.find(s => s.type === 'contact');
-                  const skills = interviewPrep.cvSections.find(s => s.type === 'skills');
-                  const languages = interviewPrep.cvSections.find(s => s.type === 'languages');
-                  const experience = interviewPrep.cvSections.find(s => s.type === 'experience');
-                  return (
-                    <div>
-                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)' }}>🎓 CV Summary</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                        {/* Contact Info */}
-                        {contact && contact.items.length > 0 && (
-                          <div style={{ fontSize: 'var(--font-size-sm)' }}>
-                            <p style={{ fontWeight: 600, marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>Kontak</p>
-                            <div style={{ color: 'var(--color-text-muted)', paddingLeft: 'var(--space-2)' }}>
-                              {contact.items.slice(0, 3).map((item, i) => (
-                                <p key={i}>{item.text}</p>
-                              ))}
-                            </div>
+                {/* Saran Tailoring */}
+                {interviewPrep.tailoringSuggestions.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)' }}>💡 Saran Tailoring</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                      {interviewPrep.tailoringSuggestions.map((s, i) => (
+                        <div key={i} style={{
+                          padding: 'var(--space-3)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--color-bg)',
+                        }}>
+                          <span style={{
+                            display: 'inline-block', padding: '2px var(--space-2)',
+                            background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)', fontWeight: 600, marginBottom: 'var(--space-1)',
+                          }}>{s.section}</span>
+                          <div style={{ marginTop: 'var(--space-1)' }}>
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-red)', textDecoration: 'line-through' }}>
+                              ❌ {s.original}
+                            </p>
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-green)', marginTop: 'var(--space-1)' }}>
+                              ✅ {s.suggested}
+                            </p>
                           </div>
-                        )}
-                        {/* Top Skills */}
-                        {skills && skills.items.length > 0 && (
-                          <div style={{ fontSize: 'var(--font-size-sm)' }}>
-                            <p style={{ fontWeight: 600, marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>Top Skills</p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)' }}>
-                              {skills.items.slice(0, 10).map((item, i) => (
-                                <span key={i} style={{
-                                  padding: '2px var(--space-2)',
-                                  borderRadius: 'var(--radius-sm)',
-                                  fontSize: 'var(--font-size-xs)',
-                                  background: 'var(--color-bg)',
-                                  border: '1px solid var(--color-border)',
-                                  color: 'var(--color-text)',
-                                }}>
-                                  {item.text}
-                                </span>
-                              ))}
-                              {skills.items.length > 10 && (
-                                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', alignSelf: 'center' }}>
-                                  +{skills.items.length - 10} lainnya
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {/* Languages */}
-                        {languages && languages.items.length > 0 && (
-                          <div style={{ fontSize: 'var(--font-size-sm)' }}>
-                            <p style={{ fontWeight: 600, marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>Bahasa</p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)' }}>
-                              {languages.items.map((item, i) => (
-                                <span key={i} style={{
-                                  padding: '2px var(--space-2)',
-                                  borderRadius: 'var(--radius-sm)',
-                                  fontSize: 'var(--font-size-xs)',
-                                  background: '#EEF2FF',
-                                  border: '1px solid #C7D2FE',
-                                  color: '#3730A3',
-                                }}>
-                                  {item.text}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {/* Experience */}
-                        {experience && experience.items.length > 0 && (
-                          <div style={{ fontSize: 'var(--font-size-sm)' }}>
-                            <p style={{ fontWeight: 600, marginBottom: 'var(--space-1)', color: 'var(--color-text)' }}>Pengalaman</p>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', paddingLeft: 'var(--space-2)', color: 'var(--color-text-muted)' }}>
-                              {experience.items.slice(0, 3).map((item, i) => (
-                                <p key={i}>{item.text}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                          {s.reason && (
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
+                              💡 {s.reason}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
 
                 {/* 🎤 Pertanyaan Interview */}
                 <div>
@@ -775,18 +531,5 @@ export default function DataHub() {
         </div>
       )}
     </section>
-    {/* Hidden container for PDF generation — content is safe (AI-generated, no user XSS) */}
-    <div
-      ref={pdfContainerRef}
-      style={{
-        position: 'fixed',
-        top: -9999,
-        left: -9999,
-        width: '210mm',
-        display: 'none',
-        background: '#fff',
-      }}
-    />
-    </>
   );
 }
