@@ -384,15 +384,6 @@ export default function DataHub() {
                     )}
                   </div>
                 )}
-                {interviewPrep.tailoredResume && (
-                  <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📝 Resume Tailoring</h4>
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                      {interviewPrep.tailoredResume.suggestions.filter(s => s.accepted).length} diterima,
-                      {' '}{interviewPrep.tailoredResume.suggestions.filter(s => !s.accepted).length} pending
-                    </p>
-                  </div>
-                )}
 
                 {/* Job Description */}
                 {interviewPrep.jobDescription && (
