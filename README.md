@@ -14,43 +14,40 @@ uSeeker membantu kamu melacak lamaran kerja, menganalisis kecocokan CV dengan jo
 
 ## Instalasi
 ### Windows
-1. Download `uSeeker_*_en-US.msi` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+1. Download file `.msi` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
 2. Double-click file `.msi` → ikuti petunjuk instalasi
 3. Buka uSeeker dari Start Menu
 
 ### macOS
-1. Download `uSeeker_*_*.dmg` (Apple Silicon) atau `uSeeker_*_*.dmg` (Intel) dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+1. Download file `.dmg` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+   - Pilih **Apple Silicon** (aarch64) untuk Mac M1/M2/M3/M4
+   - Pilih **Intel** (x64) untuk Mac lama
 2. Double-click `.dmg` → drag uSeeker ke Applications
 3. Buka uSeeker dari Applications
 
 ### Linux (Ubuntu/Debian)
-1. Download `uSeeker_*_amd64.deb` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
-2. Buka terminal, navigasi ke folder Downloads:
+1. Download file `.deb` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+2. Buka **Terminal** (buka aplikasi "Terminal" dari menu)
+3. Ketik ini lalu tekan **Enter**:
    ```bash
-   cd ~/Downloads
+   cd ~/Downloads && sudo dpkg -i uSeeker_*.deb
    ```
-3. Install dengan dpkg:
-   ```bash
-   sudo dpkg -i uSeeker_*_amd64.deb
-   ```
-4. Jika ada error dependency, jalankan:
+4. Kalau muncul error "dependency", ketik ini lalu tekan **Enter**:
    ```bash
    sudo apt-get install -f
    ```
-5. Buka uSeeker dari aplikasi menu atau terminal:
+5. Buka uSeeker dari menu aplikasi, atau ketik:
    ```bash
    u-seeker
    ```
 
+> **Tips:** Kalau file tidak ada di `~/Downloads`, ganti `cd ~/Downloads` dengan folder tempat kamu menyimpan file download.
+
 ### Linux (AppImage)
-1. Download `uSeeker_*_amd64.AppImage` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
-2. Beri permission execute:
+1. Download file `.AppImage` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+2. Buka **Terminal**, lalu ketik ini lalu tekan **Enter**:
    ```bash
-   chmod +x uSeeker_*_amd64.AppImage
-   ```
-3. Jalankan:
-   ```bash
-   ./uSeeker_*_amd64.AppImage
+   cd ~/Downloads && chmod +x uSeeker_*.AppImage && ./uSeeker_*.AppImage
    ```
 
 > **Catatan:** Tidak perlu install Node.js atau dependencies tambahan. Semua sudah included dalam aplikasi.
