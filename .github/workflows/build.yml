@@ -61,6 +61,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Embedded API keys (from GitHub Secrets → compile-time in Rust binary)
+          USEEKER_AI_API_KEY: ${{ secrets.USEEKER_AI_API_KEY }}
+          USEEKER_AI_BASE_URL: ${{ secrets.USEEKER_AI_BASE_URL }}
+          USEEKER_AI_MODEL: ${{ secrets.USEEKER_AI_MODEL }}
         with:
           tauriScript: pnpm tauri
 

@@ -1,7 +1,6 @@
 import { db } from './db';
 import type { CompanyIntel } from '../types';
-
-const API_BASE = 'http://127.0.0.1:8787';
+import { invoke } from '@tauri-apps/api/core';
 
 const BANNED_DOMAINS = [
   'linkedin.com',
@@ -199,13 +198,7 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
  */
 async function fetchUrlContent(url: string): Promise<string | null> {
   try {
-    const res = await fetch(API_BASE + "/api/fetch-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await invoke<{ text: string }>('fetch_url', { url });
     return data.text || null;
   } catch {
     return null;
@@ -218,14 +211,8 @@ async function fetchUrlContent(url: string): Promise<string | null> {
  */
 async function searchViaDuckDuckGo(query: string): Promise<{ title: string; url: string; content: string }[]> {
   try {
-    const res = await fetch(API_BASE + '/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.results || []).slice(0, 5).map((r: any) => ({
+    const results = await invoke<{ title: string; url: string; content: string }[]>('search_web', { query });
+    return (results || []).slice(0, 5).map((r) => ({
       title: r.title || '',
       url: r.url || '',
       content: r.content || ''
@@ -238,13 +225,7 @@ async function searchViaDuckDuckGo(query: string): Promise<{ title: string; url:
  */
 async function scrapeUrl(url: string): Promise<{ text: string; links: { url: string; text: string }[] } | null> {
   try {
-    const res = await fetch(API_BASE + "/api/scrape", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await invoke<{ text: string; links: { url: string; text: string }[] }>('scrape_url', { url });
     return { text: data.text || "", links: data.links || [] };
   } catch {
     return null;
@@ -486,19 +467,11 @@ export async function requestResearch(
     "Kembalikan HANYA objek JSON, tanpa markdown formatting atau penjelasan tambahan.";
 
   try {
-    const response = await fetch(API_BASE + "/api/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemPrompt,
-        prompt,
-        task: "company_research",
-      }),
+    const data = await invoke<{ result: string }>('call_ai', {
+      prompt,
+      systemPrompt,
+      task: 'company_research',
     });
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
     const result = data.result || JSON.stringify(data);
     const parsed = parseIntelResponse(result);
 

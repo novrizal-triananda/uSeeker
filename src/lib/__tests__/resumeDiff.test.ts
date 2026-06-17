@@ -7,6 +7,9 @@ import {
   applyAcceptedSuggestions,
 } from '../resumeDiff';
 import type { MasterResume, TailoredResume } from '../../types';
+import { invoke } from '@tauri-apps/api/core';
+
+vi.mock('@tauri-apps/api/core');
 
 // ── Shared test data ────────────────────────────────────────────────────────
 
@@ -238,37 +241,26 @@ describe('generateAiSuggestions', () => {
       },
     ];
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ result: JSON.stringify(mockSuggestions), tokens: 100, provider: 'test' }),
-    });
+    vi.mocked(invoke).mockResolvedValue({ result: JSON.stringify(mockSuggestions) });
 
     const result = await generateAiSuggestions(sampleResume, sampleJD, 'job-1');
     expect(result).toHaveLength(1);
     expect(result![0].section).toBe('skills');
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://127.0.0.1:8787/api/ai',
-      expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.stringContaining('"task":"resume_tailor"'),
-      }),
-    );
+    expect(invoke).toHaveBeenCalledWith('call_ai', expect.objectContaining({
+      task: 'resume_tailor',
+    }));
   });
 
   it('should return null when server is down', async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+    vi.mocked(invoke).mockRejectedValue(new Error('Network error'));
 
     const result = await generateAiSuggestions(sampleResume, sampleJD, 'job-2');
     expect(result).toBeNull();
   });
 
-  it('should return null when API returns non-ok status', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-    });
+  it('should return null when API returns error', async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error('AI API error (500)'));
 
     const result = await generateAiSuggestions(sampleResume, sampleJD, 'job-3');
     expect(result).toBeNull();
@@ -277,26 +269,20 @@ describe('generateAiSuggestions', () => {
   it('should not mutate the master resume', async () => {
     const originalSections = JSON.stringify(sampleResume.sections);
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ result: '[]' }),
-    });
+    vi.mocked(invoke).mockResolvedValue({ result: '[]' });
 
     await generateAiSuggestions(sampleResume, sampleJD, 'job-4');
     expect(JSON.stringify(sampleResume.sections)).toBe(originalSections);
   });
 
   it('should include systemPrompt and task in request', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ result: '[]' }),
-    });
+    vi.mocked(invoke).mockResolvedValue({ result: '[]' });
 
     await generateAiSuggestions(sampleResume, sampleJD, 'job-5');
 
-    const callBody = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
-    expect(callBody.systemPrompt).toBeDefined();
-    expect(callBody.task).toBe('resume_tailor');
+    const callArgs = vi.mocked(invoke).mock.calls[0][1] as any;
+    expect(callArgs.systemPrompt).toBeDefined();
+    expect(callArgs.task).toBe('resume_tailor');
   });
 });
 

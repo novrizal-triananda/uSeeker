@@ -1,7 +1,6 @@
 import type { MasterResume, ResumeSection, ResumeItem, SectionType } from '../types';
 import { parseResumeText } from './cvParser';
-
-const API_BASE = 'http://127.0.0.1:8787';
+import { invoke } from '@tauri-apps/api/core';
 
 const AI_SYSTEM_PROMPT = `Kamu adalah parser CV profesional. Tugasmu: ekstrak SEMUA data dari teks CV dan kembalikan dalam format JSON terstruktur.
 
@@ -262,36 +261,11 @@ export async function parseResumeWithAI(text: string): Promise<MasterResume> {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch(`${API_BASE}/api/ai`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Parse this CV/resume text into structured JSON:\n\n${text}`,
-          systemPrompt: AI_SYSTEM_PROMPT,
-          task: 'cv_parsing',
-          maxTokens: 12000,
-        }),
+      const data = await invoke<{ result: string }>('call_ai', {
+        prompt: `Parse this CV/resume text into structured JSON:\n\n${text}`,
+        systemPrompt: AI_SYSTEM_PROMPT,
+        task: 'cv_parsing',
       });
-
-      if (response.status === 429) {
-        console.warn(`AI parser rate limited (429), attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
-        if (attempt < MAX_RETRIES) {
-          // Wait longer for rate limit
-          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-          continue;
-        }
-        console.warn('AI parser rate limited after retries, falling back to local parser');
-        return parseResumeText(text);
-      }
-
-      if (!response.ok) {
-        console.warn(`AI parser returned ${response.status}, attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
-        if (attempt < MAX_RETRIES) continue;
-        console.warn('AI parser unavailable after retries, falling back to local parser');
-        return parseResumeText(text);
-      }
-
-      const data = await response.json();
       const result = data.result || '';
 
       // Try to parse with multiple recovery strategies

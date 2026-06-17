@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import UpdateChecker from './UpdateChecker';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: '📊' },
@@ -68,6 +69,7 @@ export default function Layout() {
               </li>
             ))}
           </ul>
+          <UpdateChecker />
         </nav>
 
         {/* Mobile bottom tab bar */}

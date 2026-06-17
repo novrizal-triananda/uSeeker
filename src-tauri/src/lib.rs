@@ -1,3 +1,5 @@
+mod proxy;
+
 use std::sync::Mutex;
 
 /// State holding the sidecar child process handle
@@ -13,7 +15,6 @@ fn save_config(key: String, value: String) -> Result<(), String> {
         .join("useeker");
 
     std::fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
-
     let config_path = config_dir.join("config.json");
 
     let mut config: serde_json::Value = if config_path.exists() {
@@ -60,7 +61,19 @@ pub fn run() {
         .manage(SidecarState {
             child: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![save_config, read_config])
+        .invoke_handler(tauri::generate_handler![
+            // Config commands (existing)
+            save_config,
+            read_config,
+            // Proxy commands (new — replaces Node.js server)
+            proxy::call_ai,
+            proxy::search_web,
+            proxy::fetch_url,
+            proxy::scrape_url,
+            proxy::check_health,
+            proxy::check_update,
+            proxy::run_agent,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

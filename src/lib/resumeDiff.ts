@@ -1,7 +1,6 @@
 import type { MasterResume, ResumeSection, TailorSuggestion, TailoredResume } from '../types';
 import { isUrlOrDomain } from './fitScoring';
-
-const API_BASE = 'http://127.0.0.1:8787';
+import { invoke } from '@tauri-apps/api/core';
 
 const STOP_WORDS = new Set([
   'the','a','an','and','or','but','in','on','at','to','for','of','with','by',
@@ -243,19 +242,11 @@ export async function generateAiSuggestions(
   ].join('\n');
 
   try {
-    const response = await fetch(`${API_BASE}/api/ai`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt,
-        prompt,
-        task: 'resume_tailor',
-      }),
+    const data = await invoke<{ result: string }>('call_ai', {
+      prompt,
+      systemPrompt,
+      task: 'resume_tailor',
     });
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
     const result: string = data.result || JSON.stringify(data);
     return parseAiSuggestions(result);
   } catch {
@@ -352,18 +343,11 @@ export async function generateSkillAnalysis(
   ].join('\n');
 
   try {
-    const response = await fetch(`${API_BASE}/api/ai`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt,
-        prompt,
-        task: 'skill_analysis',
-      }),
+    const data = await invoke<{ result: string }>('call_ai', {
+      prompt,
+      systemPrompt,
+      task: 'skill_analysis',
     });
-
-    if (!response.ok) return null;
-    const data = await response.json();
     const result: string = data.result || JSON.stringify(data);
     return parseSkillAnalysis(result);
   } catch {

@@ -1,10 +1,10 @@
 /**
  * Client-side agent caller.
- * Sends research goals to the server-side agent loop.
- * API key never leaves the server.
+ * Sends research goals to the Tauri backend agent loop.
+ * API key never leaves the app.
  */
 
-const API_BASE = 'http://127.0.0.1:8787';
+import { invoke } from '@tauri-apps/api/core';
 
 export interface AgentStep {
   iteration: number;
@@ -32,22 +32,11 @@ export async function runDeepResearch(
   enrichmentUrls: string[] = [],
   maxIterations: number = 5,
 ): Promise<AgentResult> {
-  const response = await fetch(`${API_BASE}/api/agent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      goal: `Riset mendalam tentang perusahaan "${company}". Website resmi: ${officialUrl || '(tidak ada)'}`,
-      context: `Perusahaan: ${company}\nWebsite: ${officialUrl}`,
-      task: 'company_research',
-      maxIterations,
-      enrichmentUrls,
-    }),
+  return invoke<AgentResult>('run_agent', {
+    goal: `Riset mendalam tentang perusahaan "${company}". Website resmi: ${officialUrl || '(tidak ada)'}`,
+    context: `Perusahaan: ${company}\nWebsite: ${officialUrl}`,
+    task: 'company_research',
+    maxIterations,
+    enrichmentUrls,
   });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || `Agent error: ${response.status}`);
-  }
-
-  return response.json();
 }

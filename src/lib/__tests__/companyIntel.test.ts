@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createIntelCard, parseIntelResponse, requestResearch, isBannedDomain, labelClaims } from '../companyIntel';
 import { db } from '../db';
+import { invoke } from '@tauri-apps/api/core';
+
+vi.mock('@tauri-apps/api/core');
 
 describe('createIntelCard', () => {
   beforeEach(async () => {
@@ -166,16 +169,11 @@ describe('requestResearch', () => {
       officialUrl: 'https://testco.com',
     });
 
-    // Mock fetch to reject (simulating server down)
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+    // Mock invoke to reject (simulating server down)
+    vi.mocked(invoke).mockRejectedValue(new Error('Network error'));
 
-    try {
-      const result = await requestResearch(intel.id);
-      expect(result).toBeNull();
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
+    const result = await requestResearch(intel.id);
+    expect(result).toBeNull();
   });
 
   it('should return null for banned domains', async () => {

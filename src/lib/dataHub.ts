@@ -1,7 +1,6 @@
 import { db } from './db';
 import type { JobEntry, FitScore, CompanyIntel, TailoredResume, TailorSuggestion, Application, ApplicationStatus, ResumeSection, EventLog } from '../types';
-
-const API_BASE = 'http://127.0.0.1:8787';
+import { invoke } from '@tauri-apps/api/core';
 
 export interface ConsolidatedView {
   jobEntry: JobEntry;
@@ -247,19 +246,11 @@ export async function generateInterviewQuestions(jobId: string): Promise<Intervi
   prompt.push('Berikan tips singkat untuk setiap pertanyaan dalam Bahasa Indonesia.');
 
   try {
-    const response = await fetch(`${API_BASE}/api/ai`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemPrompt,
-        prompt: prompt.join('\n'),
-        task: 'interview_prep',
-      }),
+    const data = await invoke<{ result: string }>('call_ai', {
+      prompt: prompt.join('\n'),
+      systemPrompt,
+      task: 'interview_prep',
     });
-
-    if (!response.ok) return [];
-
-    const data = await response.json();
     const result: string = data.result || JSON.stringify(data);
     const parsed = JSON.parse(result);
     if (Array.isArray(parsed.questions)) {
