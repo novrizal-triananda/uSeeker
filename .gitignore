@@ -6,3 +6,6 @@ dist/
 
 .hermes-tmp*
 src/lib/debug.ts
+AGENTS.md
+tasks/
+.codegraph/
