@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from '@tauri-apps/api/app';
 import { open } from '@tauri-apps/plugin-shell';
 
 interface UpdateInfo {
@@ -11,17 +12,18 @@ interface UpdateInfo {
   releaseNotes: string;
 }
 
-// ── CONFIG ──
-// Set these to your GitHub repo. For private repos, the GitHub API
-// requires auth — but public repos work without a token.
 const REPO_OWNER = 'novrizal-triananda';
 const REPO_NAME = 'uSeeker';
-const CURRENT_VERSION = '2.1.0';
 
 export default function UpdateChecker() {
+  const [currentVersion, setCurrentVersion] = useState('...');
   const [state, setState] = useState<'idle' | 'checking' | 'available' | 'up-to-date' | 'error'>('idle');
   const [info, setInfo] = useState<UpdateInfo | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    getVersion().then(setCurrentVersion).catch(() => {});
+  }, []);
 
   const checkForUpdate = async () => {
     setState('checking');
@@ -30,7 +32,7 @@ export default function UpdateChecker() {
       const result = await invoke<UpdateInfo>('check_update', {
         repoOwner: REPO_OWNER,
         repoName: REPO_NAME,
-        currentVersion: CURRENT_VERSION,
+        currentVersion: currentVersion,
       });
       setInfo(result);
       setState(result.updateAvailable ? 'available' : 'up-to-date');
@@ -112,7 +114,7 @@ export default function UpdateChecker() {
       )}
 
       <div style={{ marginTop: '0.375rem', textAlign: 'center', color: 'var(--color-text-muted, #9ca3af)', fontSize: '0.65rem' }}>
-        v{CURRENT_VERSION}
+        v{currentVersion}
       </div>
     </div>
   );
