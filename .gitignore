@@ -14,3 +14,5 @@ server/
 test/
 scripts/
 test-e2e.sh
+.keys/
+# Updater signing keys (NEVER commit)

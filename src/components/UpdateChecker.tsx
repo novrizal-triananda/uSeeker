@@ -1,53 +1,74 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { getVersion } from '@tauri-apps/api/app';
-import { open } from '@tauri-apps/plugin-shell';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 
-interface UpdateInfo {
-  updateAvailable: boolean;
-  latestVersion: string;
-  currentVersion: string;
-  downloadUrl: string;
-  releaseUrl: string;
-  releaseNotes: string;
-}
-
-const REPO_OWNER = 'novrizal-triananda';
-const REPO_NAME = 'uSeeker';
+type UpdateState = 'idle' | 'checking' | 'available' | 'installing' | 'up-to-date' | 'error' | 'relaunching';
 
 export default function UpdateChecker() {
-  const [currentVersion, setCurrentVersion] = useState('...');
-  const [state, setState] = useState<'idle' | 'checking' | 'available' | 'up-to-date' | 'error'>('idle');
-  const [info, setInfo] = useState<UpdateInfo | null>(null);
+  const [state, setState] = useState<UpdateState>('idle');
+  const [version, setVersion] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [downloaded, setDownloaded] = useState(0);
+  const [contentLength, setContentLength] = useState(0);
 
   useEffect(() => {
-    getVersion().then(setCurrentVersion).catch(() => {});
+    import('@tauri-apps/api/app').then(({ getVersion }) => {
+      getVersion().then(setVersion).catch(() => {});
+    });
   }, []);
 
   const checkForUpdate = async () => {
     setState('checking');
     setErrorMsg('');
     try {
-      const result = await invoke<UpdateInfo>('check_update', {
-        repoOwner: REPO_OWNER,
-        repoName: REPO_NAME,
-        currentVersion: currentVersion,
-      });
-      setInfo(result);
-      setState(result.updateAvailable ? 'available' : 'up-to-date');
+      const update = await check();
+      if (update) {
+        setVersion(update.version);
+        setState('available');
+      } else {
+        setState('up-to-date');
+      }
     } catch (err) {
       setErrorMsg(String(err));
       setState('error');
     }
   };
 
-  const openDownload = async () => {
-    const url = info?.downloadUrl || info?.releaseUrl;
-    if (url) {
-      await open(url);
+  const downloadAndInstall = async () => {
+    setState('installing');
+    try {
+      const update = await check();
+      if (!update) {
+        setState('up-to-date');
+        return;
+      }
+
+      let contentLen = 0;
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case 'Started':
+            contentLen = event.data.contentLength || 0;
+            setContentLength(contentLen);
+            break;
+          case 'Progress':
+            setDownloaded((prev) => prev + (event.data.chunkLength || 0));
+            break;
+          case 'Finished':
+            break;
+        }
+      });
+
+      setState('relaunching');
+      await relaunch();
+    } catch (err) {
+      setErrorMsg(String(err));
+      setState('error');
     }
   };
+
+  const progressPercent = contentLength > 0
+    ? Math.min(100, Math.round((downloaded / contentLength) * 100))
+    : 0;
 
   return (
     <div style={{
@@ -56,16 +77,16 @@ export default function UpdateChecker() {
       fontSize: '0.75rem',
     }}>
       <button
-        onClick={checkForUpdate}
-        disabled={state === 'checking'}
+        onClick={state === 'available' || state === 'idle' ? (state === 'available' ? downloadAndInstall : checkForUpdate) : undefined}
+        disabled={state === 'checking' || state === 'installing' || state === 'relaunching'}
         style={{
           width: '100%',
           padding: '0.4rem 0.75rem',
           border: '1px solid var(--color-border, #e5e7eb)',
           borderRadius: '0.375rem',
-          background: 'var(--color-surface, #fff)',
-          color: 'var(--color-text-secondary, #6b7280)',
-          cursor: state === 'checking' ? 'wait' : 'pointer',
+          background: state === 'available' ? 'var(--color-primary, #2563eb)' : 'var(--color-surface, #fff)',
+          color: state === 'available' ? '#fff' : 'var(--color-text-secondary, #6b7280)',
+          cursor: (state === 'checking' || state === 'installing' || state === 'relaunching') ? 'wait' : 'pointer',
           fontSize: '0.75rem',
           display: 'flex',
           alignItems: 'center',
@@ -74,30 +95,39 @@ export default function UpdateChecker() {
         }}
         aria-label="Cek update"
       >
-        {state === 'checking' ? '⏳ Mengecek...' : '🔄 Cek Update'}
+        {state === 'checking' && '⏳ Mengecek...'}
+        {state === 'idle' && '🔄 Cek Update'}
+        {state === 'available' && '⬇️ Update Sekarang'}
+        {state === 'installing' && `⬇️ Mengunduh... ${progressPercent}%`}
+        {state === 'relaunching' && '🔄 Memulai ulang...'}
+        {state === 'up-to-date' && '✓ Versi terbaru'}
+        {state === 'error' && '⚠️ Gagal'}
       </button>
 
-      {state === 'available' && info && (
-        <div style={{ marginTop: '0.5rem', color: 'var(--color-primary, #2563eb)' }}>
-          <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-            Versi {info.latestVersion} tersedia!
-          </div>
-          <button
-            onClick={openDownload}
-            style={{
-              width: '100%',
-              padding: '0.4rem 0.75rem',
-              border: 'none',
-              borderRadius: '0.375rem',
+      {state === 'installing' && contentLength > 0 && (
+        <div style={{ marginTop: '0.375rem' }}>
+          <div style={{
+            width: '100%',
+            height: '4px',
+            background: 'var(--color-border, #e5e7eb)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              width: `${progressPercent}%`,
+              height: '100%',
               background: 'var(--color-primary, #2563eb)',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-            }}
-          >
-            Download Update
-          </button>
+              transition: 'width 0.3s',
+            }} />
+          </div>
+          <div style={{
+            marginTop: '0.25rem',
+            textAlign: 'center',
+            color: 'var(--color-text-muted, #9ca3af)',
+            fontSize: '0.65rem',
+          }}>
+            {formatBytes(downloaded)} / {formatBytes(contentLength)}
+          </div>
         </div>
       )}
 
@@ -114,8 +144,16 @@ export default function UpdateChecker() {
       )}
 
       <div style={{ marginTop: '0.375rem', textAlign: 'center', color: 'var(--color-text-muted, #9ca3af)', fontSize: '0.65rem' }}>
-        v{currentVersion}
+        v{version}
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }

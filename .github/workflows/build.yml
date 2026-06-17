@@ -62,6 +62,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           # Embedded API keys (from GitHub Secrets → compile-time in Rust binary)
           USEEKER_AI_API_KEY: ${{ secrets.USEEKER_AI_API_KEY }}
           USEEKER_AI_BASE_URL: ${{ secrets.USEEKER_AI_BASE_URL }}
@@ -78,4 +79,6 @@ jobs:
             src-tauri/target/release/bundle/**/*.AppImage
             src-tauri/target/release/bundle/**/*.dmg
             src-tauri/target/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.sig
+            src-tauri/target/release/bundle/**/latest.json
           retention-days: 7
