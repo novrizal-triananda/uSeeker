@@ -60,14 +60,14 @@ uSeeker adalah aplikasi desktop yang dibangun dengan [Tauri v2](https://v2.tauri
 │           uSeeker Desktop App           │
 │                                         │
 │  ┌─────────────┐  ┌──────────────────┐  │
-│  │   Frontend   │  │   Rust Backend   │  │
-│  │  React + TS  │──│  Tauri Commands  │  │
-│  │   Vite UI    │  │  (AI, Search,    │  │
-│  │              │  │   Scrape, Agent) │  │
+│  │   Frontend  │  │   Rust Backend   │  │
+│  │  React + TS │──│  Tauri Commands  │  │
+│  │   Vite UI   │  │  (AI, Search,    │  │
+│  │             │  │   Scrape, Agent) │  │
 │  └─────────────┘  └──────────────────┘  │
-│         │                    │           │
+│         │                    │          │
 │    IndexedDB            External APIs   │
-│   (data lokal)                           │
+│   (data lokal)                          │
 └─────────────────────────────────────────┘
 ```
 
