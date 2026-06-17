@@ -220,8 +220,9 @@ export default function Triage() {
 
   if (loading) {
     return (
-      <section style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-        Memuat...
+      <section className="loading-state">
+        <div className="loading-spinner" />
+        <p>Memuat...</p>
       </section>
     );
   }

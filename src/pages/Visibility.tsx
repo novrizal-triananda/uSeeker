@@ -125,8 +125,9 @@ export default function Visibility() {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <p style={styles.loading}>Memuat pipeline...</p>
+      <div className="loading-state" style={styles.container}>
+        <div className="loading-spinner" />
+        <p>Memuat pipeline...</p>
       </div>
     );
   }

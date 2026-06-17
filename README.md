@@ -17,19 +17,44 @@ uSeeker membantu kamu melacak lamaran kerja, menganalisis kecocokan CV dengan jo
 ## Instalasi
 
 ### Windows
-1. Download `useeker_xxx_x64-setup.msi` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+1. Download `uSeeker_2.1.0_x64_en-US.msi` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
 2. Double-click file `.msi` → ikuti petunjuk instalasi
 3. Buka uSeeker dari Start Menu
 
 ### macOS
-1. Download `useeker_xxx_aarch64.dmg` (Apple Silicon) atau `useeker_xxx_x64.dmg` (Intel) dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+1. Download `uSeeker_2.1.0_aarch64.dmg` (Apple Silicon) atau `uSeeker_2.1.0_x64.dmg` (Intel) dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
 2. Double-click `.dmg` → drag uSeeker ke Applications
 3. Buka uSeeker dari Applications
 
-### Linux
-1. Download `useeker_xxx_amd64.deb` (Ubuntu/Debian) atau `useeker_xxx_amd64.AppImage` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
-2. **Deb:** `sudo dpkg -i useeker_*.deb`
-3. **AppImage:** `chmod +x useeker_*.AppImage && ./useeker_*.AppImage`
+### Linux (Ubuntu/Debian)
+1. Download `uSeeker_2.1.0_amd64.deb` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+2. Buka terminal, navigasi ke folder Downloads:
+   ```bash
+   cd ~/Downloads
+   ```
+3. Install dengan dpkg:
+   ```bash
+   sudo dpkg -i uSeeker_2.1.0_amd64.deb
+   ```
+4. Jika ada error dependency, jalankan:
+   ```bash
+   sudo apt-get install -f
+   ```
+5. Buka uSeeker dari aplikasi menu atau terminal:
+   ```bash
+   u-seeker
+   ```
+
+### Linux (AppImage)
+1. Download `uSeeker_2.1.0_amd64.AppImage` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
+2. Beri permission execute:
+   ```bash
+   chmod +x uSeeker_2.1.0_amd64.AppImage
+   ```
+3. Jalankan:
+   ```bash
+   ./uSeeker_2.1.0_amd64.AppImage
+   ```
 
 > **Catatan:** Tidak perlu install Node.js atau dependencies tambahan. Semua sudah included dalam aplikasi.
 
@@ -49,15 +74,15 @@ uSeeker adalah aplikasi desktop yang dibangun dengan [Tauri v2](https://v2.tauri
 │  └─────────────┘  └──────────────────┘  │
 │         │                    │           │
 │    IndexedDB            External APIs   │
-│   (data lokal)         (Deepseek, Brave)│
+│   (data lokal)                           │
 └─────────────────────────────────────────┘
 ```
 
 ### Arsitektur
 
 - **Data tersimpan 100% di komputer kamu** (IndexedDB). Tidak ada data yang dikirim ke server manapun.
-- **Fitur AI** menggunakan API Deepseek untuk menganalisis CV, meriset perusahaan, dan generate pertanyaan wawancara.
-- **Search** menggunakan multi-provider: DuckDuckGo → Brave → Bing dengan fallback otomatis.
+- **Fitur AI** membutuhkan koneksi internet untuk menganalisis CV, meriset perusahaan, dan generate pertanyaan wawancara.
+- **Search** menggunakan multi-provider dengan fallback otomatis.
 - **Offline** — Fitur non-AI (Triage, Pipeline, Data Hub) tetap jalan tanpa internet.
 
 ## Cek Update
@@ -71,13 +96,11 @@ Klik tombol **🔄 Cek Update** di bagian bawah sidebar untuk mengecek versi ter
 - [Vite](https://vitejs.dev/) — Build tool
 - [Dexie.js](https://dexie.org/) — IndexedDB wrapper (data lokal)
 - [Rust](https://www.rust-lang.org/) — Backend proxy (AI, search, scraping)
-- [Deepseek API](https://platform.deepseek.com/) — AI provider
 
 ## Privasi
 
 uSeeker dirancang **local-first**. Semua data kamu (CV, lamaran, catatan) tersimpan di komputer kamu sendiri. Tidak ada analytics, tidak ada telemetry, tidak ada data yang dikirim ke server kami.
-
-Fitur AI membutuhkan koneksi internet untuk menghubungi API Deepseek, tetapi data kamu tidak disimpan di server mereka.
+Fitur AI membutuhkan koneksi internet, tetapi data kamu tidak disimpan di server manapun.
 
 ## Lisensi
 

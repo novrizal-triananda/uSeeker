@@ -135,11 +135,11 @@ export default function DataHub() {
       </h2>
 
       {loading ? (
-        <div style={{
-          textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-text-muted)',
+        <div className="loading-state" style={{
           background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--color-border)',
         }}>
+          <div className="loading-spinner" />
           <p style={{ fontSize: 'var(--font-size-lg)' }}>Memuat data...</p>
         </div>
       ) : views.length === 0 ? (

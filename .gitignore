@@ -13,3 +13,4 @@ product/
 server/
 test/
 scripts/
+test-e2e.sh
