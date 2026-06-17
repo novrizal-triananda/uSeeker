@@ -3,6 +3,7 @@ name: Build Desktop App
 on:
   push:
     tags: ['v*']
+    branches: ['main']
   workflow_dispatch:
 
 jobs:
