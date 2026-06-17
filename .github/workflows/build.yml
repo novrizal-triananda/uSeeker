@@ -69,6 +69,11 @@ jobs:
           USEEKER_AI_MODEL: ${{ secrets.USEEKER_AI_MODEL }}
         with:
           tauriScript: pnpm tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: 'uSeeker ${{ github.ref_name }}'
+          releaseBody: 'Lihat [CHANGELOG](../main) untuk detail perubahan.'
+          releaseDraft: false
+          prerelease: false
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
