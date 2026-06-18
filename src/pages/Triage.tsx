@@ -263,7 +263,12 @@ export default function Triage() {
         {masterResume ? (
             importing ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-6)' }}>
-                <div className="cv-spinner" />
+                <svg className="cv-spinner" viewBox="0 0 36 36">
+                  <circle className="cv-spinner-track" cx="18" cy="18" r="15" />
+                  <circle className="cv-spinner-arc" cx="18" cy="18" r="15">
+                    <animateTransform attributeName="transform" type="rotate" values="0 18 18;360 18 18" dur="0.8s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
                 <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--color-text)' }}>
                   Memproses{dots}
                 </p>
@@ -303,9 +308,9 @@ export default function Triage() {
                   style={{
                     padding: 'var(--space-2) var(--space-4)',
                     borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    background: 'var(--color-bg)',
-                    color: 'var(--color-text)',
+                    border: '1px solid var(--color-primary)',
+                    background: 'var(--color-primary)',
+                    color: '#fff',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-sm)',
                   }}
@@ -335,7 +340,12 @@ export default function Triage() {
           >
             {importing ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div className="cv-spinner" />
+                <svg className="cv-spinner" viewBox="0 0 36 36">
+                  <circle className="cv-spinner-track" cx="18" cy="18" r="15" />
+                  <circle className="cv-spinner-arc" cx="18" cy="18" r="15">
+                    <animateTransform attributeName="transform" type="rotate" values="0 18 18;360 18 18" dur="0.8s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
                 <p style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text)' }}>
                   Memproses{dots}
                 </p>
