@@ -26,6 +26,7 @@ export default function Triage() {
   const [importSuccess, setImportSuccess] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dots, setDots] = useState('');
 
   // Job entry form state
   const [showJobForm, setShowJobForm] = useState(false);
@@ -46,6 +47,15 @@ export default function Triage() {
   useEffect(() => {
     if (jobId) setSelectedJobId(jobId);
   }, [jobId]);
+
+  // Animated dots during CV import (CSS content animation is non-standard in WebView2)
+  useEffect(() => {
+    if (!importing) { setDots(''); return; }
+    const frames = ['', '.', '..', '...'];
+    let i = 0;
+    const id = setInterval(() => { i = (i + 1) % frames.length; setDots(frames[i]); }, 400);
+    return () => clearInterval(id);
+  }, [importing]);
 
   async function loadData() {
     try {
@@ -253,9 +263,9 @@ export default function Triage() {
         {masterResume ? (
             importing ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-6)' }}>
-                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite' }} />
+                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite', willChange: 'transform' }} />
                 <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--color-text)' }}>
-                  Memproses<span style={{ animation: 'cv-import-dots 1.5s steps(4, end) infinite' }}></span>
+                  Memproses{dots}
                 </p>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                   Mengganti CV...
@@ -325,9 +335,9 @@ export default function Triage() {
           >
             {importing ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite' }} />
+                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite', willChange: 'transform' }} />
                 <p style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text)' }}>
-                  Memproses<span style={{ animation: 'cv-import-dots 1.5s steps(4, end) infinite' }}></span>
+                  Memproses{dots}
                 </p>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                   Sedang membaca file CV...
