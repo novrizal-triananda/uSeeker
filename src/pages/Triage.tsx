@@ -263,7 +263,7 @@ export default function Triage() {
         {masterResume ? (
             importing ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-6)' }}>
-                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite', willChange: 'transform' }} />
+                <div className="cv-spinner" />
                 <p style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--color-text)' }}>
                   Memproses{dots}
                 </p>
@@ -335,7 +335,7 @@ export default function Triage() {
           >
             {importing ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{ width: 36, height: 36, border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'cv-import-spin 0.8s linear infinite', willChange: 'transform' }} />
+                <div className="cv-spinner" />
                 <p style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text)' }}>
                   Memproses{dots}
                 </p>
