@@ -4,23 +4,25 @@ use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 use tauri::command;
 
-// ── Compile-time embedded keys (from CI / GitHub Secrets) ──
+// ── Config file reader ──
 
-const EMBEDDED_AI_KEY: Option<&str> = option_env!("USEEKER_AI_API_KEY");
-const EMBEDDED_AI_BASE: Option<&str> = option_env!("USEEKER_AI_BASE_URL");
-const EMBEDDED_AI_MODEL: Option<&str> = option_env!("USEEKER_AI_MODEL");
-const EMBEDDED_BRAVE_KEY: Option<&str> = option_env!("USEEKER_BRAVE_API_KEY");
-const EMBEDDED_BING_KEY: Option<&str> = option_env!("USEEKER_BING_API_KEY");
+fn read_config_file_value(key: &str) -> Option<String> {
+    let config_dir = dirs::config_dir()?.join("useeker");
+    let config_path = config_dir.join("config.json");
+    let data = std::fs::read_to_string(&config_path).ok()?;
+    let config: serde_json::Value = serde_json::from_str(&data).ok()?;
+    config.get(key)?.as_str().map(String::from)
+}
 
 // ── Runtime config resolution ──
-// Priority: runtime override > env var > embedded compile-time > default
+// Priority: runtime override > env var > config.json > default
 
 fn resolve_ai_key(runtime: Option<&str>) -> Option<String> {
     runtime
         .filter(|s| !s.is_empty())
         .map(String::from)
         .or_else(|| std::env::var("USEEKER_AI_API_KEY").ok().filter(|s| !s.is_empty()))
-        .or_else(|| EMBEDDED_AI_KEY.map(String::from))
+        .or_else(|| read_config_file_value("api_key").filter(|s| !s.is_empty()))
 }
 
 fn resolve_ai_base_url(runtime: Option<&str>) -> String {
@@ -28,8 +30,8 @@ fn resolve_ai_base_url(runtime: Option<&str>) -> String {
         .filter(|s| !s.is_empty())
         .map(String::from)
         .or_else(|| std::env::var("USEEKER_AI_BASE_URL").ok().filter(|s| !s.is_empty()))
-        .or_else(|| EMBEDDED_AI_BASE.map(String::from))
-        .unwrap_or_else(|| "https://api.deepseek.com".to_string())
+        .or_else(|| read_config_file_value("base_url").filter(|s| !s.is_empty()))
+        .unwrap_or_default()
         .trim_end_matches('/')
         .to_string()
 }
@@ -39,22 +41,24 @@ fn resolve_ai_model(runtime: Option<&str>) -> String {
         .filter(|s| !s.is_empty())
         .map(String::from)
         .or_else(|| std::env::var("USEEKER_AI_MODEL").ok().filter(|s| !s.is_empty()))
-        .or_else(|| EMBEDDED_AI_MODEL.map(String::from))
-        .unwrap_or_else(|| "deepseek-chat".to_string())
+        .or_else(|| read_config_file_value("model").filter(|s| !s.is_empty()))
+        .unwrap_or_default()
 }
 
 fn resolve_brave_key() -> Option<String> {
     std::env::var("USEEKER_BRAVE_API_KEY")
         .ok()
         .filter(|s| !s.is_empty())
-        .or_else(|| EMBEDDED_BRAVE_KEY.map(String::from))
+        .or_else(|| read_config_file_value("brave_key"))
+        .filter(|s| !s.is_empty())
 }
 
 fn resolve_bing_key() -> Option<String> {
     std::env::var("USEEKER_BING_API_KEY")
         .ok()
         .filter(|s| !s.is_empty())
-        .or_else(|| EMBEDDED_BING_KEY.map(String::from))
+        .or_else(|| read_config_file_value("bing_key"))
+        .filter(|s| !s.is_empty())
 }
 
 fn http_client() -> &'static Client {

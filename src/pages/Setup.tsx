@@ -1,56 +1,46 @@
 import { useState } from 'react';
 
-const PROVIDERS = [
-  { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'openrouter', label: 'OpenRouter' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'custom', label: 'Custom / Self-hosted' },
-] as const;
-
-type Provider = (typeof PROVIDERS)[number]['value'];
-
 interface SetupProps {
   onComplete?: () => void;
 }
 
 export default function Setup({ onComplete }: SetupProps) {
-  const [provider, setProvider] = useState<Provider>('deepseek');
+  const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [customEndpoint, setCustomEndpoint] = useState('');
+  const [model, setModel] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   const handleSave = async () => {
     if (!apiKey.trim()) {
-      setError('API key is required');
+      setError('API key wajib diisi');
+      return;
+    }
+    if (!baseUrl.trim()) {
+      setError('Base URL wajib diisi');
       return;
     }
 
     try {
-      // Try Tauri invoke first, fall back to localStorage
       if (window.__TAURI_INTERNALS__) {
         const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('save_config', { key: 'provider', value: provider });
         await invoke('save_config', { key: 'api_key', value: apiKey.trim() });
-        if (customEndpoint) {
-          await invoke('save_config', {
-            key: 'custom_endpoint',
-            value: customEndpoint.trim(),
-          });
+        await invoke('save_config', { key: 'base_url', value: baseUrl.trim().replace(/\/\/+$/, '') });
+        if (model.trim()) {
+          await invoke('save_config', { key: 'model', value: model.trim() });
         }
       } else {
-        localStorage.setItem('useeker_provider', provider);
         localStorage.setItem('useeker_api_key', apiKey.trim());
-        if (customEndpoint) {
-          localStorage.setItem('useeker_custom_endpoint', customEndpoint.trim());
+        localStorage.setItem('useeker_base_url', baseUrl.trim().replace(/\/\/+$/, ''));
+        if (model.trim()) {
+          localStorage.setItem('useeker_model', model.trim());
         }
       }
 
       setSaved(true);
       setTimeout(() => onComplete?.(), 1000);
     } catch (e) {
-      setError(`Failed to save: ${e}`);
+      setError('Gagal menyimpan: ' + String(e));
     }
   };
 
@@ -63,8 +53,8 @@ export default function Setup({ onComplete }: SetupProps) {
       <div style={styles.container}>
         <div style={styles.card}>
           <div style={styles.checkmark}>✓</div>
-          <h2 style={styles.title}>Configuration Saved</h2>
-          <p style={styles.subtitle}>You're all set to start using uSeeker.</p>
+          <h2 style={styles.title}>Konfigurasi Tersimpan</h2>
+          <p style={styles.subtitle}>Siap digunakan.</p>
         </div>
       </div>
     );
@@ -73,67 +63,46 @@ export default function Setup({ onComplete }: SetupProps) {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Welcome to uSeeker</h1>
+        <h1 style={styles.title}>Selamat Datang di uSeeker</h1>
         <p style={styles.subtitle}>
-          Configure your AI provider to get started with intelligent job hunting.
+          Masukkan pengaturan penyedia AI kamu untuk memulai.
         </p>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>AI Provider</label>
-          <select
-            style={styles.select}
-            value={provider}
-            onChange={(e) => setProvider(e.target.value as Provider)}
-          >
-            {PROVIDERS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <label style={styles.label}>Base URL</label>
+          <input type="text" style={styles.input} value={baseUrl}
+            onChange={(e) => { setBaseUrl(e.target.value); setError(''); }}
+            placeholder="https://api.deepseek.com" />
+          <p style={styles.hint}>Contoh: https://api.deepseek.com, https://openrouter.ai/api/v1</p>
         </div>
 
         <div style={styles.formGroup}>
           <label style={styles.label}>API Key</label>
-          <input
-            type="password"
-            style={styles.input}
-            value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-              setError('');
-            }}
-            placeholder={`Enter your ${provider} API key`}
-          />
+          <input type="password" style={styles.input} value={apiKey}
+            onChange={(e) => { setApiKey(e.target.value); setError(''); }}
+            placeholder="sk-..." />
         </div>
 
-        {provider === 'custom' && (
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Custom Endpoint URL</label>
-            <input
-              type="url"
-              style={styles.input}
-              value={customEndpoint}
-              onChange={(e) => setCustomEndpoint(e.target.value)}
-              placeholder="http://localhost:11434/api/generate"
-            />
-          </div>
-        )}
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Model <span style={{ fontWeight: 400, color: '#64748b' }}>(opsional)</span></label>
+          <input type="text" style={styles.input} value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="deepseek-chat" />
+        </div>
 
         {error && <p style={styles.error}>{error}</p>}
 
         <div style={styles.actions}>
           <button style={styles.saveButton} onClick={handleSave}>
-            Save & Continue
+            Simpan & Lanjutkan
           </button>
           <button style={styles.skipButton} onClick={handleSkip}>
-            Skip for now
+            Lewati
           </button>
         </div>
 
         <p style={styles.hint}>
-          You can configure this later in Settings. Your API key is stored
-          locally and never sent to uSeeker.
+          Pengaturan bisa diubah kapan saja dari menu Pengaturan.
         </p>
       </div>
     </div>
@@ -141,108 +110,18 @@ export default function Setup({ onComplete }: SetupProps) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    background: '#0f172a',
-    padding: '1rem',
-  },
-  card: {
-    background: '#1e293b',
-    borderRadius: '1rem',
-    padding: '2.5rem',
-    maxWidth: '480px',
-    width: '100%',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-  },
-  checkmark: {
-    fontSize: '3rem',
-    textAlign: 'center',
-    color: '#22c55e',
-    marginBottom: '0.5rem',
-  },
-  title: {
-    fontSize: '1.5rem',
-    fontWeight: 700,
-    color: '#f8fafc',
-    margin: '0 0 0.5rem',
-  },
-  subtitle: {
-    fontSize: '0.9rem',
-    color: '#94a3b8',
-    margin: '0 0 1.5rem',
-  },
-  formGroup: {
-    marginBottom: '1.25rem',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    color: '#cbd5e1',
-    marginBottom: '0.4rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  },
-  input: {
-    width: '100%',
-    padding: '0.65rem 0.75rem',
-    background: '#0f172a',
-    border: '1px solid #334155',
-    borderRadius: '0.5rem',
-    color: '#f8fafc',
-    fontSize: '0.9rem',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  select: {
-    width: '100%',
-    padding: '0.65rem 0.75rem',
-    background: '#0f172a',
-    border: '1px solid #334155',
-    borderRadius: '0.5rem',
-    color: '#f8fafc',
-    fontSize: '0.9rem',
-    outline: 'none',
-    cursor: 'pointer',
-  },
-  actions: {
-    display: 'flex',
-    gap: '0.75rem',
-    marginTop: '1.5rem',
-  },
-  saveButton: {
-    flex: 1,
-    padding: '0.7rem 1rem',
-    background: '#3b82f6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '0.5rem',
-    fontSize: '0.9rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  skipButton: {
-    padding: '0.7rem 1rem',
-    background: 'transparent',
-    color: '#94a3b8',
-    border: '1px solid #334155',
-    borderRadius: '0.5rem',
-    fontSize: '0.9rem',
-    cursor: 'pointer',
-  },
-  error: {
-    color: '#ef4444',
-    fontSize: '0.85rem',
-    margin: '0.5rem 0 0',
-  },
-  hint: {
-    fontSize: '0.75rem',
-    color: '#64748b',
-    marginTop: '1.25rem',
-    textAlign: 'center',
-    lineHeight: 1.5,
-  },
+  container: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--color-bg, #FAFAF9)', padding: '1rem' },
+  card: { background: 'var(--color-surface, #FFFFFF)', borderRadius: 'var(--radius-lg, 12px)', padding: '2.5rem', maxWidth: '480px', width: '100%', boxShadow: 'var(--shadow-md, 0 4px 6px rgba(0,0,0,0.07))', border: '1px solid var(--color-border, #E7E5E4)' },
+  checkmark: { fontSize: '3rem', textAlign: 'center', color: 'var(--color-status-green, #16A34A)', marginBottom: '0.5rem' },
+  title: { fontSize: 'var(--font-size-2xl, 1.5rem)', fontWeight: 700, color: 'var(--color-text, #1C1917)', margin: '0 0 0.5rem' },
+  subtitle: { fontSize: 'var(--font-size-sm, 0.875rem)', color: 'var(--color-text-muted, #78716C)', margin: '0 0 1.5rem', lineHeight: 1.5 },
+  formGroup: { marginBottom: '1.25rem' },
+  label: { display: 'block', fontSize: 'var(--font-size-sm, 0.875rem)', fontWeight: 600, color: 'var(--color-text, #1C1917)', marginBottom: '0.4rem' },
+  input: { width: '100%', padding: '10px 12px', background: 'var(--color-bg, #FAFAF9)', border: '1px solid var(--color-border, #E7E5E4)', borderRadius: 'var(--radius-md, 8px)', color: 'var(--color-text, #1C1917)', fontSize: 'var(--font-size-base, 1rem)', fontFamily: 'var(--font-family, system-ui, sans-serif)', outline: 'none', boxSizing: 'border-box' },
+  actions: { display: 'flex', gap: '0.75rem', marginTop: '1.5rem' },
+  saveButton: { flex: 1, padding: '10px 16px', background: 'var(--color-primary, #2563EB)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md, 8px)', fontSize: 'var(--font-size-sm, 0.875rem)', fontWeight: 600, cursor: 'pointer' },
+  skipButton: { padding: '10px 16px', background: 'transparent', color: 'var(--color-text-muted, #78716C)', border: '1px solid var(--color-border, #E7E5E4)', borderRadius: 'var(--radius-md, 8px)', fontSize: 'var(--font-size-sm, 0.875rem)', cursor: 'pointer' },
+  error: { color: 'var(--color-status-red, #DC2626)', fontSize: 'var(--font-size-sm, 0.875rem)', margin: '0.5rem 0 0' },
+  hint: { fontSize: '0.75rem', color: 'var(--color-text-muted, #78716C)', marginTop: '4px', lineHeight: 1.5 },
 };
+

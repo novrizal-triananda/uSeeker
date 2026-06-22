@@ -11,12 +11,17 @@ const NAV_ITEMS = [
   { path: '/data-hub', label: 'Data Hub', icon: '🗄️' },
 ];
 
+const BOTTOM_NAV_ITEMS = [
+  { path: '/settings', label: 'Pengaturan', icon: '⚙️' },
+];
+
 const MOBILE_ITEMS = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/triage', label: 'Triage', icon: '📋' },
   { path: '/research', label: 'Research', icon: '🔍' },
   { path: '/insights', label: 'Insights', icon: '💡' },
   { path: '/data-hub', label: 'Data Hub', icon: '🗄️' },
+  { path: '/settings', label: 'Pengaturan', icon: '⚙️' },
 ];
 
 export default function Layout() {
@@ -57,6 +62,23 @@ export default function Layout() {
                 <NavLink
                   to={item.path}
                   end={item.path === '/'}
+                  className={({ isActive }) =>
+                    `app-nav__link${isActive ? ' app-nav__link--active' : ''}`
+                  }
+                  role="menuitem"
+                  aria-label={item.label}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span className="app-nav__label">{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+          <ul className="app-nav__links" role="menubar" aria-label="Menu pengaturan" style={{ borderTop: '1px solid var(--color-border, #e5e7eb)', marginTop: 'var(--space-4)', paddingTop: 'var(--space-2)' }}>
+            {BOTTOM_NAV_ITEMS.map((item) => (
+              <li key={item.path} role="none">
+                <NavLink
+                  to={item.path}
                   className={({ isActive }) =>
                     `app-nav__link${isActive ? ' app-nav__link--active' : ''}`
                   }

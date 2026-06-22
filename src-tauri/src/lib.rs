@@ -54,6 +54,44 @@ fn read_config(key: String) -> Result<Option<String>, String> {
     }
 }
 
+/// Get all AI configuration from disk (for Settings UI).
+/// Returns structured JSON with baseUrl, model, and full apiKey.
+#[tauri::command]
+fn get_ai_config() -> Result<serde_json::Value, String> {
+    let config_dir = dirs::config_dir()
+        .ok_or_else(|| "Could not determine config directory".to_string())?
+        .join("useeker");
+    let config_path = config_dir.join("config.json");
+    if !config_path.exists() {
+        return Ok(serde_json::json!({
+            "apiKey": "",
+            "baseUrl": "",
+            "model": "",
+        }));
+    }
+    let data = std::fs::read_to_string(&config_path).map_err(|e| e.to_string())?;
+    let config: serde_json::Value = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+
+    let api_key = config.get("api_key")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let base_url = config.get("base_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let model = config.get("model")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    Ok(serde_json::json!({
+        "apiKey": api_key,
+        "baseUrl": base_url,
+        "model": model,
+    }))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -67,6 +105,7 @@ pub fn run() {
             // Config commands (existing)
             save_config,
             read_config,
+            get_ai_config,
             // Proxy commands (new — replaces Node.js server)
             proxy::call_ai,
             proxy::search_web,

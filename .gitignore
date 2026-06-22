@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.env.local
+.env.*.local
 .product-os/
 *.log
 
@@ -15,4 +17,5 @@ test/
 scripts/
 test-e2e.sh
 .keys/
+src-tauri/target/
 # Updater signing keys (NEVER commit)

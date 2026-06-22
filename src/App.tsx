@@ -10,6 +10,7 @@ import Tailoring from './pages/Tailoring';
 import Visibility from './pages/Visibility';
 import Insights from './pages/Insights';
 import DataHub from './pages/DataHub';
+import Settings from './pages/Settings';
 import './App.css';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="insights" element={<Insights />} />
           <Route path="data-hub" element={<DataHub />} />
           <Route path="data-hub/prep/:jobId" element={<DataHub />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

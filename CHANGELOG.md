@@ -7,6 +7,29 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ---
 
+## [2.2.0] - 2026-06-22
+
+### Added
+- Halaman **Pengaturan AI** — user bisa mengatur Base URL dan API key sendiri (BYOK)
+- Helper `aiConfig.ts` untuk membaca config dari backend secara terpusat
+- Command Tauri `get_ai_config` untuk mengambil semua config AI sekaligus
+
+### Changed
+- AI API key **tidak lagi di-embed** dalam binary. User wajib memasukkan API key mereka sendiri
+- Halaman Setup disederhanakan: Base URL + API Key + Model (opsional)
+- Resolve chain di Rust diperbarui: runtime param > config.json > env var > fallback default
+- Tidak ada lagi hardcoded `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, atau model name
+
+### Removed
+- Embedded compile-time API keys (`USEEKER_AI_API_KEY`, `USEEKER_AI_BASE_URL`, `USEEKER_AI_MODEL`)
+- Provider dropdown di Setup — semua provider cukup isi Base URL sendiri
+
+### Security
+- Repository dipindah ke **public** untuk mendukung mekanisme update
+- Semua API key lama dari GitHub Releases dihapus
+
+---
+
 ## [2.1.7] - 2026-06-18
 
 ### Fixed
@@ -115,6 +138,7 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ---
 
+[2.2.0]: https://github.com/novrizal-triananda/uSeeker/releases/tag/v2.2.0
 [2.1.7]: https://github.com/novrizal-triananda/uSeeker/releases/tag/v2.1.7
 [2.1.6]: https://github.com/novrizal-triananda/uSeeker/releases/tag/v2.1.6
 [2.1.5]: https://github.com/novrizal-triananda/uSeeker/releases/tag/v2.1.5

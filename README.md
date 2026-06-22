@@ -12,6 +12,17 @@ uSeeker membantu kamu melacak lamaran kerja, menganalisis kecocokan CV dengan jo
 - **Data Hub** — Lihat semua data terkonsolidasi: Company Overview + Fit Score + Tailoring Suggestions dalam satu tampilan.
 - **Interview Prep** — AI generate pertanyaan wawancara yang relevan dengan posisi dan profil kamu.
 
+## Kebutuhan AI
+uSeeker menggunakan AI untuk fitur analisis CV, riset perusahaan, dan interview prep.
+Kamu perlu menyiapkan **API key dari penyedia AI** yang kompatibel dengan OpenAI API:
+
+1. Buka **Pengaturan** dari menu sidebar
+2. Masukkan **Base URL** penyedia AI (contoh: `https://api.deepseek.com`)
+3. Masukkan **API Key** kamu
+4. Opsional: tentukan **Model** yang akan digunakan
+
+> **Tips:** uSeeker mendukung DeepSeek, OpenRouter, OpenAI, Anthropic, atau provider lain yang kompatibel dengan API OpenAI. API key disimpan lokal di komputer kamu dan tidak pernah dikirim ke server uSeeker.
+
 ## Instalasi
 ### Windows
 1. Download file `.msi` dari [GitHub Releases](https://github.com/novrizal-triananda/uSeeker/releases)
@@ -72,13 +83,14 @@ uSeeker adalah aplikasi desktop yang dibangun dengan [Tauri v2](https://v2.tauri
 ```
 
 ### Arsitektur
+- **BYOK (Bring Your Own Key)** — Kamu menyediakan API key sendiri. Tidak ada API key embedded dalam aplikasi.
 - **Data tersimpan 100% di komputer kamu** (IndexedDB). Tidak ada data yang dikirim ke server manapun.
 - **Fitur AI** membutuhkan koneksi internet untuk menganalisis CV, meriset perusahaan, dan generate pertanyaan wawancara.
 - **Search** menggunakan multi-provider dengan fallback otomatis.
 - **Offline** — Fitur non-AI (Triage, Pipeline, Data Hub) tetap jalan tanpa internet.
 
 ## Cek Update
-Klik tombol **🔄 Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru. Kalau ada update, kamu akan diarahkan ke halaman download.
+Klik tombol **🔄 Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru. Kalau ada update baru, kamu akan mendapat notifikasi untuk mengunduh versi terbaru.
 
 ## Tech Stack
 - [Tauri v2](https://v2.tauri.app/) — Desktop framework (Rust + WebView)
