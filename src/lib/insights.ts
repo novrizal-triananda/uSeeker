@@ -1,6 +1,6 @@
-import type { Application, FitScore, ApplicationStatus } from '../types';
+import type { Application, FitScore, ApplicationStatus, JobEntry } from '../types';
 
-const PIPELINE_STAGES: ApplicationStatus[] = ['applied', 'screen', 'interview', 'offer', 'rejected'];
+const PIPELINE_STAGES: ApplicationStatus[] = ['applied', 'screen', 'interview', 'offer'];
 
 const MIN_SAMPLE_SIZE = 10;
 
@@ -177,4 +177,173 @@ export function getOutcomeDistribution(applications: Application[]): OutcomeDist
   }
 
   return dist;
+}
+
+// --- New: Advanced Insights ---
+
+export interface LocationInsight {
+  location: string;
+  totalJobs: number;
+  totalApplications: number;
+  responseRate: number;
+  acceptanceRate: number;
+}
+
+export interface EmploymentTypeInsight {
+  type: string;
+  totalJobs: number;
+  totalApplications: number;
+  responseRate: number;
+  acceptanceRate: number;
+}
+
+export interface FitScoreInsight {
+  range: string;
+  count: number;
+  avgResponseRate: number;
+  avgAcceptanceRate: number;
+}
+
+/**
+ * Analyze success rates by location.
+ */
+export function getLocationInsights(
+  applications: Application[],
+  jobs: JobEntry[],
+): LocationInsight[] {
+  const jobMap = new Map(jobs.map(j => [j.id, j]));
+  const locationGroups = new Map<string, Application[]>();
+
+  for (const app of applications) {
+    const job = jobMap.get(app.jobId);
+    const loc = job?.location || 'Unknown';
+    if (!locationGroups.has(loc)) locationGroups.set(loc, []);
+    locationGroups.get(loc)!.push(app);
+  }
+
+  return Array.from(locationGroups.entries())
+    .map(([location, apps]) => {
+      const withOutcome = apps.filter(a => a.outcome !== undefined);
+      const responded = apps.filter(a => a.status !== 'applied' || a.outcome !== undefined);
+      const accepted = apps.filter(a => a.outcome === 'accepted');
+      return {
+        location,
+        totalJobs: new Set(apps.map(a => a.jobId)).size,
+        totalApplications: apps.length,
+        responseRate: apps.length > 0 ? Math.round((responded.length / apps.length) * 100) : 0,
+        acceptanceRate: withOutcome.length > 0 ? Math.round((accepted.length / withOutcome.length) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.totalApplications - a.totalApplications);
+}
+
+/**
+ * Analyze success rates by employment type.
+ */
+export function getEmploymentTypeInsights(
+  applications: Application[],
+  jobs: JobEntry[],
+): EmploymentTypeInsight[] {
+  const jobMap = new Map(jobs.map(j => [j.id, j]));
+  const typeGroups = new Map<string, Application[]>();
+
+  for (const app of applications) {
+    const job = jobMap.get(app.jobId);
+    const type = job?.employmentType || 'Unknown';
+    if (!typeGroups.has(type)) typeGroups.set(type, []);
+    typeGroups.get(type)!.push(app);
+  }
+
+  return Array.from(typeGroups.entries())
+    .map(([type, apps]) => {
+      const withOutcome = apps.filter(a => a.outcome !== undefined);
+      const responded = apps.filter(a => a.status !== 'applied' || a.outcome !== undefined);
+      const accepted = apps.filter(a => a.outcome === 'accepted');
+      return {
+        type,
+        totalJobs: new Set(apps.map(a => a.jobId)).size,
+        totalApplications: apps.length,
+        responseRate: apps.length > 0 ? Math.round((responded.length / apps.length) * 100) : 0,
+        acceptanceRate: withOutcome.length > 0 ? Math.round((accepted.length / withOutcome.length) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.totalApplications - a.totalApplications);
+}
+
+/**
+ * Analyze response rates by fit score range.
+ */
+export function getFitScoreInsights(
+  applications: Application[],
+  fitScores: FitScore[],
+): FitScoreInsight[] {
+  const scoreMap = new Map(fitScores.map(s => [s.jobId, s]));
+  const ranges = [
+    { label: '90-100', min: 90, max: 100 },
+    { label: '70-89', min: 70, max: 89 },
+    { label: '50-69', min: 50, max: 69 },
+    { label: '0-49', min: 0, max: 49 },
+  ];
+
+  return ranges.map(range => {
+    const apps = applications.filter(a => {
+      const score = scoreMap.get(a.jobId);
+      if (!score) return false;
+      return score.overallScore >= range.min && score.overallScore <= range.max;
+    });
+
+    const withOutcome = apps.filter(a => a.outcome !== undefined);
+    const responded = apps.filter(a => a.status !== 'applied' || a.outcome !== undefined);
+    const accepted = apps.filter(a => a.outcome === 'accepted');
+
+    return {
+      range: range.label,
+      count: apps.length,
+      avgResponseRate: apps.length > 0 ? Math.round((responded.length / apps.length) * 100) : 0,
+      avgAcceptanceRate: withOutcome.length > 0 ? Math.round((accepted.length / withOutcome.length) * 100) : 0,
+    };
+  }).filter(r => r.count > 0);
+}
+
+/**
+ * Calculate overall job search health score (0-100).
+ * Based on: response rate, acceptance rate, skill gap closure, pipeline velocity.
+ */
+export function getJobSearchHealth(
+  applications: Application[],
+  fitScores: FitScore[],
+): { score: number; factors: { name: string; score: number; weight: number }[] } {
+  const total = applications.length;
+  if (total === 0) return { score: 0, factors: [] };
+
+  const responded = applications.filter(a => a.status !== 'applied' || a.outcome !== undefined);
+  const withOutcome = applications.filter(a => a.outcome !== undefined);
+  const accepted = applications.filter(a => a.outcome === 'accepted');
+
+  const responseRate = total > 0 ? (responded.length / total) * 100 : 0;
+  const acceptanceRate = withOutcome.length > 0 ? (accepted.length / withOutcome.length) * 100 : 0;
+
+  // Skill coverage: how many jobs had fit scores vs total applications
+  const jobsWithScores = new Set(fitScores.map(s => s.jobId));
+  const appsWithScores = applications.filter(a => jobsWithScores.has(a.jobId));
+  const skillCoverage = total > 0 ? (appsWithScores.length / total) * 100 : 0;
+
+  // Average fit score for scored jobs
+  const avgFit = appsWithScores.length > 0
+    ? appsWithScores.reduce((sum, a) => {
+        const score = fitScores.find(s => s.jobId === a.jobId);
+        return sum + (score?.overallScore || 0);
+      }, 0) / appsWithScores.length
+    : 0;
+
+  const factors = [
+    { name: 'Response Rate', score: Math.min(100, responseRate), weight: 0.3 },
+    { name: 'Acceptance Rate', score: Math.min(100, acceptanceRate), weight: 0.3 },
+    { name: 'Skill Coverage', score: skillCoverage, weight: 0.2 },
+    { name: 'Avg Fit Score', score: avgFit, weight: 0.2 },
+  ];
+
+  const score = Math.round(factors.reduce((sum, f) => sum + f.score * f.weight, 0));
+
+  return { score, factors };
 }

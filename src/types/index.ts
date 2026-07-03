@@ -1,5 +1,5 @@
 export type SectionType = 'contact' | 'summary' | 'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'projects' | 'links';
-export type ApplicationStatus = 'applied' | 'screen' | 'interview' | 'offer' | 'rejected';
+export type ApplicationStatus = 'applied' | 'screen' | 'interview' | 'offer';
 export type ApplicationOutcome = 'accepted' | 'rejected' | 'ghosted' | 'withdrawn';
 export type EventType = 'import_cv' | 'add_job' | 'add_application' | 'update_status' | 'generate_score' | 'generate_diff' | 'create_intel' | 'export';
 
@@ -30,6 +30,8 @@ export interface JobEntry {
   companyWebsite?: string;
   careersPage?: string;
   jobDescription: string;
+  location?: string;
+  employmentType?: string;
   notes?: string;
   expectedSalary?: string;
   salaryRange?: string;

@@ -32,6 +32,12 @@ export class USeekerDB extends Dexie {
       interviewQuestions: 'id, jobId',
       eventLog: 'id, type, timestamp',
     });
+    this.version(2).stores({
+      jobEntries: 'id, company, roleTitle, location, createdAt',
+    });
+    this.version(3).stores({
+      jobEntries: 'id, company, roleTitle, location, employmentType, createdAt',
+    });
   }
 }
 

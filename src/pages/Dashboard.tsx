@@ -171,6 +171,25 @@ export default function Dashboard() {
                 <div key={job.id} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--space-3)' }}>
                   <div style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>{job.roleTitle}</div>
                   <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{job.company}</div>
+                  {(job.location || job.salaryRange || job.employmentType) && (
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-1)', flexWrap: 'wrap' }}>
+                      {job.location && (
+                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          📍 {job.location}
+                        </span>
+                      )}
+                      {job.salaryRange && (
+                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          💰 {job.salaryRange}
+                        </span>
+                      )}
+                      {job.employmentType && (
+                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          📄 {job.employmentType}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {fitScore && (
                     <div style={{ marginTop: 'var(--space-1)' }}>
                       <span
@@ -282,7 +301,6 @@ function StatusBadge({ status }: { status: string }) {
     screen: { bg: '#FEF3C7', text: '#92400E' },
     interview: { bg: '#E0E7FF', text: '#3730A3' },
     offer: { bg: '#DCFCE7', text: '#166534' },
-    rejected: { bg: '#FEE2E2', text: '#991B1B' },
   };
   const c = colors[status] || { bg: '#F3F4F6', text: '#374151' };
   return (

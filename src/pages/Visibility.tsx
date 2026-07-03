@@ -9,7 +9,6 @@ const PIPELINE_STAGES: { key: ApplicationStatus; label: string; icon: string }[]
   { key: 'screen', label: 'Screen', icon: '🔍' },
   { key: 'interview', label: 'Interview', icon: '🎤' },
   { key: 'offer', label: 'Offer', icon: '🎉' },
-  { key: 'rejected', label: 'Rejected', icon: '❌' },
 ];
 
 const OUTCOMES: { key: ApplicationOutcome; label: string; icon: string }[] = [
@@ -24,7 +23,6 @@ const STAGE_COLORS: Record<ApplicationStatus, string> = {
   screen: 'var(--color-status-amber)',
   interview: '#7C3AED',
   offer: 'var(--color-status-green)',
-  rejected: 'var(--color-status-red)',
 };
 
 interface FormData {
@@ -252,12 +250,33 @@ export default function Visibility() {
                   {stageApps.length === 0 ? (
                     <p style={styles.noCards}>Kosong</p>
                   ) : (
-                    stageApps.map((app) => (
+                    stageApps.map((app) => {
+                        const job = jobs.find(j => j.id === app.jobId);
+                        return (
                         <div key={app.id} style={styles.card}>
                           <div style={styles.cardHeader}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={styles.cardCompany}>{app.company}</div>
                               <div style={styles.cardRole}>{app.roleTitle}</div>
+                              {(job?.location || job?.salaryRange || job?.employmentType) && (
+                                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-1)', flexWrap: 'wrap' }}>
+                                  {job.location && (
+                                    <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                                      📍 {job.location}
+                                    </span>
+                                  )}
+                                  {job.salaryRange && (
+                                    <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                                      💰 {job.salaryRange}
+                                    </span>
+                                  )}
+                                  {job.employmentType && (
+                                    <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                                      📄 {job.employmentType}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <button
                               onClick={() => handleDeleteApp(app.id)}
@@ -310,7 +329,8 @@ export default function Visibility() {
                             </select>
                           </div>
                         </div>
-                      ))
+                      );
+                      })
                   )}
                 </div>
               </div>

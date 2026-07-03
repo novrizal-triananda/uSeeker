@@ -300,7 +300,7 @@ describe('getPipelineSummary', () => {
       { id: '1', jobId: 'j1', company: 'A', roleTitle: 'Dev', status: 'applied', dateApplied: now, lastUpdated: now },
       { id: '2', jobId: 'j2', company: 'B', roleTitle: 'Dev', status: 'screen', dateApplied: now, lastUpdated: now },
       { id: '3', jobId: 'j3', company: 'C', roleTitle: 'Dev', status: 'interview', dateApplied: now, lastUpdated: now },
-      { id: '4', jobId: 'j4', company: 'D', roleTitle: 'Dev', status: 'rejected', dateApplied: now, lastUpdated: now },
+      { id: '4', jobId: 'j4', company: 'D', roleTitle: 'Dev', status: 'applied', outcome: 'rejected', dateApplied: now, lastUpdated: now },
     ];
 
     await db.fitScores.bulkAdd([
@@ -313,12 +313,11 @@ describe('getPipelineSummary', () => {
     const summary = await getPipelineSummary(apps);
 
     expect(summary.total).toBe(4);
-    expect(summary.byStatus.applied).toBe(1);
+    expect(summary.byStatus.applied).toBe(2);
     expect(summary.byStatus.screen).toBe(1);
     expect(summary.byStatus.interview).toBe(1);
-    expect(summary.byStatus.rejected).toBe(1);
     expect(summary.byStatus.offer).toBe(0);
-    expect(summary.responseRate).toBe(75); // 3 out of 4 responded (all except 'applied')
+    expect(summary.responseRate).toBe(75); // 3 out of 4 responded (screen, interview, applied+outcome)
     expect(summary.avgFitScore).toBe(75); // (70+80+90+60)/4 = 75
   });
 

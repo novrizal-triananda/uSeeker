@@ -65,7 +65,7 @@ describe('updateStatus', () => {
       roleTitle: 'Dev',
     });
 
-    const stages: ApplicationStatus[] = ['screen', 'interview', 'offer', 'rejected'];
+    const stages: ApplicationStatus[] = ['screen', 'interview', 'offer'];
     let current = app;
 
     for (const stage of stages) {
@@ -76,7 +76,7 @@ describe('updateStatus', () => {
     }
 
     const final = await db.applications.get(app.id);
-    expect(final?.status).toBe('rejected');
+    expect(final?.status).toBe('offer');
   });
 
   it('should throw for non-existent application', async () => {
@@ -133,18 +133,17 @@ describe('getPipelineStats', () => {
       makeApp({ status: 'interview', company: 'D', jobId: 'j4' }),
       makeApp({ status: 'interview', company: 'E', jobId: 'j5' }),
       makeApp({ status: 'offer', company: 'F', jobId: 'j6' }),
-      makeApp({ status: 'rejected', company: 'G', jobId: 'j7', outcome: 'rejected' }),
-      makeApp({ status: 'rejected', company: 'H', jobId: 'j8', outcome: 'ghosted' }),
+      makeApp({ status: 'applied', company: 'G', jobId: 'j7', outcome: 'rejected' }),
+      makeApp({ status: 'applied', company: 'H', jobId: 'j8', outcome: 'ghosted' }),
     ];
 
     const stats = getPipelineStats(apps);
 
     expect(stats.total).toBe(8);
-    expect(stats.byStatus.applied).toBe(2);
+    expect(stats.byStatus.applied).toBe(4);
     expect(stats.byStatus.screen).toBe(1);
     expect(stats.byStatus.interview).toBe(2);
     expect(stats.byStatus.offer).toBe(1);
-    expect(stats.byStatus.rejected).toBe(2);
 
     // 6 out of 8 moved beyond applied or have outcome => 75%
     expect(stats.responseRate).toBe(75);
@@ -221,7 +220,7 @@ describe('getPatternAnalysis', () => {
 
       // Distribute across statuses
       let status: ApplicationStatus;
-      if (i < 4) status = 'rejected';
+      if (i < 4) status = 'applied';
       else if (i < 8) status = 'screen';
       else status = 'interview';
 

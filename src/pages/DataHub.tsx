@@ -117,7 +117,6 @@ export default function DataHub() {
     screen: 'var(--color-status-amber)',
     interview: '#7C3AED',
     offer: 'var(--color-status-green)',
-    rejected: 'var(--color-status-red)',
   };
 
   const statusLabels: Record<string, string> = {
@@ -125,7 +124,6 @@ export default function DataHub() {
     screen: 'Screen',
     interview: 'Interview',
     offer: 'Offer',
-    rejected: 'Ditolak',
   };
 
   return (
@@ -262,6 +260,33 @@ export default function DataHub() {
                             fontSize: 'var(--font-size-sm)',
                           }}>
                             {view.companyIntel.industry}
+                          </span>
+                        )}
+                        {view.jobEntry.location && (
+                          <span style={{
+                            padding: 'var(--space-1) var(--space-3)',
+                            background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-sm)',
+                          }}>
+                            📍 {view.jobEntry.location}
+                          </span>
+                        )}
+                        {view.jobEntry.salaryRange && (
+                          <span style={{
+                            padding: 'var(--space-1) var(--space-3)',
+                            background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-sm)',
+                          }}>
+                            💰 {view.jobEntry.salaryRange}
+                          </span>
+                        )}
+                        {view.jobEntry.employmentType && (
+                          <span style={{
+                            padding: 'var(--space-1) var(--space-3)',
+                            background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-sm)',
+                          }}>
+                            📄 {view.jobEntry.employmentType}
                           </span>
                         )}
                       </div>

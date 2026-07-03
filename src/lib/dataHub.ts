@@ -277,7 +277,6 @@ export async function getPipelineSummary(applications: Application[]): Promise<P
     screen: 0,
     interview: 0,
     offer: 0,
-    rejected: 0,
   };
 
   for (const app of applications) {

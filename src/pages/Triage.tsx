@@ -35,6 +35,9 @@ export default function Triage() {
     roleTitle: '',
     sourceUrl: '',
     jobDescription: '',
+    location: '',
+    salaryRange: '',
+    employmentType: '',
     notes: '',
   });
   const [savingJob, setSavingJob] = useState(false);
@@ -94,8 +97,8 @@ export default function Triage() {
     setImportSuccess(false);
     try {
       // Extract text from file first
-      const { extractTextFromFile } = await import('../lib/fileImporter');
-      const text = await extractTextFromFile(file);
+      const { importFile } = await import('../lib/fileImporter');
+      const text = await importFile(file);
 
       // Parse with AI (falls back to regex if server unavailable)
       const { parseResumeWithAI } = await import('../lib/aiParser');
@@ -159,12 +162,15 @@ export default function Triage() {
         roleTitle: jobForm.roleTitle.trim(),
         sourceUrl: jobForm.sourceUrl.trim() || undefined,
         jobDescription: jobForm.jobDescription.trim(),
+        location: jobForm.location.trim() || undefined,
+        employmentType: jobForm.employmentType || undefined,
+        salaryRange: jobForm.salaryRange.trim() || undefined,
         notes: jobForm.notes.trim() || undefined,
         createdAt: new Date(),
       };
       await db.jobEntries.add(newJob);
       await logEvent('add_job', { company: newJob.company, roleTitle: newJob.roleTitle });
-      setJobForm({ company: '', roleTitle: '', sourceUrl: '', jobDescription: '', notes: '' });
+      setJobForm({ company: '', roleTitle: '', sourceUrl: '', jobDescription: '', location: '', salaryRange: '', employmentType: '', notes: '' });
       setShowJobForm(false);
       await loadData();
     } catch (err) {
@@ -359,7 +365,7 @@ export default function Triage() {
                   📤 Import CV
                 </p>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                  Drag & drop file .docx atau klik untuk memilih
+                  Drag & drop file .docx / .pdf atau klik untuk memilih
                 </p>
               </>
             )}
@@ -369,13 +375,13 @@ export default function Triage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".docx"
+          accept=".docx,.pdf"
           onChange={handleFileInput}
           style={{ display: 'none' }}
         />
 
         <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-2)' }}>
-          Format yang diterima: .docx (Microsoft Word)
+          Format yang diterima: .docx, .pdf (termasuk scan/gambar via OCR)
         </p>
 
         {importError && (
@@ -448,6 +454,37 @@ export default function Triage() {
               onChange={(e) => setJobForm({ ...jobForm, sourceUrl: e.target.value })}
               style={{ ...inputStyle, marginBottom: 'var(--space-3)', width: '100%' }}
             />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+              <input
+                type="text"
+                placeholder="Lokasi (opsional)"
+                value={jobForm.location}
+                onChange={(e) => setJobForm({ ...jobForm, location: e.target.value })}
+                style={inputStyle}
+              />
+              <input
+                type="text"
+                placeholder="Range Gaji, contoh: 8-12 juta/bulan"
+                value={jobForm.salaryRange}
+                onChange={(e) => setJobForm({ ...jobForm, salaryRange: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+              <select
+                value={jobForm.employmentType}
+                onChange={(e) => setJobForm({ ...jobForm, employmentType: e.target.value })}
+                style={{ ...inputStyle, color: jobForm.employmentType ? 'var(--color-text)' : 'var(--color-text-muted)' }}
+              >
+                <option value="">Tipe Pekerjaan (opsional)</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Internship">Internship</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Contract">Contract</option>
+              </select>
+              <div /> {/* spacer */}
+            </div>
             <textarea
               placeholder="Deskripsi Posisi (Job Description)"
               value={jobForm.jobDescription}
@@ -529,6 +566,25 @@ export default function Triage() {
                   <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                     {job.company}
                   </div>
+                  {(job.location || job.salaryRange || job.employmentType) && (
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-1)', flexWrap: 'wrap' }}>
+                      {job.location && (
+                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          📍 {job.location}
+                        </span>
+                      )}
+                      {job.salaryRange && (
+                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          💰 {job.salaryRange}
+                        </span>
+                      )}
+                      {job.employmentType && (
+                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                          📄 {job.employmentType}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   {fitScore ? (
