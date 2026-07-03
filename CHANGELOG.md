@@ -7,6 +7,27 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ---
 
+## [Unreleased]
+
+### Ditambahkan
+- Sistem tema 3 pilihan: Terang, Gelap, dan Pink
+- Pengaturan tema di halaman Pengaturan
+- Deteksi tema system preference secara otomatis
+- Persistensi tema menggunakan localStorage
+- Komponen AiIndicator untuk status AI
+- Test suite E2E untuk parsing CV
+
+### Diubah
+- Semua warna hardcoded dikonversi ke CSS variables untuk mendukung tema
+- Pipeline status: Applied → Screen → Interview → Offer (menghapus tahap Rejected)
+- Formulir Triage ditambahkan field Employment Type (Full-time/Part-time/Internship/Freelance/Contract)
+- Badge lokasi, salary, dan employment type di semua tab
+
+### Diperbaiki
+- CSS variables spacing, typography, dan radius yang hilang dipulihkan
+
+---
+
 ## [2.2.0] - 2026-06-22
 
 ### Added
