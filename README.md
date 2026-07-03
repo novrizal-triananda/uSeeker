@@ -6,63 +6,45 @@ uSeeker membantu kamu melacak lamaran kerja, menganalisis kecocokan CV dengan jo
 
 ---
 
-## 📸 Screenshot
-
-> **Belum ada screenshot?** Tambahkan gambar screenshot di sini untuk memudahkan calon pengguna memahami tampilan aplikasi.
->
-> Contoh format:
->
-> ```markdown
-> ![Dashboard](screenshots/dashboard.png)
-> ![Triage - Analisis Kecocokan](screenshots/triage.png)
-> ![Visibility - Pipeline Board](screenshots/visibility.png)
-> ```
-
-<!-- Untuk contributor: jalankan aplikasi, ambil screenshot dari setiap halaman utama, simpan di folder screenshots/, lalu uncomment baris di atas. -->
-
----
-
-## 🌟 Fitur
+## Fitur
 
 | Fitur | Penjelasan |
 |-------|-----------|
-| **📊 Dashboard** | Ringkasan keseluruhan pencarian kerja kamu — jumlah lamaran, skor kecocokan rata-rata, dan lowongan terbaru. |
-| **📋 Triage** | Unggah CV dan job description, lalu dapatkan analisis kecocokan secara instan. Lihat skill yang cocok dan skill yang perlu diasah (gap analysis). |
-| **🔍 Research** | Riset otomatis tentang perusahaan: profil, produk, budaya kerja, *red flags*, dan tips wawancara. |
-| **🎤 Tailoring** | AI memberikan saran untuk menyesuaikan CV kamu agar lebih relevan dengan posisi yang dilamar — termasuk saran perbaikan CV (*resume diff*). |
-| **👁️ Visibility** | Pantau status lamaran kamu dalam bentuk *pipeline board*: Applied → Screen → Interview → Offer, dengan hasil akhir (Accepted / Rejected / Ghosted / Withdrawn). |
-| **💡 Insights** | Analisis pola dari pengalaman lamaran kamu. Stage mana yang paling sering gagal? Skill apa yang kurang? |
-| **🗄️ Data Hub** | Lihat semua data terkonsolidasi: Company Overview + Fit Score + Tailoring Suggestions dalam satu tampilan terpadu. |
-| **⚙️ Pengaturan** | Konfigurasi API key AI dan pilih tema tampilan: Terang ☀️, Gelap 🌙, atau Pink 🌸. |
+| **Dashboard** | Ringkasan keseluruhan pencarian kerja kamu — jumlah lamaran, skor kecocokan rata-rata, dan lowongan terbaru. |
+| **Triage** | Unggah CV dan job description, lalu dapatkan analisis kecocokan secara instan. Lihat skill yang cocok dan skill yang perlu diasah (*gap analysis*). |
+| **Research** | Riset otomatis tentang perusahaan: profil, produk, budaya kerja, *red flags*, dan tips wawancara. |
+| **Tailoring** | AI memberikan saran untuk menyesuaikan CV kamu agar lebih relevan dengan posisi yang dilamar — termasuk saran perbaikan CV (*resume diff*). |
+| **Visibility** | Pantau status lamaran kamu dalam bentuk *pipeline board*: Applied → Screen → Interview → Offer, dengan hasil akhir (Accepted / Rejected / Ghosted / Withdrawn). |
+| **Insights** | Analisis pola dari pengalaman lamaran kamu. Stage mana yang paling sering gagal? Skill apa yang kurang? |
+| **Data Hub** | Lihat semua data terkonsolidasi: Company Overview + Fit Score + Tailoring Suggestions dalam satu tampilan terpadu. |
+| **Pengaturan** | Konfigurasi API key AI dan pilih tema tampilan: Terang, Gelap, atau Pink. |
 
 ### Fitur yang tidak butuh internet
 
 Beberapa fitur uSeeker bisa digunakan **sepenuhnya offline**:
 
-- ✅ Dashboard (ringkasan data lokal)
-- ✅ Triage (analisis kecocokan CV — tapi butuh AI untuk analisis lanjutan)
-- ✅ Visibility (pipeline management)
-- ✅ Data Hub (tampilan konsolidasi data)
-- ❌ Research, Tailoring, Insights → butuh koneksi internet untuk AI
+- Dashboard (ringkasan data lokal)
+- Visibility (pipeline management)
+- Data Hub (tampilan konsolidasi data)
+
+Fitur yang membutuhkan koneksi internet: Research, Tailoring, Insights, dan analisis AI di Triage.
 
 ---
 
-## ⬇️ Download & Install
+## Download & Install
 
 Download versi terbaru dari [**GitHub Releases**](https://github.com/novrizal-triananda/uSeeker/releases).
 
-### 🪟 Windows
+### Windows
 
 1. Buka halaman [Releases](https://github.com/novrizal-triananda/uSeeker/releases) di browser
-2. Cari file `.msi` (contoh: `uSeeker_2.2.0_x64-setup.msi`)
+2. Cari file `.msi` (contoh: `uSeeker_2.2.0_x64_en-US.msi`)
 3. Klik untuk mengunduh
 4. **Double-click** file `.msi` yang sudah diunduh
 5. Ikuti petunjuk instalasi (klik **Next** → **Install** → **Finish**)
 6. Buka **uSeeker** dari Start Menu
 
-> **Screenshot hint:** Tampilkan dialog instalasi Windows.
-
-### 🍎 macOS
+### macOS
 
 1. Buka halaman [Releases](https://github.com/novrizal-triananda/uSeeker/releases) di browser
 2. Cari file `.dmg`
@@ -73,11 +55,9 @@ Download versi terbaru dari [**GitHub Releases**](https://github.com/novrizal-tr
 5. **Drag** ikon uSeeker ke folder **Applications**
 6. Buka **uSeeker** dari Applications
 
-> ⚠️ **Pertama kali buka?** Kalau macOS bilang "tidak bisa dibuka karena developer tidak terverifikasi", klik **OK**, lalu buka **System Settings → Privacy & Security** → klik **Open Anyway** di bagian bawah.
+> **Pertama kali buka?** Kalau macOS bilang "tidak bisa dibuka karena developer tidak terverifikasi", klik **OK**, lalu buka **System Settings → Privacy & Security** → klik **Open Anyway** di bagian bawah.
 
-> **Screenshot hint:** Tampilkan dialog drag ke Applications.
-
-### 🐧 Linux
+### Linux
 
 #### Ubuntu / Debian (.deb)
 
@@ -111,13 +91,11 @@ Download versi terbaru dari [**GitHub Releases**](https://github.com/novrizal-tr
    cd ~/Downloads && chmod +x uSeeker_*.AppImage && ./uSeeker_*.AppImage
    ```
 
-> **Screenshot hint:** Tampilkan terminal dengan perintah instalasi.
-
-> 💡 **Tips:** Tidak perlu install Node.js atau dependency tambahan. Semua sudah included dalam aplikasi.
+> Tidak perlu install Node.js atau dependency tambahan. Semua sudah included dalam aplikasi.
 
 ---
 
-## 🚀 Cara Mulai (Quick Start)
+## Cara Mulai (Quick Start)
 
 ### Langkah 1 — Buka Aplikasi
 
@@ -127,48 +105,43 @@ Setelah instalasi, buka uSeeker dari menu sistem (Start Menu / Applications / De
 
 Fitur AI seperti analisis kecocokan CV dan riset perusahaan membutuhkan **API key dari penyedia AI** yang kompatibel dengan OpenAI API.
 
-1. Buka **⚙️ Pengaturan** dari menu sidebar
-2. Masukkan **Base URL** penyedia AI kamu:
-   - DeepSeek: `https://api.deepseek.com`
-   - OpenRouter: `https://openrouter.ai/api/v1`
-   - OpenAI: `https://api.openai.com/v1`
-3. Masukkan **API Key** kamu (contoh: `sk-...`)
+1. Buka **Pengaturan** dari menu sidebar
+2. Masukkan **Base URL** penyedia AI kamu (contoh: `https://api.deepseek.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`)
+3. Masukkan **API Key** kamu
 4. Opsional: tentukan **Model** yang akan digunakan
 5. Klik **Simpan Pengaturan**
 
-> 💡 **Tips:** uSeeker mendukung DeepSeek, OpenRouter, OpenAI, Anthropic, atau provider lain yang kompatibel dengan API OpenAI. API key disimpan lokal di komputer kamu dan tidak pernah dikirim ke server uSeeker.
-
-> 🔒 **Privasi:** API key kamu hanya disimpan di komputer ini. Tidak ada yang bisa mengaksesnya selain kamu.
+> uSeeker mendukung **semua penyedia AI yang kompatibel dengan OpenAI API** — DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Anthropic (via OpenRouter), Ollama (lokal), LM Studio, atau provider self-hosted lainnya. Cukup masukkan Base URL dan API Key dari provider pilihan kamu.
 
 ### Langkah 3 — Unggah CV
 
-1. Buka **📋 Triage** dari sidebar
+1. Buka **Triage** dari sidebar
 2. Unggah file CV kamu (PDF atau DOCX)
 3. Kamu juga bisa **drag and drop** file langsung ke area upload
 
 ### Langkah 4 — Analisis Lowongan
 
-1. Di halaman **📋 Triage**, paste *job description* dari lowongan yang kamu minati
+1. Di halaman **Triage**, paste *job description* dari lowongan yang kamu minati
 2. Klik tombol analisis
 3. Lihat hasilnya: skill yang cocok, skill yang kurang, dan skor kecocokan
 
 ### Langkah 5 — Pantau Lamaran
 
-1. Buka **👁️ Visibility**
+1. Buka **Visibility**
 2. Tambahkan lamaran baru
 3. Geser status lamaran ke stage yang sesuai: **Applied** → **Screen** → **Interview** → **Offer**
-4. Tandai hasil akhir: Accepted ✅, Rejected ❌, Ghosted 👻, atau Withdrawn 🏳️
+4. Tandai hasil akhir: Accepted, Rejected, Ghosted, atau Withdrawn
 
 ### Langkah 6 — Eksplorasi Fitur Lainnya
 
-- **🔍 Research** — Riset perusahaan sebelum wawancara
-- **🎤 Tailoring** — Dapatkan saran untuk menyesuaikan CV
-- **💡 Insights** — Lihat analisis pola pencarian kerja kamu
-- **🗄️ Data Hub** — Lihat ringkasan data lengkap per lowongan
+- **Research** — Riset perusahaan sebelum wawancara
+- **Tailoring** — Dapatkan saran untuk menyesuaikan CV
+- **Insights** — Lihat analisis pola pencarian kerja kamu
+- **Data Hub** — Lihat ringkasan data lengkap per lowongan
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 ### Apakah uSeeker gratis?
 
@@ -176,7 +149,11 @@ Ya! uSeeker adalah aplikasi **gratis dan open-source**. Namun, untuk fitur AI ka
 
 ### Apakah data saya aman?
 
-**Sangat aman.** Semua data kamu tersimpan 100% di komputer kamu sendiri (menggunakan IndexedDB lokal). Tidak ada data yang dikirim ke server uSeeker atau pihak ketiga manapun. Lihat bagian **Privasi** di bawah untuk penjelasan lengkap.
+Semua data kamu tersimpan di komputer kamu sendiri (menggunakan IndexedDB lokal). Tidak ada data yang dikirim ke server uSeeker karena uSeeker tidak memiliki server.
+
+**Yang perlu diketahui:** Saat kamu menggunakan fitur AI (analisis CV, riset perusahaan, *tailoring*), teks CV dan/atau deskripsi pekerjaan akan dikirim ke **provider AI yang kamu pilih** untuk dianalisis. Data ini dikirim langsung ke provider (contoh: DeepSeek, OpenAI) — bukan ke uSeeker. Kamu bertanggung jawab memahami kebijakan privasi provider yang kamu gunakan.
+
+Jika kamu menggunakan provider lokal seperti **Ollama** atau **LM Studio**, data tidak keluar dari komputer kamu sama sekali.
 
 ### Apakah saya perlu internet?
 
@@ -186,15 +163,17 @@ Ya! uSeeker adalah aplikasi **gratis dan open-source**. Namun, untuk fitur AI ka
 
 ### Bagaimana cara mendapatkan API key?
 
-Kamu perlu mendaftar di salah satu penyedia AI berikut (pilih salah satu):
+Kamu perlu mendaftar di salah satu penyedia AI yang kompatibel dengan OpenAI API. Beberapa contoh:
 
-| Provider | Link | Estimasi Biaya |
-|----------|------|----------------|
+| Provider | Link | Keterangan |
+|----------|------|------------|
 | **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com) | Sangat murah |
 | **OpenRouter** | [openrouter.ai](https://openrouter.ai) | Banyak pilihan model |
 | **OpenAI** | [platform.openai.com](https://platform.openai.com) | Populer, harga bervariasi |
+| **Groq** | [console.groq.com](https://console.groq.com) | Sangat cepat |
+| **Ollama** (lokal) | [ollama.com](https://ollama.com) | Gratis, data tetap di komputer |
 
-Setelah mendaftar, copy API key dari dashboard provider, lalu masukkan ke **⚙️ Pengaturan** di uSeeker.
+Setelah mendaftar, copy API key dari dashboard provider, lalu masukkan ke **Pengaturan** di uSeeker.
 
 ### Format CV apa yang didukung?
 
@@ -207,45 +186,37 @@ Bisa, tapi setiap komputer punya data tersendiri (karena data disimpan lokal). B
 
 ### Ada bug atau saran?
 
-Buka [**Issue di GitHub**](https://github.com/novrizal-triananda/uSeeker/issues) — kami akan membaca dan merespons sesegera mungkin.
+Buka [**Issue di GitHub**](https://github.com/novrizal-triananda/uSeeker/issues) — laporan akan dibaca dan ditanggapi sesuai ketersediaan pengembang.
 
 ### Bagaimana cara update ke versi terbaru?
 
-Klik tombol **🔄 Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru. Kalau ada update baru, kamu akan mendapat notifikasi untuk mengunduh versi terbaru.
+Klik tombol **Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru. Kalau ada update baru, kamu akan mendapat notifikasi untuk mengunduh versi terbaru.
 
 ---
 
-## 🔒 Privasi
+## Privasi
 
 **uSeeker dirancang *local-first*.** Ini berarti:
 
-| | |
-|---|---|
-| 📁 **Data lokal** | Semua data kamu — CV, lamaran kerja, catatan, skor — tersimpan **100% di komputer kamu sendiri** (IndexedDB). |
-| 🚫 **Tanpa tracking** | Tidak ada analytics, tidak ada telemetry, tidak ada data usage reporting. |
-| 🔑 **API key aman** | API key AI disimpan lokal di perangkat kamu. Tidak pernah dikirim ke server uSeeker. |
-| 🌐 **Koneksi AI** | Fitur AI menghubungi provider pilihan kamu langsung — uSeeker tidak menjadi perantara penyimpanan data. |
-| 📴 **Offline-ready** | Fitur non-AI tetap jalan tanpa internet. |
-
-**Singkatnya: data kamu tidak akan pernah keluar dari komputer kamu.**
+- **Data lokal** — Semua data kamu — CV, lamaran kerja, catatan, skor — tersimpan di komputer kamu sendiri (IndexedDB). Tidak ada server uSeeker yang menyimpan data ini.
+- **Tanpa telemetri** — Tidak ada analytics, tidak ada pelacakan penggunaan, tidak ada laporan telemetri.
+- **API key milik kamu** — API key AI disimpan lokal di perangkat kamu. Hanya dikirim ke provider AI yang kamu tunjuk saat fitur AI dijalankan.
+- **Koneksi AI** — Fitur AI menghubungi provider pilihan kamu langsung. uSeeker tidak menjadi perantara penyimpanan data.
+- **Offline-ready** — Fitur non-AI tetap jalan tanpa internet.
 
 ---
 
-## 🛠️ Tech Stack
-
-Bagi developer yang penasaran:
+## Tech Stack
 
 | Komponen | Teknologi |
 |----------|-----------|
-| **Desktop Framework** | [Tauri v2](https://v2.tauri.app/) — Rust + WebView, ringan dan aman |
+| **Desktop Framework** | [Tauri v2](https://v2.tauri.app/) — Rust + WebView |
 | **Frontend** | [React 18](https://react.dev/) + TypeScript |
 | **Build Tool** | [Vite](https://vitejs.dev/) |
 | **Database Lokal** | [Dexie.js](https://dexie.org/) — IndexedDB wrapper |
 | **Backend** | [Rust](https://www.rust-lang.org/) — Tauri commands (AI proxy, search, scraping) |
 | **Testing** | [Vitest](https://vitest.dev/) + Testing Library |
 | **File Parsing** | PDF.js, Mammoth (DOCX), Tesseract.js (OCR) |
-
-**Arsitektur:**
 
 ```
 ┌─────────────────────────────────────────┐
@@ -268,22 +239,18 @@ Bagi developer yang penasaran:
 
 ---
 
-## 🤝 Kontribusi
+## Kontribusi
 
-Ini adalah project personal. Jika kamu menemukan bug atau punya saran, buka [**Issue**](https://github.com/novrizal-triananda/uSeeker/issues).
+Jika kamu menemukan bug atau punya saran, buka [**Issue**](https://github.com/novrizal-triananda/uSeeker/issues).
 
-Kalau kamu developer dan ingin berkontribusi:
-
-1. Fork repository ini
-2. Buat branch baru untuk fitur/fix kamu
-3. Buat Pull Request dengan penjelasan yang jelas
+Kalau kamu developer dan ingin berkontribusi, lihat [**CONTRIBUTING.md**](CONTRIBUTING.md).
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
-Belum ditentukan.
+[MIT License](LICENSE) — Gratis untuk digunakan, dimodifikasi, dan didistribusikan.
 
 ---
 
-*Dibuat dengan ❤️ untuk pencari kerja Indonesia.*
+*Dibuat untuk pencari kerja Indonesia.*

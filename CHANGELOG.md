@@ -36,14 +36,7 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 - Command Tauri `get_ai_config` untuk mengambil semua config AI sekaligus
 
 ### Changed
-- AI API key **tidak lagi di-embed** dalam binary. User wajib memasukkan API key mereka sendiri
-- Halaman Setup disederhanakan: Base URL + API Key + Model (opsional)
-- Resolve chain di Rust diperbarui: runtime param > config.json > env var > fallback default
-- Tidak ada lagi hardcoded `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, atau model name
-
-### Removed
-- Embedded compile-time API keys (`USEEKER_AI_API_KEY`, `USEEKER_AI_BASE_URL`, `USEEKER_AI_MODEL`)
-- Provider dropdown di Setup — semua provider cukup isi Base URL sendiri
+- Pengaturan AI disederhanakan: Base URL + API Key + Model (opsional)
 
 ### Security
 - Repository dipindah ke **public** untuk mendukung mekanisme update
@@ -135,7 +128,6 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ### Changed
 - Server proxy Node.js digantikan oleh Rust Tauri IPC backend (`proxy.rs`)
-- API keys di-embed via compile-time injection (`option_env!()`) dari GitHub Secrets
 
 ### Removed
 - PDF import (hanya .docx dan .txt yang didukung)

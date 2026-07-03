@@ -1,48 +1,45 @@
 # Kebijakan Keamanan — uSeeker
 
-## Komitmen Keamanan
+## Prinsip
 
-Keamanan data pengguna adalah prioritas utama uSeeker. Kami dirancang dengan prinsip **local-first** — semua data kamu tetap di komputer kamu.
+uSeeker dirancang *local-first*. Semua data pengguna disimpan di komputer masing-masing. Tidak ada server uSeeker yang menyimpan data pengguna.
 
-## Model Ancaman
+## Apa yang Disimpan Lokal
 
-uSeeker adalah aplikasi desktop yang berjalan secara lokal. Berikut yang kami lindungi:
+| Data | Lokasi | Dikirim ke Internet? |
+|------|--------|---------------------|
+| CV / Resume | IndexedDB (lokal) | Tidak, kecuali saat dianalisis oleh AI |
+| Data lamaran kerja | IndexedDB (lokal) | Tidak |
+| Hasil riset perusahaan | IndexedDB (lokal) | Tidak |
+| Skor kecocokan | IndexedDB (lokal) | Tidak |
 
-| Yang Dilindungi | Bagaimana |
-|---|---|
-| **CV / Resume kamu** | Disimpan di database lokal (IndexedDB). Tidak pernah dikirim ke server manapun. |
-| **Data lamaran kerja** | Semua data pelamaran tetap di komputer kamu. |
-| **API Key AI** | Disimpan di `~/.config/useeker/config.json`. Hanya kamu yang memiliki akses. |
-| **Riset perusahaan** | Semua riset tersimpan lokal di browser kamu. |
+## Fitur AI dan Privasi
 
-## Yang Perlu Diketahui
+Fitur AI uSeeker (analisis CV, riset perusahaan, *tailoring*, pertanyaan wawancara) bekerja dengan cara mengirim data ke **provider AI pilihan pengguna**.
 
-- **Tidak ada telemetry** — uSeeker tidak mengirim data penggunaan ke mana pun.
-- **Tidak ada akun** — Tidak perlu daftar atau login. Semua fitur berjalan offline.
-- **Data tidak keluar dari komputer** — Kecuali kamu secara aktif menggunakan fitur AI (yang memerlukan API key milikmu sendiri), tidak ada data yang dikirim ke internet.
-- **Open source** — Kode sumber tersedia secara publik. Siapa saja bisa memverifikasi klaim keamanan ini.
+- **Data yang dikirim ke provider AI:** Teks CV dan/atau deskripsi pekerjaan. Bergantung pada provider yang dipilih — bisa ke server DeepSeek (China), OpenAI (AS), atau provider lainnya.
+- **Data yang TIDAK pernah keluar dari komputer:** Semua data yang disimpan di IndexedDB — CV asli, daftar lamaran, catatan, hasil riset, dan skor.
+- **Jika menggunakan Ollama atau provider lokal:** Data tetap 100% di komputer pengguna. Tidak ada yang keluar ke internet.
+
+**Pengguna bertanggung jawab memahami kebijakan privasi provider AI yang mereka pilih.**
+
+## API Key
+
+- API key disimpan di `~/.config/useeker/config.json` dalam bentuk teks biasa.
+- API key tidak pernah dikirim ke server uSeeker (tidak ada server uSeeker).
+- API key hanya dikirim ke provider AI yang ditunjuk pengguna saat fitur AI dijalankan.
+
+## Tanpa Telemetri
+
+- Tidak ada analytics, tidak ada pelacakan penggunaan, tidak ada laporan telemetri.
+- Tidak ada akun atau registrasi yang diperlukan.
 
 ## Melaporkan Kerentanan
 
-Jika kamu menemukan kerentanan keamanan di uSeeker, **jangan publikasikan di GitHub Issues yang terbuka**.
+Jika menemukan kerentanan keamanan, buka [GitHub Issues](https://github.com/novrizal-triananda/uSeeker/issues/new) dengan label "security" atau sebutkan "keamanan" di judul.
 
-### Langkah Pelaporan
+Karena ini proyek yang dikelola oleh pengembang tunggal, tidak ada jangka waktu pasti untuk respons. Namun, setiap laporan akan dibaca dan ditanggapi sebaik mungkin berdasarkan ketersediaan pengembang.
 
-1. Buka [GitHub Issues](https://github.com/novrizal-triananda/uSeeker/issues/new)
-2. Beri label **"security"** atau sebutkan "keamanan" di judul
-3. Jelaskan kerentanan secara detail
-4. Sertakan langkah-langkah untuk mereproduksi
+## Open Source
 
-### Yang Terjadi Setelah Pelaporan
-
-- Kami akan mengakui laporan dalam 48 jam
-- Perbaikan akan diprioritaskan berdasarkan tingkat keparahan
-- Kamu akan diberi tahu ketika perbaikan sudah tersedia
-
-## Daftar Keamanan
-
-Rilis keamanan akan diterbitkan di [Releases](https://github.com/novrizal-triananda/uSeeker/releases) dengan label **"security"**.
-
-## Terima Kasih
-
-Terima kasih telah membantu menjaga keamanan uSeeker untuk semua pengguna. 🙏
+Kode sumber tersedia secara publik di [GitHub](https://github.com/novrizal-triananda/uSeeker). Siapa saja dapat memverifikasi klaim keamanan di atas.
