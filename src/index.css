@@ -1,4 +1,7 @@
-:root {
+/* ========================
+   Light Theme (default)
+   ======================== */
+:root, .theme-light {
   /* Primary */
   --color-primary: #2563EB;
   --color-primary-hover: #1D4ED8;
@@ -15,6 +18,17 @@
   --color-status-amber: #D97706;
   --color-status-red: #DC2626;
   --color-status-blue: #2563EB;
+
+  /* Semantic */
+  --color-input-bg: #FAFAF9;
+  --color-success-bg: #F0FDF4;
+  --color-success-text: #166534;
+  --color-error-bg: #FEF2F2;
+  --color-error-text: #991B1B;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-text: #92400E;
+  --color-info-bg: #EFF6FF;
+  --color-info-text: #1E40AF;
 
   /* Spacing (4px grid) */
   --space-1: 4px;
@@ -45,6 +59,83 @@
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
 }
 
+/* ========================
+   Dark Theme
+   ======================== */
+.theme-dark {
+  /* Primary */
+  --color-primary: #60A5FA;
+  --color-primary-hover: #93C5FD;
+
+  /* Neutrals */
+  --color-bg: #111111;
+  --color-surface: #1E1E1E;
+  --color-border: #333333;
+  --color-text: #E5E5E5;
+  --color-text-muted: #A3A3A3;
+
+  /* Status — boosted for dark bg */
+  --color-status-green: #4ADE80;
+  --color-status-amber: #FBBF24;
+  --color-status-red: #F87171;
+  --color-status-blue: #60A5FA;
+
+  /* Semantic */
+  --color-input-bg: #2A2A2A;
+  --color-success-bg: #052E16;
+  --color-success-text: #4ADE80;
+  --color-error-bg: #450A0A;
+  --color-error-text: #FCA5A5;
+  --color-warning-bg: #451A03;
+  --color-warning-text: #FCD34D;
+  --color-info-bg: #1E3A5F;
+  --color-info-text: #93C5FD;
+
+  /* Shadows — stronger for dark bg */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================
+   Pink Theme
+   ======================== */
+.theme-pink {
+  /* Primary */
+  --color-primary: #DB2777;
+  --color-primary-hover: #BE185D;
+
+  /* Neutrals */
+  --color-bg: #FFF5F7;
+  --color-surface: #FFFFFF;
+  --color-border: #F9A8D4;
+  --color-text: #4A1942;
+  --color-text-muted: #9D174D;
+
+  /* Status — kept readable on pink bg */
+  --color-status-green: #16A34A;
+  --color-status-amber: #D97706;
+  --color-status-red: #DC2626;
+  --color-status-blue: #DB2777;
+
+  /* Semantic */
+  --color-input-bg: #FDF2F8;
+  --color-success-bg: #F0FDF4;
+  --color-success-text: #166534;
+  --color-error-bg: #FEF2F2;
+  --color-error-text: #991B1B;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-text: #92400E;
+  --color-info-bg: #FDF2F8;
+  --color-info-text: #9D174D;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(190, 24, 93, 0.05);
+  --shadow-md: 0 4px 6px rgba(190, 24, 93, 0.07);
+}
+
+/* ========================
+   Base Reset
+   ======================== */
 *,
 *::before,
 *::after {
@@ -54,20 +145,23 @@
 }
 
 body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
   color: var(--color-text);
   background-color: var(--color-bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* Skip to content link (accessibility) */
+/* ========================
+   Skip to content link (accessibility)
+   ======================== */
 .skip-to-content {
   position: absolute;
   top: -100%;
@@ -77,7 +171,7 @@ body {
   background-color: var(--color-primary);
   color: #FFFFFF;
   font-weight: 600;
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-radius: 0 0 var(--radius-md, 8px) var(--radius-md, 8px);
   text-decoration: none;
   transition: top 0.2s ease;
 }
@@ -94,7 +188,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Remove default outline for mouse users */
 *:focus:not(:focus-visible) {
   outline: none;
 }

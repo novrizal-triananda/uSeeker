@@ -297,7 +297,7 @@ export default function DataHub() {
                       style={{
                         padding: 'var(--space-2) var(--space-4)',
                         background: selectedJobId === view.jobEntry.id ? '#7C3AED' : 'var(--color-bg)',
-                        color: selectedJobId === view.jobEntry.id ? '#FFFFFF' : 'var(--color-text)',
+                        color: selectedJobId === view.jobEntry.id ? 'var(--color-surface)' : 'var(--color-text)',
                         border: '1px solid var(--color-border)',
                         borderRadius: 'var(--radius-md)',
                         cursor: prepLoading ? 'wait' : 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 500,
@@ -399,9 +399,9 @@ export default function DataHub() {
                               padding: '2px var(--space-2)',
                               borderRadius: 'var(--radius-sm)',
                               fontSize: 'var(--font-size-xs)',
-                              background: '#FEE2E2',
-                              border: '1px solid #FECACA',
-                              color: '#991B1B',
+                              background: 'var(--color-error-bg)',
+                              border: '1px solid var(--color-error-bg)',
+                              color: 'var(--color-error-text)',
                             }}>{skill}</span>
                           ))}
                         </div>
@@ -469,7 +469,7 @@ export default function DataHub() {
                       onClick={handleGenerateQuestions}
                       style={{
                         padding: 'var(--space-2) var(--space-4)',
-                        background: '#7C3AED', color: '#FFFFFF',
+                        background: '#7C3AED', color: 'var(--color-surface)',
                         border: 'none', borderRadius: 'var(--radius-md)',
                         cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 600,
                       }}
@@ -485,10 +485,10 @@ export default function DataHub() {
                   {questionsError && !questionsLoading && (
                     <div style={{
                       padding: 'var(--space-3) var(--space-4)',
-                      background: '#FEF3C7',
-                      border: '1px solid #FCD34D',
+                      background: 'var(--color-warning-bg)',
+                      border: '1px solid var(--color-warning-border)',
                       borderRadius: 'var(--radius-md)',
-                      color: '#92400E',
+                      color: 'var(--color-warning-text)',
                       fontSize: 'var(--font-size-sm)',
                       marginBottom: 'var(--space-3)',
                     }}>
@@ -521,8 +521,8 @@ export default function DataHub() {
                                 padding: '2px var(--space-2)',
                                 borderRadius: 'var(--radius-sm)',
                                 fontSize: 'var(--font-size-xs)', fontWeight: 600,
-                                background: q.category === 'teknis' ? '#DBEAFE' : q.category === 'perilaku' ? '#D1FAE5' : '#FEF3C7',
-                                color: q.category === 'teknis' ? '#1E40AF' : q.category === 'perilaku' ? '#065F46' : '#92400E',
+                                background: q.category === 'teknis' ? 'var(--color-info-bg)' : q.category === 'perilaku' ? '#D1FAE5' : 'var(--color-warning-bg)',
+                                color: q.category === 'teknis' ? 'var(--color-info-text)' : q.category === 'perilaku' ? '#065F46' : 'var(--color-warning-text)',
                               }}>
                                 {q.category}
                               </span>

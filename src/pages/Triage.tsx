@@ -339,7 +339,7 @@ export default function Triage() {
               padding: 'var(--space-8)',
               textAlign: 'center',
               cursor: importing ? 'not-allowed' : 'pointer',
-              background: importing ? 'var(--color-bg)' : isDragging ? '#EFF6FF' : 'transparent',
+              background: importing ? 'var(--color-bg)' : isDragging ? 'var(--color-info-bg)' : 'transparent',
               transition: 'all 0.2s ease',
               opacity: importing ? 0.7 : 1,
             }}
@@ -681,8 +681,8 @@ export default function Triage() {
                                 style={{
                                   padding: '2px 8px',
                                   borderRadius: 'var(--radius-sm)',
-                                  background: '#DCFCE7',
-                                  color: '#166534',
+                                  background: 'var(--color-success-bg)',
+                                  color: 'var(--color-success-text)',
                                   fontSize: 'var(--font-size-sm)',
                                 }}
                               >
@@ -706,8 +706,8 @@ export default function Triage() {
                                 style={{
                                   padding: '2px 8px',
                                   borderRadius: 'var(--radius-sm)',
-                                  background: '#FEE2E2',
-                                  color: '#991B1B',
+                                  background: 'var(--color-error-bg)',
+                                  color: 'var(--color-error-text)',
                                   fontSize: 'var(--font-size-sm)',
                                 }}
                               >

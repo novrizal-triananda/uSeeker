@@ -146,7 +146,7 @@ export default function Visibility() {
       {showForm && (
         <form onSubmit={handleAdd} style={styles.form}>
           {jobs.length === 0 ? (
-            <div style={{ padding: 'var(--space-4)', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 'var(--radius-md)', color: '#92400E', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
+            <div style={{ padding: 'var(--space-4)', background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-text)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
               ⚠️ Belum ada lowongan. Tambah lowongan melalui tab <strong>Triage</strong> terlebih dahulu.
             </div>
           ) : (
@@ -297,8 +297,8 @@ export default function Visibility() {
                               <span style={{
                                 padding: '1px 6px', borderRadius: 'var(--radius-sm)',
                                 fontSize: '0.65rem', fontWeight: 600,
-                                background: app.outcome === 'accepted' ? '#DCFCE7' : app.outcome === 'rejected' ? '#FEE2E2' : app.outcome === 'ghosted' ? '#F3F4F6' : '#FEF3C7',
-                                color: app.outcome === 'accepted' ? '#166534' : app.outcome === 'rejected' ? '#991B1B' : app.outcome === 'ghosted' ? '#6B7280' : '#92400E',
+                                background: app.outcome === 'accepted' ? 'var(--color-success-bg)' : app.outcome === 'rejected' ? 'var(--color-error-bg)' : app.outcome === 'ghosted' ? 'var(--color-bg)' : 'var(--color-warning-bg)',
+                                color: app.outcome === 'accepted' ? 'var(--color-success-text)' : app.outcome === 'rejected' ? 'var(--color-error-text)' : app.outcome === 'ghosted' ? '#6B7280' : 'var(--color-warning-text)',
                               }}>
                                 {OUTCOMES.find(o => o.key === app.outcome)?.icon} {app.outcome}
                               </span>
@@ -373,7 +373,7 @@ const styles: Record<string, React.CSSProperties> = {
   addButton: {
     padding: 'var(--space-3) var(--space-5)',
     backgroundColor: 'var(--color-primary)',
-    color: '#FFFFFF',
+    color: 'var(--color-surface)',
     border: 'none',
     borderRadius: 'var(--radius-md)',
     cursor: 'pointer',
@@ -426,7 +426,7 @@ const styles: Record<string, React.CSSProperties> = {
   submitButton: {
     padding: 'var(--space-3) var(--space-5)',
     backgroundColor: 'var(--color-primary)',
-    color: '#FFFFFF',
+    color: 'var(--color-surface)',
     border: 'none',
     borderRadius: 'var(--radius-md)',
     cursor: 'pointer',
@@ -490,7 +490,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 'var(--space-2)',
     padding: 'var(--space-3) var(--space-5)',
     backgroundColor: 'var(--color-primary)',
-    color: '#FFFFFF',
+    color: 'var(--color-surface)',
     borderRadius: 'var(--radius-md)',
     border: 'none',
     cursor: 'pointer',
@@ -532,7 +532,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: 24,
     height: 24,
     borderRadius: '50%',
-    color: '#FFFFFF',
+    color: 'var(--color-surface)',
     fontSize: 'var(--font-size-sm)',
     fontWeight: 700,
   },

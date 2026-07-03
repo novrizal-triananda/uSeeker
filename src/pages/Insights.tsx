@@ -95,9 +95,9 @@ export default function Insights() {
           {sampleWarning && (
             <div style={{
               padding: 'var(--space-4)',
-              background: '#FEF3C7', border: '1px solid #FCD34D',
+              background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)',
               borderRadius: 'var(--radius-md)',
-              color: '#92400E', fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-warning-text)', fontSize: 'var(--font-size-sm)',
             }}>
               ⚠️ {sampleWarning}
             </div>
@@ -154,9 +154,9 @@ export default function Insights() {
               </h3>
               <div style={{
                 padding: 'var(--space-4)',
-                background: '#FEF2F2',
+                background: 'var(--color-error-bg)',
                 borderRadius: 'var(--radius-md)',
-                border: '1px solid #FECACA',
+                border: '1px solid var(--color-error-bg)',
               }}>
                 <p style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>
                   Stage dengan rejection rate tertinggi:
@@ -195,7 +195,7 @@ export default function Insights() {
                     <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>{entry.skill}</span>
                     <span style={{
                       padding: 'var(--space-1) var(--space-2)',
-                      background: 'var(--color-status-red)', color: '#FFFFFF',
+                      background: 'var(--color-status-red)', color: 'var(--color-surface)',
                       borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-sm)', fontWeight: 600,
                     }}>{entry.count}x</span>
                   </div>
@@ -255,7 +255,7 @@ export default function Insights() {
                 <div style={{
                   fontSize: '3rem',
                   fontWeight: 700,
-                  color: healthScore.score >= 70 ? '#16A34A' : healthScore.score >= 40 ? '#CA8A04' : '#DC2626',
+                  color: healthScore.score >= 70 ? 'var(--color-status-green)' : healthScore.score >= 40 ? '#CA8A04' : 'var(--color-status-red)',
                 }}>
                   {healthScore.score}
                 </div>
@@ -264,7 +264,7 @@ export default function Insights() {
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                       <span style={{ fontSize: 'var(--font-size-sm)', width: '120px' }}>{factor.name}</span>
                       <div style={{ flex: 1, height: '8px', background: 'var(--color-border)', borderRadius: '4px' }}>
-                        <div style={{ width: `${factor.score}%`, height: '100%', background: factor.score >= 70 ? '#16A34A' : factor.score >= 40 ? '#CA8A04' : '#DC2626', borderRadius: '4px' }} />
+                        <div style={{ width: `${factor.score}%`, height: '100%', background: factor.score >= 70 ? 'var(--color-status-green)' : factor.score >= 40 ? '#CA8A04' : 'var(--color-status-red)', borderRadius: '4px' }} />
                       </div>
                       <span style={{ fontSize: 'var(--font-size-sm)', width: '40px', textAlign: 'right' }}>{Math.round(factor.score)}</span>
                     </div>
@@ -307,8 +307,8 @@ export default function Insights() {
                         <td style={{ padding: 'var(--space-2)' }}>{loc.location}</td>
                         <td style={{ textAlign: 'right', padding: 'var(--space-2)' }}>{loc.totalJobs}</td>
                         <td style={{ textAlign: 'right', padding: 'var(--space-2)' }}>{loc.totalApplications}</td>
-                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: loc.responseRate >= 50 ? '#16A34A' : '#CA8A04' }}>{loc.responseRate}%</td>
-                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: loc.acceptanceRate >= 30 ? '#16A34A' : '#CA8A04' }}>{loc.acceptanceRate}%</td>
+                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: loc.responseRate >= 50 ? 'var(--color-status-green)' : '#CA8A04' }}>{loc.responseRate}%</td>
+                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: loc.acceptanceRate >= 30 ? 'var(--color-status-green)' : '#CA8A04' }}>{loc.acceptanceRate}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -345,8 +345,8 @@ export default function Insights() {
                         <td style={{ padding: 'var(--space-2)' }}>{type.type}</td>
                         <td style={{ textAlign: 'right', padding: 'var(--space-2)' }}>{type.totalJobs}</td>
                         <td style={{ textAlign: 'right', padding: 'var(--space-2)' }}>{type.totalApplications}</td>
-                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: type.responseRate >= 50 ? '#16A34A' : '#CA8A04' }}>{type.responseRate}%</td>
-                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: type.acceptanceRate >= 30 ? '#16A34A' : '#CA8A04' }}>{type.acceptanceRate}%</td>
+                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: type.responseRate >= 50 ? 'var(--color-status-green)' : '#CA8A04' }}>{type.responseRate}%</td>
+                        <td style={{ textAlign: 'right', padding: 'var(--space-2)', color: type.acceptanceRate >= 30 ? 'var(--color-status-green)' : '#CA8A04' }}>{type.acceptanceRate}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -386,7 +386,7 @@ export default function Insights() {
                     </div>
                     <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>applications</div>
                     <div style={{ marginTop: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}>
-                      <span style={{ color: insight.avgResponseRate >= 50 ? '#16A34A' : '#CA8A04' }}>
+                      <span style={{ color: insight.avgResponseRate >= 50 ? 'var(--color-status-green)' : '#CA8A04' }}>
                         {insight.avgResponseRate}% response
                       </span>
                     </div>

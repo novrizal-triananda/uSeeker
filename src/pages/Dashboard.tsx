@@ -197,8 +197,8 @@ export default function Dashboard() {
                           display: 'inline-block',
                           padding: '2px 8px',
                           borderRadius: 'var(--radius-sm)',
-                          background: fitScore.overallScore >= 70 ? '#DCFCE7' : fitScore.overallScore >= 50 ? '#FEF3C7' : '#FEE2E2',
-                          color: fitScore.overallScore >= 70 ? '#166534' : fitScore.overallScore >= 50 ? '#92400E' : '#991B1B',
+                          background: fitScore.overallScore >= 70 ? 'var(--color-success-bg)' : fitScore.overallScore >= 50 ? 'var(--color-warning-bg)' : 'var(--color-error-bg)',
+                          color: fitScore.overallScore >= 70 ? 'var(--color-success-text)' : fitScore.overallScore >= 50 ? 'var(--color-warning-text)' : 'var(--color-error-text)',
                           fontSize: 'var(--font-size-sm)',
                           fontWeight: 600,
                         }}
@@ -280,8 +280,8 @@ function QuickAction({ icon, label, description, href, highlight, done }: {
         display: 'block',
         padding: 'var(--space-4)',
         borderRadius: 'var(--radius-md)',
-        border: done ? '1px solid #16A34A' : highlight ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-        background: done ? '#F0FDF4' : highlight ? '#EFF6FF' : 'var(--color-bg)',
+        border: done ? '1px solid var(--color-status-green)' : highlight ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+        background: done ? 'var(--color-success-bg)' : highlight ? 'var(--color-info-bg)' : 'var(--color-bg)',
         textDecoration: 'none',
         color: 'var(--color-text)',
         flex: '1 1 200px',
@@ -290,19 +290,19 @@ function QuickAction({ icon, label, description, href, highlight, done }: {
     >
       <div style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-1)' }}>{done ? '✅' : icon}</div>
       <div style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>{label}</div>
-      <div style={{ color: done ? '#16A34A' : 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{done ? 'Selesai' : description}</div>
+      <div style={{ color: done ? 'var(--color-status-green)' : 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{done ? 'Selesai' : description}</div>
     </a>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
-    applied: { bg: '#DBEAFE', text: '#1E40AF' },
-    screen: { bg: '#FEF3C7', text: '#92400E' },
+    applied: { bg: 'var(--color-info-bg)', text: 'var(--color-info-text)' },
+    screen: { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-text)' },
     interview: { bg: '#E0E7FF', text: '#3730A3' },
-    offer: { bg: '#DCFCE7', text: '#166534' },
+    offer: { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)' },
   };
-  const c = colors[status] || { bg: '#F3F4F6', text: '#374151' };
+  const c = colors[status] || { bg: 'var(--color-bg)', text: 'var(--color-text-muted)' };
   return (
     <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: c.bg, color: c.text, fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
       {status}
@@ -312,12 +312,12 @@ function StatusBadge({ status }: { status: string }) {
 
 function OutcomeBadge({ outcome }: { outcome: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
-    accepted: { bg: '#DCFCE7', text: '#166534' },
-    rejected: { bg: '#FEE2E2', text: '#991B1B' },
-    ghosted: { bg: '#F3F4F6', text: '#6B7280' },
-    withdrawn: { bg: '#FEF3C7', text: '#92400E' },
+    accepted: { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)' },
+    rejected: { bg: 'var(--color-error-bg)', text: 'var(--color-error-text)' },
+    ghosted: { bg: 'var(--color-bg)', text: '#6B7280' },
+    withdrawn: { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-text)' },
   };
-  const c = colors[outcome] || { bg: '#F3F4F6', text: '#374151' };
+  const c = colors[outcome] || { bg: 'var(--color-bg)', text: 'var(--color-text-muted)' };
   return (
     <span style={{ display: 'inline-block', marginLeft: 'var(--space-2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: c.bg, color: c.text, fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
       {outcome}

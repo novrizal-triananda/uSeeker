@@ -216,7 +216,7 @@ export default function Research() {
               alignSelf: 'flex-start',
               padding: 'var(--space-3) var(--space-6)',
               background: 'var(--color-primary)',
-              color: '#FFFFFF',
+              color: 'var(--color-surface)',
               border: 'none',
               borderRadius: 'var(--radius-md)',
               fontWeight: 600,
@@ -233,7 +233,7 @@ export default function Research() {
       {researchError && (
         <div style={{
           padding: 'var(--space-3) var(--space-4)',
-          background: '#FEF2F2', border: '1px solid #FECACA',
+          background: 'var(--color-error-bg)', border: '1px solid var(--color-error-bg)',
           borderRadius: 'var(--radius-md)', color: 'var(--color-status-red)',
           fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-6)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -298,9 +298,9 @@ export default function Research() {
                         <span style={{
                           display: 'inline-block', marginTop: 'var(--space-2)', marginLeft: 'var(--space-2)',
                           padding: 'var(--space-1) var(--space-3)',
-                          background: '#EFF6FF', borderRadius: 'var(--radius-sm)',
+                          background: 'var(--color-info-bg)', borderRadius: 'var(--radius-sm)',
                           fontSize: 'var(--font-size-sm)', color: 'var(--color-primary)',
-                          border: '1px solid #BFDBFE',
+                          border: '1px solid var(--color-info-bg)',
                         }}>
                           🔗 {linkedJob.company} — {linkedJob.roleTitle}
                         </span>
@@ -314,7 +314,7 @@ export default function Research() {
                       style={{
                         padding: 'var(--space-2) var(--space-4)',
                         background: hasIntel ? 'var(--color-status-green)' : 'var(--color-primary)',
-                        color: '#FFFFFF', border: 'none', borderRadius: 'var(--radius-md)',
+                        color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)',
                         fontWeight: 500, cursor: 'pointer', fontSize: 'var(--font-size-sm)',
                       }}
                     >

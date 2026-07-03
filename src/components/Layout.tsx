@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import UpdateChecker from './UpdateChecker';
+import AiIndicator from './AiIndicator';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: '📊' },
@@ -92,6 +93,9 @@ export default function Layout() {
             ))}
           </ul>
           <UpdateChecker />
+          <div style={{ padding: '4px 8px', borderTop: '1px solid var(--color-border, #e5e7eb)' }}>
+            <AiIndicator />
+          </div>
         </nav>
 
         {/* Mobile bottom tab bar */}
