@@ -218,7 +218,7 @@ Tailoring membantu kamu menyesuaikan CV agar lebih cocok dengan lowongan tertent
   - Kolom **"✅"** — Teks yang disarankan
   - **Alasan** — Kenapa perubahan itu disarankan
 
-### Tips 💡
+### Tips �💡
 - Jalankan analisis untuk setiap lowongan yang berbeda — setiap lowongan punya kebutuhan yang berbeda
 - Skill gap bukan berarti kamu tidak layak — bisa jadi kamu punya skill tersebut tapi belum mencantumkannya di CV
 - Saran tailoring bisa langsung kamu terapkan ke CV
