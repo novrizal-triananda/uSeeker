@@ -160,6 +160,16 @@ body {
 }
 
 /* ========================
+   Global input/textarea — respect theme colors
+   ======================== */
+input,
+textarea,
+select {
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
+}
+
+/* ========================
    Skip to content link (accessibility)
    ======================== */
 .skip-to-content {
