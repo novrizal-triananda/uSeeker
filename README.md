@@ -44,6 +44,8 @@ Download versi terbaru dari [**GitHub Releases**](https://github.com/novrizal-tr
 5. Ikuti petunjuk instalasi (klik **Next** → **Install** → **Finish**)
 6. Buka **uSeeker** dari Start Menu
 
+> **Pertama kali buka?** Windows Defender SmartScreen mungkin memblokir aplikasi ini karena belum terverifikasi. Klik **More info** → **Run anyway** untuk melanjutkan. Ini normal untuk aplikasi indie yang belum ditandatangani secara digital.
+
 ### macOS
 
 1. Buka halaman [Releases](https://github.com/novrizal-triananda/uSeeker/releases) di browser
@@ -92,6 +94,36 @@ Download versi terbaru dari [**GitHub Releases**](https://github.com/novrizal-tr
    ```
 
 > Tidak perlu install Node.js atau dependency tambahan. Semua sudah included dalam aplikasi.
+
+---
+
+## Uninstall
+
+### Windows
+
+1. Buka **Settings** → **Apps** → **Installed apps**
+2. Cari **uSeeker** → klik **Uninstall**
+3. Ikuti petunjuk penghapusan
+
+Atau: buka **Start Menu**, cari **uSeeker**, klik kanan → **Uninstall**
+
+### macOS
+
+1. Buka **Finder** → **Applications**
+2. Seret ikon **uSeeker** ke **Trash** (atau klik kanan → **Move to Trash**)
+3. Kosongkan **Trash** untuk menghapus permanen
+
+### Linux
+
+#### Ubuntu / Debian (.deb)
+
+```bash
+sudo dpkg -r useeker
+```
+
+#### AppImage
+
+Hapus file `.AppImage` yang sudah diunduh. Tidak ada yang terinstall ke sistem.
 
 ---
 

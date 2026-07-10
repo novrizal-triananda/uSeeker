@@ -28,6 +28,22 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ---
 
+## [2.3.0] - 2026-07-10
+
+### Changed
+- Field **Model** di Pengaturan AI sekarang **wajib** diisi (sebelumnya opsional)
+- Hint text Model ditambahkan contoh: deepseek-chat, gpt-4o, gemini-2.0-flash
+
+### Added
+- Panduan **Uninstall** untuk Windows, macOS, dan Linux di README
+- Catatan **Windows Defender SmartScreen** di panduan install Windows
+- Catatan **macOS Gatekeeper** sudah ada di panduan install macOS (sebelumnya tidak ada)
+
+### Fixed
+- Versi Cargo.toml (2.1.7) disinkronkan dengan package.json (2.3.0)
+
+---
+
 ## [2.2.0] - 2026-06-22
 
 ### Added

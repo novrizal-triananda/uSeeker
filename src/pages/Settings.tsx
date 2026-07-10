@@ -35,13 +35,13 @@ export default function Settings() {
   async function handleSave() {
     if (!settings.apiKey.trim()) { setError('API key wajib diisi'); return; }
     if (!settings.baseUrl.trim()) { setError('Base URL wajib diisi'); return; }
+    if (!settings.model.trim()) { setError('Nama model wajib diisi'); return; }
     setError(''); setSaved(false);
     try {
       if (window.__TAURI_INTERNALS__) {
         await invoke('save_config', { key: 'api_key', value: settings.apiKey.trim() });
         await invoke('save_config', { key: 'base_url', value: settings.baseUrl.trim().replace(/\/+$/, '') });
-        if (settings.model.trim()) { await invoke('save_config', { key: 'model', value: settings.model.trim() }); }
-        else { await invoke('save_config', { key: 'model', value: '' }); }
+        await invoke('save_config', { key: 'model', value: settings.model.trim() });
       }
       setSaved(true); setTimeout(() => setSaved(false), 3000);
     } catch (e) { setError('Gagal menyimpan: ' + String(e)); }
@@ -104,11 +104,11 @@ export default function Settings() {
           <p style={hintStyle}>Kunci API dari penyedia AI kamu. Disimpan lokal di perangkat ini saja.</p>
         </div>
         <div style={fieldStyle}>
-          <label style={labelStyle}>Model <span style={{ fontWeight: 400, color: 'var(--color-text-muted)' }}>(opsional)</span></label>
+          <label style={labelStyle}>Model</label>
           <input type="text" style={inputStyle} value={settings.model}
             onChange={(e) => { setSettings(s => ({ ...s, model: e.target.value })); setError(''); setSaved(false); }}
             placeholder="deepseek-chat" />
-          <p style={hintStyle}>Nama model yang digunakan. Kosongkan untuk menggunakan default penyedia.</p>
+          <p style={hintStyle}>Nama model yang digunakan oleh penyedia AI. Contoh: deepseek-chat, gpt-4o, gemini-2.0-flash</p>
         </div>
         {error && <p style={{ color: 'var(--color-status-red)', fontSize: '0.875rem', marginBottom: '16px' }}>{error}</p>}
         {saved && <p style={{ color: 'var(--color-status-green)', fontSize: '0.875rem', marginBottom: '16px' }}>Pengaturan tersimpan.</p>}
