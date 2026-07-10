@@ -43,6 +43,46 @@ async function extractDocxText(file: File): Promise<string> {
 }
 
 /**
+ * Reconstruct page text from pdfjs text items using Y-coordinates.
+ * Groups items by Y-position to form lines, preserving paragraph structure.
+ */
+function reconstructPageText(items: any[]): string {
+  if (items.length === 0) return '';
+
+  // Sort by Y (desc = top to bottom), then X (asc = left to right)
+  const sorted = [...items].sort((a: any, b: any) => {
+    const aY = Math.round(a.transform[5]);
+    const bY = Math.round(b.transform[5]);
+    if (aY !== bY) return bY - aY; // higher Y = higher on page
+    return a.transform[4] - b.transform[4];
+  });
+
+  const lines: string[][] = [];
+  let currentLine: string[] = [];
+  let currentY: number | null = null;
+  const LINE_THRESHOLD = 3; // Y-difference within same line
+
+  for (const item of sorted) {
+    const y = Math.round(item.transform[5]);
+    const text = item.str;
+    if (!text || !text.trim()) continue; // skip empty items
+
+    if (currentY === null || Math.abs(y - currentY) <= LINE_THRESHOLD) {
+      currentLine.push(text);
+      currentY = y;
+    } else {
+      lines.push(currentLine);
+      currentLine = [text];
+      currentY = y;
+    }
+  }
+  if (currentLine.length > 0) lines.push(currentLine);
+
+  // Join each line with space, then join lines with newline
+  return lines.map(line => line.join(' ').trim()).join('\n');
+}
+
+/**
  * Extract text from PDF. Falls back to OCR if text content is too short
  * (scanned/image-based PDF).
  */
@@ -55,11 +95,7 @@ async function extractPdfText(file: File): Promise<string> {
   for (let i = 1; i <= totalPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ')
-      .trim();
-    pageTexts.push(pageText);
+    pageTexts.push(reconstructPageText(textContent.items));
   }
 
   const combined = pageTexts.join('\n\n');
