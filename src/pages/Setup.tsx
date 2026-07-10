@@ -20,21 +20,21 @@ export default function Setup({ onComplete }: SetupProps) {
       setError('Base URL wajib diisi');
       return;
     }
+    if (!model.trim()) {
+      setError('Nama model wajib diisi');
+      return;
+    }
 
     try {
       if (window.__TAURI_INTERNALS__) {
         const { invoke } = await import('@tauri-apps/api/core');
         await invoke('save_config', { key: 'api_key', value: apiKey.trim() });
         await invoke('save_config', { key: 'base_url', value: baseUrl.trim().replace(/\/\/+$/, '') });
-        if (model.trim()) {
-          await invoke('save_config', { key: 'model', value: model.trim() });
-        }
+        await invoke('save_config', { key: 'model', value: model.trim() });
       } else {
         localStorage.setItem('useeker_api_key', apiKey.trim());
         localStorage.setItem('useeker_base_url', baseUrl.trim().replace(/\/\/+$/, ''));
-        if (model.trim()) {
-          localStorage.setItem('useeker_model', model.trim());
-        }
+        localStorage.setItem('useeker_model', model.trim());
       }
 
       setSaved(true);
@@ -84,7 +84,7 @@ export default function Setup({ onComplete }: SetupProps) {
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Model <span style={{ fontWeight: 400, color: '#64748b' }}>(opsional)</span></label>
+          <label style={styles.label}>Model</label>
           <input type="text" style={styles.input} value={model}
             onChange={(e) => setModel(e.target.value)}
             placeholder="deepseek-chat" />

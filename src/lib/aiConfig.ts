@@ -24,6 +24,6 @@ export async function getAiConfig(): Promise<AiConfig> {
 
 export async function isAiConfigured(): Promise<boolean> {
   const config = await getAiConfig();
-  return config.apiKey.length > 0;
+  return config.apiKey.length > 0 && config.model.length > 0;
 }
 

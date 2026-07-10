@@ -421,9 +421,9 @@ Fitur AI di uSeeker (seperti analisis tailoring dan riset perusahaan) membutuhka
 - **API Key** * (wajib) — Kunci akses dari penyedia AI kamu
   - Biasanya dimulai dengan `sk-...`
   - Disimpan hanya di komputer kamu
-- **Model** (opsional) — Nama model AI yang ingin digunakan
+- **Model** (wajib) — Nama model AI yang ingin digunakan
   - Contoh: `deepseek-chat`
-  - Kosongkan untuk menggunakan model default
+  - Contoh: deepseek-chat, gpt-4o, gemini-2.0-flash
 
 **Cara menyimpan:**
 1. Isi semua kolom yang diperlukan

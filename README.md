@@ -38,7 +38,7 @@ Download versi terbaru dari [**GitHub Releases**](https://github.com/novrizal-tr
 ### Windows
 
 1. Buka halaman [Releases](https://github.com/novrizal-triananda/uSeeker/releases) di browser
-2. Cari file `.msi` (contoh: `uSeeker_2.2.0_x64_en-US.msi`)
+2. Cari file `.msi` (contoh: `uSeeker_2.3.0_x64_en-US.msi`)
 3. Klik untuk mengunduh
 4. **Double-click** file `.msi` yang sudah diunduh
 5. Ikuti petunjuk instalasi (klik **Next** → **Install** → **Finish**)
@@ -140,7 +140,7 @@ Fitur AI seperti analisis kecocokan CV dan riset perusahaan membutuhkan **API ke
 1. Buka **Pengaturan** dari menu sidebar
 2. Masukkan **Base URL** penyedia AI kamu (contoh: `https://api.deepseek.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`)
 3. Masukkan **API Key** kamu
-4. Opsional: tentukan **Model** yang akan digunakan
+4. Wajib: tentukan **Model** yang akan digunakan
 5. Klik **Simpan Pengaturan**
 
 > uSeeker mendukung **semua penyedia AI yang kompatibel dengan OpenAI API** — DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Anthropic (via OpenRouter), Ollama (lokal), LM Studio, atau provider self-hosted lainnya. Cukup masukkan Base URL dan API Key dari provider pilihan kamu.
