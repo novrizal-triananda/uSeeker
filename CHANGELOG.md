@@ -28,6 +28,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ---
 
+## [2.3.1] - 2026-07-10
+
+### Fixed
+- Input/textarea di semua halaman sekarang pakai warna tema (sebelumnya putih di dark mode)
+- Setup.tsx: field Model wajib diisi saat onboarding (sebelumnya opsional)
+- `isAiConfigured()` sekarang cek API key **dan** model
+- Konsistensi dokumen: Model wajib di README, FEATURES.md
+
+---
+
 ## [2.3.0] - 2026-07-10
 
 ### Changed
