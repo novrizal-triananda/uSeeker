@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
+
+function openUrl(url: string) {
+  const full = /^https?:\/\//.test(url) ? url : `https://${url}`;
+  open(full).catch((err) => console.error('Failed to open URL:', err));
+}
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { createIntelCard, requestResearch, isBannedDomain } from '../lib/companyIntel';
@@ -274,7 +279,7 @@ export default function Research() {
                       {card.company}
                     </h3>
                     <button
-                      onClick={() => open(card.officialUrl)}
+                      onClick={() => openUrl(card.officialUrl)}
                       style={{
                         color: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all',
                         background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',

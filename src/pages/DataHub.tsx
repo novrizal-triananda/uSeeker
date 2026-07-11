@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
+
+function openUrl(url: string) {
+  const full = /^https?:\/\//.test(url) ? url : `https://${url}`;
+  open(full).catch((err) => console.error('Failed to open URL:', err));
+}
 import { db } from '../lib/db';
 import {
   getAllConsolidatedViews,
@@ -292,7 +297,7 @@ export default function DataHub() {
                         )}
                         {view.jobEntry.sourceUrl && (
                           <button
-                            onClick={() => open(view.jobEntry.sourceUrl!)}
+                            onClick={() => openUrl(view.jobEntry.sourceUrl!)}
                             style={{
                               padding: 'var(--space-1) var(--space-3)',
                               background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',

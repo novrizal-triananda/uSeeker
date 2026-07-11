@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
+
+function openUrl(url: string) {
+  const full = /^https?:\/\//.test(url) ? url : `https://${url}`;
+  open(full).catch((err) => console.error('Failed to open URL:', err));
+}
 import { db } from '../lib/db';
 import { addApplication, updateStatus, getOutcome, getPipelineStats } from '../lib/pipeline';
 import { logEvent } from '../lib/eventLog';
@@ -278,7 +283,7 @@ export default function Visibility() {
                                   )}
                                   {job.sourceUrl && (
                                     <button
-                                      onClick={() => open(job.sourceUrl!)}
+                                      onClick={() => openUrl(job.sourceUrl!)}
                                       style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit' }}
                                     >
                                       🔗 Link

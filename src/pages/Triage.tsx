@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { open } from '@tauri-apps/plugin-shell';
+
+function openUrl(url: string) {
+  const full = /^https?:\/\//.test(url) ? url : `https://${url}`;
+  open(full).catch((err) => console.error('Failed to open URL:', err));
+}
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { logEvent } from '../lib/eventLog';
@@ -588,7 +593,7 @@ export default function Triage() {
                   )}
                   {job.sourceUrl && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); open(job.sourceUrl!); }}
+                      onClick={(e) => { e.stopPropagation(); openUrl(job.sourceUrl!); }}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary)', textDecoration: 'none', marginTop: 'var(--space-1)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       🔗 Lihat Lowongan
