@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { open } from '@tauri-apps/plugin-shell';
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { logEvent } from '../lib/eventLog';
@@ -586,15 +587,12 @@ export default function Triage() {
                     </div>
                   )}
                   {job.sourceUrl && (
-                    <a
-                      href={job.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary)', textDecoration: 'none', marginTop: 'var(--space-1)' }}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); open(job.sourceUrl!); }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary)', textDecoration: 'none', marginTop: 'var(--space-1)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       🔗 Lihat Lowongan
-                    </a>
+                    </button>
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { db } from '../lib/db';
 import { addApplication, updateStatus, getOutcome, getPipelineStats } from '../lib/pipeline';
 import { logEvent } from '../lib/eventLog';
@@ -276,14 +277,12 @@ export default function Visibility() {
                                     </span>
                                   )}
                                   {job.sourceUrl && (
-                                    <a
-                                      href={job.sourceUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
+                                    <button
+                                      onClick={() => open(job.sourceUrl!)}
+                                      style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-primary)', cursor: 'pointer', fontFamily: 'inherit' }}
                                     >
                                       🔗 Link
-                                    </a>
+                                    </button>
                                   )}
                                 </div>
                               )}

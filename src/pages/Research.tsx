@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { createIntelCard, requestResearch, isBannedDomain } from '../lib/companyIntel';
@@ -272,11 +273,15 @@ export default function Research() {
                     <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
                       {card.company}
                     </h3>
-                    <a href={card.officialUrl} target="_blank" rel="noopener noreferrer" style={{
-                      color: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all',
-                    }}>
+                    <button
+                      onClick={() => open(card.officialUrl)}
+                      style={{
+                        color: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all',
+                        background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                      }}
+                    >
                       {card.officialUrl}
-                    </a>
+                    </button>
                     {card.notes && (
                       <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-2)' }}>
                         {card.notes}

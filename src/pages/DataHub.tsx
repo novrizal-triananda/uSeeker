@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { db } from '../lib/db';
 import {
   getAllConsolidatedViews,
@@ -290,19 +291,17 @@ export default function DataHub() {
                           </span>
                         )}
                         {view.jobEntry.sourceUrl && (
-                          <a
-                            href={view.jobEntry.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => open(view.jobEntry.sourceUrl!)}
                             style={{
                               padding: 'var(--space-1) var(--space-3)',
                               background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
                               fontSize: 'var(--font-size-sm)', color: 'var(--color-primary)',
-                              textDecoration: 'none',
+                              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                             }}
                           >
                             🔗 Lihat Lowongan
-                          </a>
+                          </button>
                         )}
                       </div>
                     </div>
