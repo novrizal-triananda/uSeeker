@@ -225,7 +225,7 @@ export default function DataHub() {
                   padding: 'var(--space-4)',
                   border: '1px solid var(--color-border)',
                   borderRadius: 'var(--radius-md)',
-                  background: selectedJobId === view.jobEntry.id ? '#F0F9FF' : 'var(--color-surface)',
+                  background: selectedJobId === view.jobEntry.id ? 'var(--color-info-bg)' : 'var(--color-surface)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                     <div>
@@ -288,6 +288,21 @@ export default function DataHub() {
                           }}>
                             📄 {view.jobEntry.employmentType}
                           </span>
+                        )}
+                        {view.jobEntry.sourceUrl && (
+                          <a
+                            href={view.jobEntry.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: 'var(--space-1) var(--space-3)',
+                              background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
+                              fontSize: 'var(--font-size-sm)', color: 'var(--color-primary)',
+                              textDecoration: 'none',
+                            }}
+                          >
+                            🔗 Lihat Lowongan
+                          </a>
                         )}
                       </div>
                     </div>

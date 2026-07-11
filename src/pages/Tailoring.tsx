@@ -163,10 +163,10 @@ export default function Tailoring() {
         ) : (
           <div style={{
             padding: 'var(--space-4)',
-            background: '#FEF3C7',
-            border: '1px solid #FCD34D',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-md)',
-            color: '#92400E',
+            color: 'var(--color-warning-text)',
             fontSize: 'var(--font-size-sm)',
           }}>
             ⚠️ Belum ada CV. Import CV melalui tab <strong>Triage</strong> terlebih dahulu.
@@ -239,10 +239,10 @@ export default function Tailoring() {
           {aiError && (
             <div style={{
               padding: 'var(--space-3) var(--space-4)',
-              background: '#FEF3C7',
-              border: '1px solid #FCD34D',
+              background: 'var(--color-warning-bg)',
+              border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-md)',
-              color: '#92400E',
+              color: 'var(--color-warning-text)',
               fontSize: 'var(--font-size-sm)',
               marginBottom: 'var(--space-4)',
             }}>
@@ -276,7 +276,7 @@ export default function Tailoring() {
                 {skillAnalysis.matchedSkills.map((skill, i) => (
                   <span key={i} style={{
                     padding: 'var(--space-1) var(--space-3)',
-                    background: '#DCFCE7', borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-success-bg)', borderRadius: 'var(--radius-sm)',
                     fontSize: 'var(--font-size-sm)',
                   }}>{skill}</span>
                 ))}
@@ -294,7 +294,7 @@ export default function Tailoring() {
                 {skillAnalysis.gapSkills.map((skill, i) => (
                   <span key={i} style={{
                     padding: 'var(--space-1) var(--space-3)',
-                    background: '#FEE2E2', borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-error-bg)', borderRadius: 'var(--radius-sm)',
                     fontSize: 'var(--font-size-sm)',
                   }}>{skill}</span>
                 ))}

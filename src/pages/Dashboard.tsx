@@ -299,7 +299,7 @@ function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
     applied: { bg: 'var(--color-info-bg)', text: 'var(--color-info-text)' },
     screen: { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-text)' },
-    interview: { bg: '#E0E7FF', text: '#3730A3' },
+    interview: { bg: 'var(--color-info-bg)', text: 'var(--color-info-text)' },
     offer: { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)' },
   };
   const c = colors[status] || { bg: 'var(--color-bg)', text: 'var(--color-text-muted)' };

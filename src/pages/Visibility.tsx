@@ -275,6 +275,16 @@ export default function Visibility() {
                                       📄 {job.employmentType}
                                     </span>
                                   )}
+                                  {job.sourceUrl && (
+                                    <a
+                                      href={job.sourceUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-primary)', textDecoration: 'none' }}
+                                    >
+                                      🔗 Link
+                                    </a>
+                                  )}
                                 </div>
                               )}
                             </div>

@@ -585,6 +585,17 @@ export default function Triage() {
                       )}
                     </div>
                   )}
+                  {job.sourceUrl && (
+                    <a
+                      href={job.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary)', textDecoration: 'none', marginTop: 'var(--space-1)' }}
+                    >
+                      🔗 Lihat Lowongan
+                    </a>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   {fitScore ? (
