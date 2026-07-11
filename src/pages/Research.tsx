@@ -199,7 +199,7 @@ export default function Research() {
                   width: '100%', padding: 'var(--space-3)',
                   border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
                   fontSize: 'var(--font-size-base)', fontFamily: 'var(--font-family)',
-                  background: 'var(--color-bg)',
+                  background: 'var(--color-input-bg)',
                 }}
               >
                 <option value="">— Tidak dihubungkan —</option>

@@ -420,7 +420,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-sm)',
     fontSize: 'var(--font-size-sm)',
-    backgroundColor: 'var(--color-bg)',
+    backgroundColor: 'var(--color-input-bg)',
     color: 'var(--color-text)',
   },
   submitButton: {
@@ -617,7 +617,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '2px 4px',
     border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-sm)',
-    backgroundColor: 'var(--color-bg)',
+    backgroundColor: 'var(--color-input-bg)',
     color: 'var(--color-text)',
     cursor: 'pointer',
     flex: 1,

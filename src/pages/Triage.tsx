@@ -783,7 +783,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 'var(--radius-md)',
   fontSize: 'var(--font-size-base)',
   fontFamily: 'var(--font-family)',
-  background: 'var(--color-bg)',
+  background: 'var(--color-input-bg)',
   color: 'var(--color-text)',
   outline: 'none',
 };

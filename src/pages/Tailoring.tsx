@@ -210,7 +210,7 @@ export default function Tailoring() {
                 flex: 1, minWidth: 200, padding: 'var(--space-3)',
                 border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
                 fontSize: 'var(--font-size-base)', fontFamily: 'var(--font-family)',
-                background: 'var(--color-surface)',
+                background: 'var(--color-input-bg)',
               }}
             >
               <option value="">-- Pilih Lowongan --</option>
