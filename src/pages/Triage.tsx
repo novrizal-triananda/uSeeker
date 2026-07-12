@@ -590,8 +590,13 @@ export default function Triage() {
                         </span>
                       )}
                     </div>
-                  )}
-                  {job.sourceUrl && (
+                    )}
+                    {job.notes && (
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
+                      📝 {job.notes}
+                    </p>
+                    )}
+                    {job.sourceUrl && (
                     <button
                       onClick={(e) => { e.stopPropagation(); openUrl(job.sourceUrl!); }}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-primary)', textDecoration: 'none', marginTop: 'var(--space-1)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -660,6 +665,17 @@ export default function Triage() {
               {/* JD preview */}
               {selectedJobId === job.id && (
                 <div style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)' }}>
+                  {/* Notes */}
+                  {job.notes && (
+                    <div style={{ marginBottom: 'var(--space-4)' }}>
+                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                        Catatan
+                      </h4>
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text)', lineHeight: 1.6, fontStyle: 'italic' }}>
+                        {job.notes}
+                      </p>
+                    </div>
+                  )}
                   {/* Job Description */}
                   <div style={{ marginBottom: 'var(--space-4)' }}>
                     <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>

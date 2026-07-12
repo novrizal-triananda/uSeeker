@@ -518,6 +518,8 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: 'repeat(5, 1fr)',
     gap: 'var(--space-3)',
     overflowX: 'auto',
+    maxHeight: 'calc(100vh - 220px)',
+    overflowY: 'auto',
   },
   column: {
     minWidth: 160,
@@ -558,6 +560,8 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: 80,
     backgroundColor: 'var(--color-bg)',
     borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+    maxHeight: 'calc(100vh - 300px)',
+    overflowY: 'auto',
   },
   noCards: {
     textAlign: 'center',

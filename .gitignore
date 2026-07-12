@@ -20,3 +20,9 @@ test-e2e.sh
 src-tauri/target/
 # Updater signing keys (NEVER commit)
 .git_log_data.txt
+# Staging / scratch files
+_ext/
+reference/
+tmp-dogfood.ts
+useeker.sh
+~/
