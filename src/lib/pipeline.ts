@@ -2,6 +2,23 @@ import { db } from './db';
 import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats } from '../types';
 
 const PIPELINE_STAGES: ApplicationStatus[] = ['applied', 'screen', 'interview', 'offer'];
+/** Stage-outcome validation rules */
+export const VALID_OUTCOMES_BY_STAGE: Record<ApplicationStatus, ApplicationOutcome[]> = {
+  applied: ['withdrawn'],
+  screen: ['rejected', 'ghosted', 'withdrawn'],
+  interview: ['rejected', 'ghosted', 'withdrawn'],
+  offer: ['accepted', 'rejected', 'ghosted', 'withdrawn'],
+};
+
+/** Get valid outcomes for a given stage */
+export function getValidOutcomes(stage: ApplicationStatus): ApplicationOutcome[] {
+  return VALID_OUTCOMES_BY_STAGE[stage];
+}
+
+/** Check if an outcome is valid for a given stage */
+export function isValidOutcome(stage: ApplicationStatus, outcome: ApplicationOutcome): boolean {
+  return VALID_OUTCOMES_BY_STAGE[stage].includes(outcome);
+}
 
 export interface StageBocor {
   stage: ApplicationStatus;
@@ -48,7 +65,8 @@ export async function updateStatus(id: string, newStatus: ApplicationStatus): Pr
   if (!app) {
     throw new Error(`Application ${id} not found`);
   }
-  await db.applications.update(id, { status: newStatus, lastUpdated: new Date() });
+  // Clear outcome when stage changes (outcome must be re-set at new stage)
+  await db.applications.update(id, { status: newStatus, outcome: undefined, lastUpdated: new Date() });
   return (await db.applications.get(id))!;
 }
 

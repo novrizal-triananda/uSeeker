@@ -36,6 +36,7 @@ export default function Triage() {
 
   // Job entry form state
   const [showJobForm, setShowJobForm] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [jobForm, setJobForm] = useState({
     company: '',
     roleTitle: '',
@@ -155,32 +156,66 @@ export default function Triage() {
   }
 
   // ── Job Entry Handlers ──
-  async function handleAddJob(e: React.FormEvent) {
+  function handleEditJob(job: JobEntry) {
+    setEditingJobId(job.id);
+    setJobForm({
+      company: job.company,
+      roleTitle: job.roleTitle,
+      sourceUrl: job.sourceUrl || '',
+      jobDescription: job.jobDescription,
+      location: job.location || '',
+      salaryRange: job.salaryRange || '',
+      employmentType: job.employmentType || '',
+      notes: job.notes || '',
+    });
+    setShowJobForm(true);
+  }
+
+  function handleCancelEdit() {
+    setEditingJobId(null);
+    setJobForm({ company: '', roleTitle: '', sourceUrl: '', jobDescription: '', location: '', salaryRange: '', employmentType: '', notes: '' });
+    setShowJobForm(false);
+  }
+
+  async function handleSaveJob(e: React.FormEvent) {
     e.preventDefault();
     if (!jobForm.company.trim() || !jobForm.roleTitle.trim()) return;
-    // jobDescription is now optional - only company and roleTitle are required
-
     setSavingJob(true);
     try {
-      const newJob: JobEntry = {
-        id: crypto.randomUUID(),
-        company: jobForm.company.trim(),
-        roleTitle: jobForm.roleTitle.trim(),
-        sourceUrl: jobForm.sourceUrl.trim() || undefined,
-        jobDescription: jobForm.jobDescription.trim(),
-        location: jobForm.location.trim() || undefined,
-        employmentType: jobForm.employmentType || undefined,
-        salaryRange: jobForm.salaryRange.trim() || undefined,
-        notes: jobForm.notes.trim() || undefined,
-        createdAt: new Date(),
-      };
-      await db.jobEntries.add(newJob);
-      await logEvent('add_job', { company: newJob.company, roleTitle: newJob.roleTitle });
+      if (editingJobId) {
+        await db.jobEntries.update(editingJobId, {
+          company: jobForm.company.trim(),
+          roleTitle: jobForm.roleTitle.trim(),
+          sourceUrl: jobForm.sourceUrl.trim() || undefined,
+          jobDescription: jobForm.jobDescription.trim(),
+          location: jobForm.location.trim() || undefined,
+          employmentType: jobForm.employmentType || undefined,
+          salaryRange: jobForm.salaryRange.trim() || undefined,
+          notes: jobForm.notes.trim() || undefined,
+        });
+        await logEvent('edit_job', { jobId: editingJobId });
+      } else {
+        const newJob: JobEntry = {
+          id: crypto.randomUUID(),
+          company: jobForm.company.trim(),
+          roleTitle: jobForm.roleTitle.trim(),
+          sourceUrl: jobForm.sourceUrl.trim() || undefined,
+          jobDescription: jobForm.jobDescription.trim(),
+          location: jobForm.location.trim() || undefined,
+          employmentType: jobForm.employmentType || undefined,
+          salaryRange: jobForm.salaryRange.trim() || undefined,
+          notes: jobForm.notes.trim() || undefined,
+          createdAt: new Date(),
+        };
+        await db.jobEntries.add(newJob);
+        await logEvent('add_job', { company: newJob.company, roleTitle: newJob.roleTitle });
+      }
       setJobForm({ company: '', roleTitle: '', sourceUrl: '', jobDescription: '', location: '', salaryRange: '', employmentType: '', notes: '' });
+      setEditingJobId(null);
       setShowJobForm(false);
       await loadData();
     } catch (err) {
-      console.error('Failed to add job:', err);
+      console.error('Failed to save job:', err);
     } finally {
       setSavingJob(false);
     }
@@ -416,25 +451,27 @@ export default function Triage() {
           <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
             💼 Lowongan
           </h3>
-          <button
-            onClick={() => setShowJobForm(!showJobForm)}
-            style={{
-              padding: 'var(--space-2) var(--space-4)',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              background: 'var(--color-primary)',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 600,
-            }}
-          >
-            {showJobForm ? '✕ Batal' : '+ Tambah Lowongan'}
-          </button>
+          {!editingJobId && (
+            <button
+              onClick={() => setShowJobForm(!showJobForm)}
+              style={{
+                padding: 'var(--space-2) var(--space-4)',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                background: 'var(--color-primary)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 600,
+              }}
+            >
+              {showJobForm ? '✕ Batal' : '+ Tambah Lowongan'}
+            </button>
+          )}
         </div>
 
         {showJobForm && (
-          <form onSubmit={handleAddJob} style={{ marginBottom: 'var(--space-4)' }}>
+          <form onSubmit={handleSaveJob} style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
               <input
                 type="text"
@@ -521,8 +558,27 @@ export default function Triage() {
                 opacity: savingJob ? 0.6 : 1,
               }}
             >
-              {savingJob ? 'Menyimpan...' : '✓ Simpan Lowongan'}
+              {savingJob ? 'Menyimpan...' : editingJobId ? '✓ Update Lowongan' : '✓ Simpan Lowongan'}
             </button>
+            {editingJobId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                style={{
+                  marginTop: 'var(--space-3)',
+                  marginLeft: 'var(--space-3)',
+                  padding: 'var(--space-2) var(--space-5)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
+                ✕ Batal
+              </button>
+            )}
           </form>
         )}
       </div>
@@ -642,6 +698,24 @@ export default function Triage() {
                       {generatingId === job.id ? '...' : '🎯 Hitung'}
                     </button>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditJob(job);
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      background: 'transparent',
+                      color: 'var(--color-text-muted)',
+                      cursor: 'pointer',
+                      fontSize: 'var(--font-size-sm)',
+                    }}
+                    title="Edit lowongan"
+                  >
+                    ✏️
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

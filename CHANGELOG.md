@@ -11,6 +11,20 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ---
 
+
+## [2.4.0] - 2026-07-14
+
+### Added
+- Triage: edit lowongan kerja yang sudah ada (inline form)
+- DataHub: detail view expand inline di dalam card (accordion)
+- Pipeline: validasi stage-outcome (accepted hanya di Offer, dll)
+- Pipeline: outcome otomatis clear saat stage berubah
+- Pipeline: dropdown outcome hanya tampilkan opsi valid per stage
+- STOP_WORDS: tambah kata-kata umum Indonesia (sesuai, hasil, cafe, dll)
+
+### Fixed
+- Skill gap analysis: filter kata-kata umum Indonesia dari missing skills
+- Triage: tombol "Selesai" dihapus, gunakan tombol "Batal" di bawah form
 ## [2.3.2] - 2026-07-12
 
 ### Ditambahkan

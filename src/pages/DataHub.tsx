@@ -326,243 +326,244 @@ export default function DataHub() {
                       {prepLoading && selectedJobId === view.jobEntry.id ? '⏳ Memuat...' : '📋 Detail Lowongan'}
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Detail Lowongan View */}
-          {interviewPrep && (
-            <div style={{
-              background: 'var(--color-surface)',
-              border: '2px solid #7C3AED',
-              borderRadius: 'var(--radius-lg)',
-              padding: 'var(--space-6)',
-              position: 'relative',
-            }}>
-              <button
-                onClick={() => setInterviewPrep(null)}
-                style={{
-                  position: 'absolute', top: 'var(--space-3)', right: 'var(--space-3)',
-                  width: 32, height: 32,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg)', border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  fontSize: 'var(--font-size-lg)', color: 'var(--color-text-muted)',
-                  lineHeight: 1,
-                }}
-                title="Tutup Detail Lowongan"
-              >
-                ✕
-              </button>
-              <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: '#7C3AED' }}>
-                📋 Detail Lowongan
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                {interviewPrep.companyIntel && (
-                  <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Company Overview</h4>
-                    {interviewPrep.companyIntel.snapshot && (
-                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                        {interviewPrep.companyIntel.snapshot}
-                      </p>
-                    )}
-                    {interviewPrep.companyIntel.products && interviewPrep.companyIntel.products.length > 0 && (
-                      <div style={{ marginTop: 'var(--space-2)' }}>
-                        <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>Produk: </span>
-                        {interviewPrep.companyIntel.products.join(', ')}
-                      </div>
-                    )}
-                    {interviewPrep.companyIntel.redFlags && interviewPrep.companyIntel.redFlags.length > 0 && (
-                      <div style={{ marginTop: 'var(--space-2)' }}>
-                        <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-status-red)' }}>
-                          Red Flags: 
-                        </span>
-                        <span style={{ fontSize: 'var(--font-size-sm)' }}>
-                          {interviewPrep.companyIntel.redFlags.join(', ')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {/* Pipeline Summary */}
-                {interviewPrep.pipeline && (
-                  <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📈 Ringkasan Pipeline</h4>
-                    <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', fontSize: 'var(--font-size-sm)' }}>
-                      <span>Total: <strong>{interviewPrep.pipeline.total}</strong></span>
-                      <span>Response Rate: <strong>{interviewPrep.pipeline.responseRate}%</strong></span>
-                      <span>Avg Fit Score: <strong>{interviewPrep.pipeline.avgFitScore}</strong></span>
-                    </div>
-                  </div>
-                )}
-                {interviewPrep.fitScore && (
-                  <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📊 Fit Score Breakdown</h4>
-                    <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-                      <div>
-                        <p style={{ fontWeight: 500 }}>Overall: {interviewPrep.fitScore.overallScore}/100</p>
+            {/* Detail Lowongan View */}
+            {selectedJobId === view.jobEntry.id && interviewPrep && (
+              <div style={{
+                background: 'var(--color-surface)',
+                border: '2px solid #7C3AED',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
+                position: 'relative',
+              }}>
+                <button
+                  onClick={() => setInterviewPrep(null)}
+                  style={{
+                    position: 'absolute', top: 'var(--space-3)', right: 'var(--space-3)',
+                    width: 32, height: 32,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                    fontSize: 'var(--font-size-lg)', color: 'var(--color-text-muted)',
+                    lineHeight: 1,
+                  }}
+                  title="Tutup Detail Lowongan"
+                >
+                  ✕
+                </button>
+                <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: '#7C3AED' }}>
+                  📋 Detail Lowongan
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  {interviewPrep.companyIntel && (
+                    <div>
+                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Company Overview</h4>
+                      {interviewPrep.companyIntel.snapshot && (
                         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                          Skill: {interviewPrep.fitScore.skillMatch}% | Experience: {interviewPrep.fitScore.experienceMatch}%
+                          {interviewPrep.companyIntel.snapshot}
                         </p>
+                      )}
+                      {interviewPrep.companyIntel.products && interviewPrep.companyIntel.products.length > 0 && (
+                        <div style={{ marginTop: 'var(--space-2)' }}>
+                          <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>Produk: </span>
+                          {interviewPrep.companyIntel.products.join(', ')}
+                        </div>
+                      )}
+                      {interviewPrep.companyIntel.redFlags && interviewPrep.companyIntel.redFlags.length > 0 && (
+                        <div style={{ marginTop: 'var(--space-2)' }}>
+                          <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-status-red)' }}>
+                            Red Flags: 
+                          </span>
+                          <span style={{ fontSize: 'var(--font-size-sm)' }}>
+                            {interviewPrep.companyIntel.redFlags.join(', ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {/* Pipeline Summary */}
+                  {interviewPrep.pipeline && (
+                    <div>
+                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📈 Ringkasan Pipeline</h4>
+                      <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', fontSize: 'var(--font-size-sm)' }}>
+                        <span>Total: <strong>{interviewPrep.pipeline.total}</strong></span>
+                        <span>Response Rate: <strong>{interviewPrep.pipeline.responseRate}%</strong></span>
+                        <span>Avg Fit Score: <strong>{interviewPrep.pipeline.avgFitScore}</strong></span>
                       </div>
                     </div>
-                    {interviewPrep.gapSkills.length > 0 && (
-                      <div style={{ marginTop: 'var(--space-2)' }}>
-                        <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-status-red)' }}>
-                          ⚠️ Skill yang perlu diperdalam:
-                        </p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)', marginTop: 'var(--space-1)' }}>
-                          {interviewPrep.gapSkills.map((skill, i) => (
-                            <span key={i} style={{
-                              padding: '2px var(--space-2)',
-                              borderRadius: 'var(--radius-sm)',
-                              fontSize: 'var(--font-size-xs)',
-                              background: 'var(--color-error-bg)',
-                              border: '1px solid var(--color-error-bg)',
-                              color: 'var(--color-error-text)',
-                            }}>{skill}</span>
-                          ))}
+                  )}
+                  {interviewPrep.fitScore && (
+                    <div>
+                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📊 Fit Score Breakdown</h4>
+                      <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                        <div>
+                          <p style={{ fontWeight: 500 }}>Overall: {interviewPrep.fitScore.overallScore}/100</p>
+                          <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                            Skill: {interviewPrep.fitScore.skillMatch}% | Experience: {interviewPrep.fitScore.experienceMatch}%
+                          </p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Job Description */}
-                {interviewPrep.jobDescription && (
-                  <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📄 Job Description</h4>
-                    <p style={{
-                      fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)',
-                      whiteSpace: 'pre-wrap', maxHeight: '120px', overflow: 'auto',
-                      padding: 'var(--space-3)', background: 'var(--color-bg)',
-                      borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
-                    }}>
-                      {interviewPrep.jobDescription}
-                    </p>
-                  </div>
-                )}
-
-                {/* Saran Tailoring */}
-                {interviewPrep.tailoringSuggestions.length > 0 && (
-                  <div>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)' }}>💡 Saran Tailoring</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                      {interviewPrep.tailoringSuggestions.map((s, i) => (
-                        <div key={i} style={{
-                          padding: 'var(--space-3)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          background: 'var(--color-bg)',
-                        }}>
-                          <span style={{
-                            display: 'inline-block', padding: '2px var(--space-2)',
-                            background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)',
-                            fontSize: 'var(--font-size-xs)', fontWeight: 600, marginBottom: 'var(--space-1)',
-                          }}>{s.section}</span>
-                          <div style={{ marginTop: 'var(--space-1)' }}>
-                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-red)', textDecoration: 'line-through' }}>
-                              ❌ {s.original}
-                            </p>
-                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-green)', marginTop: 'var(--space-1)' }}>
-                              ✅ {s.suggested}
-                            </p>
-                          </div>
-                          {s.reason && (
-                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
-                              💡 {s.reason}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 🎤 Pertanyaan Interview */}
-                <div>
-                  <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🎤 Pertanyaan Interview</h4>
-                  {interviewQuestions.length === 0 && !questionsLoading && (
-                    <button
-                      onClick={handleGenerateQuestions}
-                      style={{
-                        padding: 'var(--space-2) var(--space-4)',
-                        background: '#7C3AED', color: 'var(--color-surface)',
-                        border: 'none', borderRadius: 'var(--radius-md)',
-                        cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 600,
-                      }}
-                    >
-                      ✨ Generate Pertanyaan
-                    </button>
-                  )}
-                  {questionsLoading && (
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                      ⏳ Sedang membuat pertanyaan...
-                    </p>
-                  )}
-                  {questionsError && !questionsLoading && (
-                    <div style={{
-                      padding: 'var(--space-3) var(--space-4)',
-                      background: 'var(--color-warning-bg)',
-                      border: '1px solid var(--color-warning-border)',
-                      borderRadius: 'var(--radius-md)',
-                      color: 'var(--color-warning-text)',
-                      fontSize: 'var(--font-size-sm)',
-                      marginBottom: 'var(--space-3)',
-                    }}>
-                      ⚠️ {questionsError}
-                    </div>
-                  )}
-                  {interviewQuestions.length > 0 && !questionsLoading && (
-                    <>
-                      <button
-                        onClick={handleGenerateQuestions}
-                        style={{
-                          padding: 'var(--space-1) var(--space-3)',
-                          background: 'var(--color-bg)', color: 'var(--color-text)',
-                          border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
-                          cursor: 'pointer', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)',
-                        }}
-                      >
-                        🔄 Regenerate
-                      </button>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                        {interviewQuestions.map((q, idx) => (
-                          <div key={idx} style={{
-                            padding: 'var(--space-3) var(--space-4)',
-                            background: 'var(--color-bg)',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: 'var(--radius-md)',
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
-                              <span style={{
+                      {interviewPrep.gapSkills.length > 0 && (
+                        <div style={{ marginTop: 'var(--space-2)' }}>
+                          <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-status-red)' }}>
+                            ⚠️ Skill yang perlu diperdalam:
+                          </p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)', marginTop: 'var(--space-1)' }}>
+                            {interviewPrep.gapSkills.map((skill, i) => (
+                              <span key={i} style={{
                                 padding: '2px var(--space-2)',
                                 borderRadius: 'var(--radius-sm)',
-                                fontSize: 'var(--font-size-xs)', fontWeight: 600,
-                                background: q.category === 'teknis' ? 'var(--color-info-bg)' : q.category === 'perilaku' ? '#D1FAE5' : 'var(--color-warning-bg)',
-                                color: q.category === 'teknis' ? 'var(--color-info-text)' : q.category === 'perilaku' ? '#065F46' : 'var(--color-warning-text)',
-                              }}>
-                                {q.category}
-                              </span>
+                                fontSize: 'var(--font-size-xs)',
+                                background: 'var(--color-error-bg)',
+                                border: '1px solid var(--color-error-bg)',
+                                color: 'var(--color-error-text)',
+                              }}>{skill}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Job Description */}
+                  {interviewPrep.jobDescription && (
+                    <div>
+                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📄 Job Description</h4>
+                      <p style={{
+                        fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)',
+                        whiteSpace: 'pre-wrap', maxHeight: '120px', overflow: 'auto',
+                        padding: 'var(--space-3)', background: 'var(--color-bg)',
+                        borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
+                      }}>
+                        {interviewPrep.jobDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Saran Tailoring */}
+                  {interviewPrep.tailoringSuggestions.length > 0 && (
+                    <div>
+                      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-3)' }}>💡 Saran Tailoring</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                        {interviewPrep.tailoringSuggestions.map((s, i) => (
+                          <div key={i} style={{
+                            padding: 'var(--space-3)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--color-bg)',
+                          }}>
+                            <span style={{
+                              display: 'inline-block', padding: '2px var(--space-2)',
+                              background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)',
+                              fontSize: 'var(--font-size-xs)', fontWeight: 600, marginBottom: 'var(--space-1)',
+                            }}>{s.section}</span>
+                            <div style={{ marginTop: 'var(--space-1)' }}>
+                              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-red)', textDecoration: 'line-through' }}>
+                                ❌ {s.original}
+                              </p>
+                              <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-status-green)', marginTop: 'var(--space-1)' }}>
+                                ✅ {s.suggested}
+                              </p>
                             </div>
-                            <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
-                              {q.question}
-                            </p>
-                            {q.tips && (
-                              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-                                💡 {q.tips}
+                            {s.reason && (
+                              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
+                                💡 {s.reason}
                               </p>
                             )}
                           </div>
                         ))}
                       </div>
-                    </>
+                    </div>
                   )}
+
+                  {/* 🎤 Pertanyaan Interview */}
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🎤 Pertanyaan Interview</h4>
+                    {interviewQuestions.length === 0 && !questionsLoading && (
+                      <button
+                        onClick={handleGenerateQuestions}
+                        style={{
+                          padding: 'var(--space-2) var(--space-4)',
+                          background: '#7C3AED', color: 'var(--color-surface)',
+                          border: 'none', borderRadius: 'var(--radius-md)',
+                          cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 600,
+                        }}
+                      >
+                        ✨ Generate Pertanyaan
+                      </button>
+                    )}
+                    {questionsLoading && (
+                      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                        ⏳ Sedang membuat pertanyaan...
+                      </p>
+                    )}
+                    {questionsError && !questionsLoading && (
+                      <div style={{
+                        padding: 'var(--space-3) var(--space-4)',
+                        background: 'var(--color-warning-bg)',
+                        border: '1px solid var(--color-warning-border)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--color-warning-text)',
+                        fontSize: 'var(--font-size-sm)',
+                        marginBottom: 'var(--space-3)',
+                      }}>
+                        ⚠️ {questionsError}
+                      </div>
+                    )}
+                    {interviewQuestions.length > 0 && !questionsLoading && (
+                      <>
+                        <button
+                          onClick={handleGenerateQuestions}
+                          style={{
+                            padding: 'var(--space-1) var(--space-3)',
+                            background: 'var(--color-bg)', color: 'var(--color-text)',
+                            border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)',
+                          }}
+                        >
+                          🔄 Regenerate
+                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                          {interviewQuestions.map((q, idx) => (
+                            <div key={idx} style={{
+                              padding: 'var(--space-3) var(--space-4)',
+                              background: 'var(--color-bg)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: 'var(--radius-md)',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
+                                <span style={{
+                                  padding: '2px var(--space-2)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  fontSize: 'var(--font-size-xs)', fontWeight: 600,
+                                  background: q.category === 'teknis' ? 'var(--color-info-bg)' : q.category === 'perilaku' ? '#D1FAE5' : 'var(--color-warning-bg)',
+                                  color: q.category === 'teknis' ? 'var(--color-info-text)' : q.category === 'perilaku' ? '#065F46' : 'var(--color-warning-text)',
+                                }}>
+                                  {q.category}
+                                </span>
+                              </div>
+                              <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
+                                {q.question}
+                              </p>
+                              {q.tips && (
+                                <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                                  💡 {q.tips}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
+            )}
+
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+
         </div>
       )}
     </section>

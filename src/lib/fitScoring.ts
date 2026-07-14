@@ -51,7 +51,15 @@ const STOP_WORDS = new Set([
   'http','https','www','com','id','org','net','co','httpid','httpsid',
   'httpwww','httpswww','httpcom','httpscom',
   'html','htm','php','asp','jsp','cgi',
-]);
+  // Indonesian stop words (common in JD, not skills)
+  'dan','untuk','dengan','dalam','pada','dari','ke','di','yang','adalah','ini','itu','atau','juga',
+  'telah','sudah','akan','dapat','bisa','harus','lebih','serta','oleh','karena','sebagai',
+  'apabila','bahwa','serta','antara','lain','meliputi','bagi','guna','wajib','nantinya',
+  'melakukan','mempersiapkan','membuat','mengelola','menjalankan','bertanggung','jawab',
+  'pengalaman','kemampuan','kualifikasi','tanggung','kriteria','posisi','lowongan',
+  'makanan','bahan','pasien','klinis','kolaborasi','pengolahan','olahan',
+  'deadline','secepatnya','cafe','gizi','sesuai','hasil',
+  ]);
 
 const URL_DOMAIN_PATTERNS = /https?:|www\.|\.com|\.co\.|\.id|\.org|\.net|\.io|\.dev|\.app/i;
 const DOMAIN_SUFFIXES = /\.(com|id|org|net|io|co|dev|app|gov|edu|co\.id)$/;

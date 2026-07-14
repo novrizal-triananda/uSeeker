@@ -6,7 +6,7 @@ function openUrl(url: string) {
   open(full).catch((err) => console.error('Failed to open URL:', err));
 }
 import { db } from '../lib/db';
-import { addApplication, updateStatus, getOutcome, getPipelineStats } from '../lib/pipeline';
+import { addApplication, updateStatus, getOutcome, getPipelineStats, getValidOutcomes } from '../lib/pipeline';
 import { logEvent } from '../lib/eventLog';
 import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats, JobEntry } from '../types';
 
@@ -337,7 +337,7 @@ export default function Visibility() {
                               style={styles.statusSelect}
                             >
                               <option value="">Outcome...</option>
-                              {OUTCOMES.map((o) => (
+                              {OUTCOMES.filter(o => getValidOutcomes(app.status).includes(o.key)).map((o) => (
                                 <option key={o.key} value={o.key}>{o.icon} {o.label}</option>
                               ))}
                             </select>
