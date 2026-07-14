@@ -12,6 +12,13 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 
+## [2.5.1] - 2026-07-15
+
+### Fixed
+- Replace window.confirm() with Tauri native dialog (confirm broken on WebKitGTK/Linux)
+- Remove auto-restore bug: deleted data no longer reappears on tab switch
+- Export/import via Rust backend (bypasses fs plugin scope issues)
+
 ## [2.5.0] - 2026-07-14
 
 ### Added
