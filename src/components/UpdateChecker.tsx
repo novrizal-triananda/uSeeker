@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
+import { exportAllData } from '../lib/backup';
 
 type UpdateState = 'idle' | 'checking' | 'available' | 'installing' | 'up-to-date' | 'error' | 'relaunching';
 
@@ -41,6 +43,13 @@ export default function UpdateChecker() {
       if (!update) {
         setState('up-to-date');
         return;
+      }
+      // Auto-backup before update
+      try {
+        const data = await exportAllData();
+        await invoke('backup_database', { data: JSON.stringify(data) });
+      } catch {
+        // Backup failed — proceed anyway, don't block update
       }
 
       let contentLen = 0;

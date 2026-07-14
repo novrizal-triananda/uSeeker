@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { useTheme } from '../lib/theme';
+import { exportAllData, importAllData } from '../lib/backup';
 
 interface AiSettings {
   apiKey: string;
@@ -120,6 +123,44 @@ export default function Settings() {
         <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
           Kunci API kamu disimpan secara lokal. Tidak ada data yang dikirim ke server uSeeker.
         </p>
+      </div>
+
+      {/* Data Backup */}
+      <div style={{ ...cardStyle, marginTop: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px' }}>Backup Data</h2>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '12px', lineHeight: 1.5 }}>
+          Backup semua data aplikasi ke file JSON. Gunakan sebelum update atau untuk pindah perangkat.
+        </p>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={async () => {
+            try {
+              const data = await exportAllData();
+              const path = await save({
+                defaultPath: `useeker-backup-${new Date().toISOString().slice(0, 10)}.json`,
+                filters: [{ name: 'JSON', extensions: ['json'] }],
+              });
+              if (path) {
+                await writeTextFile(path, JSON.stringify(data));
+                alert('Backup berhasil disimpan.');
+              }
+            } catch (e) { alert('Gagal backup: ' + String(e)); }
+          }} style={{ ...saveBtnStyle, flex: 1, background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>Export Data</button>
+          <button onClick={async () => {
+            try {
+              const path = await open({
+                filters: [{ name: 'JSON', extensions: ['json'] }],
+                multiple: false,
+              });
+              if (!path) return;
+              const text = await readTextFile(path as string);
+              const data = JSON.parse(text);
+              if (!confirm('Import akan mengganti semua data yang ada. Lanjutkan?')) return;
+              await importAllData(data);
+              alert('Import berhasil. Muat ulang halaman.');
+              window.location.reload();
+            } catch (e) { alert('Gagal import: ' + String(e)); }
+          }} style={{ ...saveBtnStyle, flex: 1, background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>Import Data</button>
+        </div>
       </div>
     </div>
   );

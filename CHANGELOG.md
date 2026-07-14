@@ -12,6 +12,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 
+## [2.5.0] - 2026-07-14
+
+### Added
+- Auto-backup: database otomatis di-backup sebelum update
+- Auto-restore: data otomatis dipulihkan dari backup jika kosong setelah update
+- Manual export/import data di Pengaturan (dengan file dialog)
+- Tauri plugins: dialog + fs untuk file picker
+
+### Fixed
+- Updater permission denied di Linux (install ke ~/.local/bin/)
+- ACL permissions untuk filesystem write
+
+
 ## [2.4.0] - 2026-07-14
 
 ### Added

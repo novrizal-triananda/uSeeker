@@ -92,12 +92,81 @@ fn get_ai_config() -> Result<serde_json::Value, String> {
     }))
 }
 
+/// Backup directory for database exports
+fn backup_dir() -> Result<std::path::PathBuf, String> {
+    let dir = dirs::config_dir()
+        .ok_or_else(|| "Could not determine config directory".to_string())?
+        .join("useeker")
+        .join("backups");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir)
+}
+
+/// Save database backup (JSON content from Dexie exportAll)
+#[tauri::command]
+fn backup_database(data: String) -> Result<String, String> {
+    let dir = backup_dir()?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs();
+    let filename = format!("backup-{}.json", now);
+    let path = dir.join(&filename);
+    std::fs::write(&path, &data).map_err(|e| e.to_string())?;
+
+    // Keep only last 5 backups
+    let mut entries: Vec<_> = std::fs::read_dir(&dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map(|ext| ext == "json").unwrap_or(false))
+        .filter_map(|e| {
+            let metadata = e.metadata().ok()?;
+            Some((e.path(), metadata.modified().ok()?))
+        })
+        .collect();
+    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    for (path, _) in entries.into_iter().skip(5) {
+        let _ = std::fs::remove_file(path);
+    }
+
+    Ok(filename)
+}
+
+/// Get latest backup content (for auto-restore after update)
+#[tauri::command]
+fn restore_database() -> Result<Option<String>, String> {
+    let dir = backup_dir()?;
+    if !dir.exists() {
+        return Ok(None);
+    }
+    let mut entries: Vec<_> = std::fs::read_dir(&dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map(|ext| ext == "json").unwrap_or(false))
+        .filter_map(|e| {
+            let metadata = e.metadata().ok()?;
+            Some((e.path(), metadata.modified().ok()?))
+        })
+        .collect();
+    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    let latest = entries.into_iter().next().map(|(p, _)| p);
+    match latest {
+        Some(path) => {
+            let data = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+            Ok(Some(data))
+        }
+        None => Ok(None),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .manage(SidecarState {
             child: Mutex::new(None),
         })
@@ -106,6 +175,9 @@ pub fn run() {
             save_config,
             read_config,
             get_ai_config,
+            // Backup/restore commands
+            backup_database,
+            restore_database,
             // Proxy commands (new — replaces Node.js server)
             proxy::call_ai,
             proxy::search_web,
