@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { save, open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
+import { confirmAsync } from '../lib/confirm';
 import { useTheme } from '../lib/theme';
 import { exportAllData, importAllData } from '../lib/backup';
 
@@ -140,7 +140,7 @@ export default function Settings() {
                 filters: [{ name: 'JSON', extensions: ['json'] }],
               });
               if (path) {
-                await writeTextFile(path, JSON.stringify(data));
+                await invoke("export_to_file", { path, data: JSON.stringify(data) });
                 alert('Backup berhasil disimpan.');
               }
             } catch (e) { alert('Gagal backup: ' + String(e)); }
@@ -152,9 +152,9 @@ export default function Settings() {
                 multiple: false,
               });
               if (!path) return;
-              const text = await readTextFile(path as string);
+              const text = await invoke<string>("import_from_file", { path: path as string });
               const data = JSON.parse(text);
-              if (!confirm('Import akan mengganti semua data yang ada. Lanjutkan?')) return;
+              if (!(await confirmAsync('Import akan mengganti semua data yang ada. Lanjutkan?'))) return;
               await importAllData(data);
               alert('Import berhasil. Muat ulang halaman.');
               window.location.reload();

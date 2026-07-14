@@ -159,6 +159,19 @@ fn restore_database() -> Result<Option<String>, String> {
     }
 }
 
+/// Export data to a user-selected file path
+#[tauri::command]
+fn export_to_file(path: String, data: String) -> Result<(), String> {
+    std::fs::write(&path, &data).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Import data from a user-selected file path
+#[tauri::command]
+fn import_from_file(path: String) -> Result<String, String> {
+    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -178,6 +191,8 @@ pub fn run() {
             // Backup/restore commands
             backup_database,
             restore_database,
+            export_to_file,
+            import_from_file,
             // Proxy commands (new — replaces Node.js server)
             proxy::call_ai,
             proxy::search_web,

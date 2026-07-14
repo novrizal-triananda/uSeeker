@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/db';
-import { invoke } from '@tauri-apps/api/core';
-import { importAllData, hasData } from '../lib/backup';
 import type { JobEntry, FitScore, Application } from '../types';
 
 interface DashboardData {
@@ -25,14 +23,6 @@ export default function Dashboard() {
 
   async function loadDashboard() {
     try {
-      // Auto-restore if database is empty (post-update recovery)
-      if (!(await hasData())) {
-        const backup = await invoke<string | null>('restore_database');
-        if (backup) {
-          await importAllData(JSON.parse(backup));
-        }
-      }
-
       const [jobs, fitScores, applications, intel, masterResume] = await Promise.all([
         db.jobEntries.toArray(),
         db.fitScores.toArray(),

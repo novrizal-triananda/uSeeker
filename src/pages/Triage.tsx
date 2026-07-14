@@ -9,6 +9,7 @@ function openUrl(url: string) {
 import { db } from '../lib/db';
 import { generateFitScore } from '../lib/fitScoring';
 import { logEvent } from '../lib/eventLog';
+import { confirmAsync } from '../lib/confirm';
 import type { JobEntry, FitScore, MasterResume } from '../types';
 
 interface JobWithScore {
@@ -232,7 +233,7 @@ export default function Triage() {
 
     // Edge case: warn if job description is empty
     if (!job.jobDescription || job.jobDescription.trim().length === 0) {
-      const proceed = confirm('Deskripsi pekerjaan kosong. Skor kesesuaian akan menjadi 0. Lanjutkan?');
+      const proceed = await confirmAsync('Deskripsi pekerjaan kosong. Skor kesesuaian akan menjadi 0. Lanjutkan?');
       if (!proceed) return;
     }
 
@@ -241,7 +242,7 @@ export default function Triage() {
       s => s.type === 'experience' && s.items.length > 0
     );
     if (!hasExperience) {
-      const proceed = confirm('CV tidak memiliki bagian pengalaman kerja. Skor pengalaman akan rendah. Lanjutkan?');
+      const proceed = await confirmAsync('CV tidak memiliki bagian pengalaman kerja. Skor pengalaman akan rendah. Lanjutkan?');
       if (!proceed) return;
     }
 
@@ -263,7 +264,7 @@ export default function Triage() {
   }
 
   async function handleDeleteJob(jobId: string) {
-    if (!confirm('Hapus lowongan ini?')) return;
+    if (!(await confirmAsync('Hapus lowongan ini?'))) return;
     await db.jobEntries.delete(jobId);
     await db.fitScores.where('jobId').equals(jobId).delete();
     await loadData();

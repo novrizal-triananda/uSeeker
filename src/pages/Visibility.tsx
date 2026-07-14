@@ -8,6 +8,7 @@ function openUrl(url: string) {
 import { db } from '../lib/db';
 import { addApplication, updateStatus, getOutcome, getPipelineStats, getValidOutcomes } from '../lib/pipeline';
 import { logEvent } from '../lib/eventLog';
+import { confirmAsync } from '../lib/confirm';
 import type { Application, ApplicationStatus, ApplicationOutcome, PipelineStats, JobEntry } from '../types';
 
 const PIPELINE_STAGES: { key: ApplicationStatus; label: string; icon: string }[] = [
@@ -122,7 +123,7 @@ export default function Visibility() {
   }
 
   async function handleDeleteApp(id: string) {
-    if (!confirm('Hapus lamaran ini?')) return;
+    if (!(await confirmAsync('Hapus lamaran ini?'))) return;
     await db.applications.delete(id);
     await loadData();
   }
