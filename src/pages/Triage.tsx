@@ -837,11 +837,12 @@ export default function Triage() {
                           border: '1px solid var(--color-border)',
                           background: 'var(--color-bg)',
                           color: 'var(--color-text)',
-                          cursor: 'pointer',
+                          cursor: generatingId === job.id ? 'wait' : 'pointer',
                           fontSize: 'var(--font-size-sm)',
+                          opacity: generatingId === job.id ? 0.7 : 1,
                         }}
                       >
-                        🔄 Hitung Ulang Skor
+                        {generatingId === job.id ? '⏳ Menghitung...' : '🔄 Hitung Ulang Skor'}
                       </button>
                       {scoreSuccess === job.id && (
                         <span style={{

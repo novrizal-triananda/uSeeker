@@ -19,6 +19,7 @@ export default function DataHub() {
   const [views, setViews] = useState<ConsolidatedView[]>([]);
   const [pipeline, setPipeline] = useState<PipelineSummary | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [interviewPrep, setInterviewPrep] = useState<InterviewPrep | null>(null);
   const [interviewQuestions, setInterviewQuestions] = useState<InterviewQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
@@ -60,6 +61,13 @@ export default function DataHub() {
   const [prepLoading, setPrepLoading] = useState(false);
 
   async function handleShowPrep(jobId: string) {
+    // Toggle immediately for accordion UX
+    if (expandedJobId === jobId) {
+      setExpandedJobId(null);
+      setInterviewPrep(null);
+      return;
+    }
+    setExpandedJobId(jobId);
     setSelectedJobId(jobId);
     setPrepLoading(true);
     // Check cache first for previously generated questions
@@ -312,22 +320,22 @@ export default function DataHub() {
                     </div>
                     <button
                       onClick={() => handleShowPrep(view.jobEntry.id)}
-                      disabled={prepLoading}
+                      disabled={false}
                       style={{
                         padding: 'var(--space-2) var(--space-4)',
-                        background: selectedJobId === view.jobEntry.id ? '#7C3AED' : 'var(--color-bg)',
-                        color: selectedJobId === view.jobEntry.id ? 'var(--color-surface)' : 'var(--color-text)',
+                        background: expandedJobId === view.jobEntry.id ? '#7C3AED' : 'var(--color-bg)',
+                        color: expandedJobId === view.jobEntry.id ? 'var(--color-surface)' : 'var(--color-text)',
                         border: '1px solid var(--color-border)',
                         borderRadius: 'var(--radius-md)',
                         cursor: prepLoading ? 'wait' : 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 500,
                         opacity: prepLoading ? 0.6 : 1,
                       }}
                     >
-                      {prepLoading && selectedJobId === view.jobEntry.id ? '⏳ Memuat...' : '📋 Detail Lowongan'}
+                      {expandedJobId === view.jobEntry.id ? '✕ Tutup' : '📋 Detail Lowongan'}
                     </button>
                   </div>
             {/* Detail Lowongan View */}
-            {selectedJobId === view.jobEntry.id && interviewPrep && (
+            {expandedJobId === view.jobEntry.id && interviewPrep && (
               <div style={{
                 background: 'var(--color-surface)',
                 border: '2px solid #7C3AED',
@@ -336,7 +344,7 @@ export default function DataHub() {
                 position: 'relative',
               }}>
                 <button
-                  onClick={() => setInterviewPrep(null)}
+                  onClick={() => { setExpandedJobId(null); setInterviewPrep(null); }}
                   style={{
                     position: 'absolute', top: 'var(--space-3)', right: 'var(--space-3)',
                     width: 32, height: 32,
@@ -354,7 +362,45 @@ export default function DataHub() {
                   📋 Detail Lowongan
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                  {interviewPrep.companyIntel && (
+                  {/* Job Description - always visible when expanded */}
+                  <div style={{
+                    padding: 'var(--space-4)',
+                    background: 'var(--color-bg)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                  }}>
+                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📝 Deskripsi Pekerjaan</h4>
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                      {view.jobEntry.jobDescription || 'Tidak ada deskripsi'}
+                    </p>
+                    {view.jobEntry.location && (
+                      <div style={{ marginTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                        <span style={{ padding: 'var(--space-1) var(--space-3)', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
+                          📍 {view.jobEntry.location}
+                        </span>
+                        {view.jobEntry.salaryRange && (
+                          <span style={{ padding: 'var(--space-1) var(--space-3)', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
+                            💰 {view.jobEntry.salaryRange}
+                          </span>
+                        )}
+                        {view.jobEntry.employmentType && (
+                          <span style={{ padding: 'var(--space-1) var(--space-3)', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
+                            📅 {view.jobEntry.employmentType}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Loading indicator for additional data */}
+                  {prepLoading && (
+                    <div style={{ textAlign: 'center', padding: 'var(--space-4)', color: 'var(--color-text-muted)' }}>
+                      ⏳ Memuat data tambahan...
+                    </div>
+                  )}
+
+                  {/* Company Intel - only show if loaded */}
+                  {interviewPrep?.companyIntel && (
                     <div>
                       <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Company Overview</h4>
                       {interviewPrep.companyIntel.snapshot && (

@@ -1,6 +1,6 @@
 [package]
 name = "useeker"
-version = "2.7.0"
+version = "2.7.1"
 description = "uSeeker — Pelacak Lamaran Kerja"
 authors = ["Novrizal"]
 edition = "2021"

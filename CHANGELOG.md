@@ -8,6 +8,13 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 ## [Unreleased]
+## [2.7.1] - 2026-07-15
+
+### Changed
+- Triage: add loading animation to Hitung Ulang Skor button
+- Data Hub: expandable accordion-style job detail cards
+- Data Hub: show job description immediately on expand
+
 ## [2.7.0] - 2026-07-15
 
 ### Changed
