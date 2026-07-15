@@ -12,6 +12,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 
+## [2.6.0] - 2026-07-15
+
+### Changed
+- Data storage: IndexedDB → Rust JSON backend
+- Eliminates WebKitGTK IndexedDB corruption on Linux
+- Cross-platform: all OS use same JSON file storage
+- Auto-migration from legacy IndexedDB on first launch
+
+### Removed
+- Dexie.js dependency (no more IndexedDB)
 ## [2.5.1] - 2026-07-15
 
 ### Fixed
