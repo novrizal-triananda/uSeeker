@@ -8,6 +8,15 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 ## [Unreleased]
+## [2.6.1] - 2026-07-15
+
+### Fixed
+- Import data: flush to disk before page reload
+- Tailoring AI: strip markdown code fences from AI response
+- Visibility: add inline notes editing (click to edit, blur to save)
+- README/SECURITY: update IndexedDB → JSON backend references
+
+
 
 ---
 
