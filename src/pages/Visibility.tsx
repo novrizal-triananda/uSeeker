@@ -48,6 +48,7 @@ export default function Visibility() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormData>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
 
   async function loadData() {
     try {
@@ -126,6 +127,15 @@ export default function Visibility() {
     if (!(await confirmAsync('Hapus lamaran ini?'))) return;
     await db.applications.delete(id);
     await loadData();
+  }
+
+  async function handleNotesBlur(id: string) {
+    const notes = editingNotes[id];
+    if (notes !== undefined) {
+      await db.applications.update(id, { notes: notes || undefined });
+      setEditingNotes((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      await loadData();
+    }
   }
 
   if (loading) {
@@ -299,9 +309,32 @@ export default function Visibility() {
                               title="Hapus lamaran"
                             >✕</button>
                           </div>
-                          {app.notes && (
-                            <div style={styles.cardNotes}>{app.notes}</div>
-                          )}
+                          {(() => {
+                            const isEditing = app.id in editingNotes;
+                            const value = isEditing ? editingNotes[app.id] : (app.notes || '');
+                            return (
+                              <div style={styles.cardNotes}>
+                                {isEditing || app.notes ? (
+                                  <textarea
+                                    value={value}
+                                    onChange={(e) => setEditingNotes((prev) => ({ ...prev, [app.id]: e.target.value }))}
+                                    onBlur={() => handleNotesBlur(app.id)}
+                                    onKeyDown={(e) => { if (e.key === 'Escape') { setEditingNotes((prev) => { const n = { ...prev }; delete n[app.id]; return n; }); } }}
+                                    placeholder="Tambah catatan..."
+                                    rows={2}
+                                    style={{ width: '100%', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => setEditingNotes((prev) => ({ ...prev, [app.id]: app.notes || '' }))}
+                                    style={{ background: 'none', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', cursor: 'pointer', width: '100%', textAlign: 'left', fontFamily: 'inherit' }}
+                                  >
+                                    + Tambah catatan
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
                           <div style={styles.cardMeta}>
                             <time style={styles.cardDate}>
                               {new Date(app.dateApplied).toLocaleDateString('id-ID', {

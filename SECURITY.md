@@ -8,17 +8,17 @@ uSeeker dirancang *local-first*. Semua data pengguna disimpan di komputer masing
 
 | Data | Lokasi | Dikirim ke Internet? |
 |------|--------|---------------------|
-| CV / Resume | IndexedDB (lokal) | Tidak, kecuali saat dianalisis oleh AI |
-| Data lamaran kerja | IndexedDB (lokal) | Tidak |
-| Hasil riset perusahaan | IndexedDB (lokal) | Tidak |
-| Skor kecocokan | IndexedDB (lokal) | Tidak |
+| CV / Resume | JSON file (lokal) | Tidak, kecuali saat dianalisis oleh AI |
+| Data lamaran kerja | JSON file (lokal) | Tidak |
+| Hasil riset perusahaan | JSON file (lokal) | Tidak |
+| Skor kecocokan | JSON file (lokal) | Tidak |
 
 ## Fitur AI dan Privasi
 
 Fitur AI uSeeker (analisis CV, riset perusahaan, *tailoring*, pertanyaan wawancara) bekerja dengan cara mengirim data ke **provider AI pilihan pengguna**.
 
 - **Data yang dikirim ke provider AI:** Teks CV dan/atau deskripsi pekerjaan. Bergantung pada provider yang dipilih — bisa ke server DeepSeek (China), OpenAI (AS), atau provider lainnya.
-- **Data yang TIDAK pernah keluar dari komputer:** Semua data yang disimpan di IndexedDB — CV asli, daftar lamaran, catatan, hasil riset, dan skor.
+- **Data yang TIDAK pernah keluar dari komputer:** Semua data yang disimpan di JSON file (Rust backend) — CV asli, daftar lamaran, catatan, hasil riset, dan skor.
 - **Jika menggunakan Ollama atau provider lokal:** Data tetap 100% di komputer pengguna. Tidak ada yang keluar ke internet.
 
 **Pengguna bertanggung jawab memahami kebijakan privasi provider AI yang mereka pilih.**

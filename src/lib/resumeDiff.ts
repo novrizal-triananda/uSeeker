@@ -114,7 +114,7 @@ export function parseAiSuggestions(response: string): TailorSuggestion[] {
   if (!response || response.trim().length === 0) return [];
 
   try {
-    const parsed = JSON.parse(response);
+    const parsed = JSON.parse(stripMarkdown(response));
     if (Array.isArray(parsed)) {
       return parsed
         .filter(
@@ -355,11 +355,12 @@ export async function generateSkillAnalysis(
   }
 }
 
+/** Strip markdown code fences from AI response */ function stripMarkdown(text: string): string { const trimmed = text.trim(); const match = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/); return match ? match[1].trim() : trimmed; }
 function parseSkillAnalysis(response: string): SkillAnalysis | null {
   if (!response || response.trim().length === 0) return null;
 
   try {
-    const parsed = JSON.parse(response);
+    const parsed = JSON.parse(stripMarkdown(response));
     return {
       fundamentalFit: {
         experienceLevel: ['match', 'mismatch', 'partial'].includes(parsed.fundamentalFit?.experienceLevel)

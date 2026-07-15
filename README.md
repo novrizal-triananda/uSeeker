@@ -181,7 +181,7 @@ Ya! uSeeker adalah aplikasi **gratis dan open-source**. Namun, untuk fitur AI ka
 
 ### Apakah data saya aman?
 
-Semua data kamu tersimpan di komputer kamu sendiri (menggunakan IndexedDB lokal). Tidak ada data yang dikirim ke server uSeeker karena uSeeker tidak memiliki server.
+Semua data kamu tersimpan di komputer kamu sendiri sebagai file JSON via Rust backend. Tidak ada data yang dikirim ke server uSeeker karena uSeeker tidak memiliki server.
 
 **Yang perlu diketahui:** Saat kamu menggunakan fitur AI (analisis CV, riset perusahaan, *tailoring*), teks CV dan/atau deskripsi pekerjaan akan dikirim ke **provider AI yang kamu pilih** untuk dianalisis. Data ini dikirim langsung ke provider (contoh: DeepSeek, OpenAI) — bukan ke uSeeker. Kamu bertanggung jawab memahami kebijakan privasi provider yang kamu gunakan.
 
@@ -230,7 +230,7 @@ Klik tombol **Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru.
 
 **uSeeker dirancang *local-first*.** Ini berarti:
 
-- **Data lokal** — Semua data kamu — CV, lamaran kerja, catatan, skor — tersimpan di komputer kamu sendiri (IndexedDB). Tidak ada server uSeeker yang menyimpan data ini.
+- **Data lokal** — Semua data kamu — CV, lamaran kerja, catatan, skor — tersimpan di komputer kamu sendiri (JSON file via Rust backend). Tidak ada server uSeeker yang menyimpan data ini.
 - **Tanpa telemetri** — Tidak ada analytics, tidak ada pelacakan penggunaan, tidak ada laporan telemetri.
 - **API key milik kamu** — API key AI disimpan lokal di perangkat kamu. Hanya dikirim ke provider AI yang kamu tunjuk saat fitur AI dijalankan.
 - **Koneksi AI** — Fitur AI menghubungi provider pilihan kamu langsung. uSeeker tidak menjadi perantara penyimpanan data.
@@ -245,7 +245,7 @@ Klik tombol **Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru.
 | **Desktop Framework** | [Tauri v2](https://v2.tauri.app/) — Rust + WebView |
 | **Frontend** | [React 18](https://react.dev/) + TypeScript |
 | **Build Tool** | [Vite](https://vitejs.dev/) |
-| **Database Lokal** | [Dexie.js](https://dexie.org/) — IndexedDB wrapper |
+| **Database Lokal** | JSON file via Rust backend (cross-platform, WebKitGTK-proof) |
 | **Backend** | [Rust](https://www.rust-lang.org/) — Tauri commands (AI proxy, search, scraping) |
 | **Testing** | [Vitest](https://vitest.dev/) + Testing Library |
 | **File Parsing** | PDF.js, Mammoth (DOCX), Tesseract.js (OCR) |
@@ -261,7 +261,7 @@ Klik tombol **Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru.
 │  │             │  │   Scrape, Agent) │  │
 │  └─────────────┘  └──────────────────┘  │
 │         │                    │          │
-│    IndexedDB            External APIs   │
+│    JSON (Rust backend)  External APIs   │
 │   (data lokal)                          │
 └─────────────────────────────────────────┘
 ```

@@ -4,6 +4,7 @@ import { save, open } from '@tauri-apps/plugin-dialog';
 import { confirmAsync } from '../lib/confirm';
 import { useTheme } from '../lib/theme';
 import { exportAllData, importAllData } from '../lib/backup';
+import { flush } from '../lib/db';
 
 interface AiSettings {
   apiKey: string;
@@ -156,6 +157,7 @@ export default function Settings() {
               const data = JSON.parse(text);
               if (!(await confirmAsync('Import akan mengganti semua data yang ada. Lanjutkan?'))) return;
               await importAllData(data);
+              await flush();
               alert('Import berhasil. Muat ulang halaman.');
               window.location.reload();
             } catch (e) { alert('Gagal import: ' + String(e)); }

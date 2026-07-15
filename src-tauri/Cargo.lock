@@ -4393,7 +4393,7 @@ dependencies = [
 
 [[package]]
 name = "useeker"
-version = "2.5.1"
+version = "2.6.0"
 dependencies = [
  "dirs 5.0.1",
  "regex",

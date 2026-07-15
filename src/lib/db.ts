@@ -25,6 +25,12 @@ function scheduleSave() {
   saveTimer = setTimeout(() => { persist(); }, 200);
 }
 
+/** Force immediate save to disk (call after bulk operations before page reload) */
+export async function flush(): Promise<void> {
+  if (saveTimer) clearTimeout(saveTimer);
+  await persist();
+}
+
 async function persist() {
   if (!state) return;
   try {
