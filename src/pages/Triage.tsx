@@ -248,7 +248,7 @@ export default function Triage() {
 
     setGeneratingId(jobId);
     try {
-      const fitScore = generateFitScore(masterResume, job.jobDescription || '', jobId);
+      const fitScore = await generateFitScore(masterResume, job.jobDescription || '', jobId);
       // Delete old score for this job to avoid duplicates
       await db.fitScores.where('jobId').equals(jobId).delete();
       await db.fitScores.add(fitScore);

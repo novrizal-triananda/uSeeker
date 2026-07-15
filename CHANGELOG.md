@@ -8,6 +8,21 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 ## [Unreleased]
+## [2.7.0] - 2026-07-15
+
+### Changed
+- Triage keyword matching: AI-based skill extraction replaces word frequency
+- AI extracts actual skills/qualifications from job descriptions
+- Fallback to local extraction if AI unavailable
+- Matched/Missing labels now show real skills, not generic Indonesian words
+
+### Fixed
+- Import data: flush to disk before page reload
+- Tailoring AI: strip markdown code fences from AI response
+- Visibility: add inline notes editing (click to edit, blur to save)
+- README/SECURITY: update IndexedDB → JSON backend references
+
+
 ## [2.6.1] - 2026-07-15
 
 ### Fixed

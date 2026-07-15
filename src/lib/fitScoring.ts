@@ -1,4 +1,5 @@
 import type { MasterResume, FitScore } from '../types';
+import { invoke } from '@tauri-apps/api/core';
 
 // ── Skill taxonomy ──────────────────────────────────────────────────────────
 
@@ -293,13 +294,85 @@ function calculatePreferenceMatch(_jdText: string, expectedSalary?: string, sala
   return Math.max(0, score);
 }
 
-export function generateFitScore(
+// ── AI Skill Extraction ──────────────────────────────────────────────────────
+
+const SKILL_EXTRACTION_PROMPT = `## TASK
+Analyze this job description and extract the KEY skills, qualifications, and requirements.
+
+## OUTPUT FORMAT
+Return a JSON object with exactly these fields:
+{
+  "requiredSkills": ["skill1", "skill2"],
+  "niceToHaveSkills": ["skill3", "skill4"],
+  "qualifications": ["bachelor degree", "3+ years experience"],
+  "industryKnowledge": ["knowledge area 1"]
+}
+
+## RULES
+- Extract actual SPECIFIC skills, not generic words
+- Include both hard skills (tools, technologies, programming) and soft skills (leadership, communication)
+- Include domain-specific knowledge relevant to the job
+- Include education and experience requirements
+- Do NOT include generic Indonesian words like "memiliki", "mampu", "baik", "secara"
+- Do NOT include company-specific terms
+- Be specific: "React.js" not "frontend"; "Python" not "programming language"
+- For Indonesian JDs, translate technical terms to English (e.g., "pembukuan" → "accounting")
+- Max 20 required skills, max 10 nice-to-have skills
+
+## EXAMPLES
+
+Input: "Mencari frontend developer yang menguasai React.js, TypeScript, dan Tailwind CSS. Pengalaman minimal 2 tahun."
+Output: {"requiredSkills": ["React.js", "TypeScript", "Tailwind CSS", "frontend development"], "niceToHaveSkills": [], "qualifications": ["2+ years frontend experience"], "industryKnowledge": []}
+
+Input: "Dibutuhkan staff akuntansi. Menguasai Microsoft Excel, pembukuan, laporan keuangan. Pendidikan minimal D3 Akuntansi."
+Output: {"requiredSkills": ["Microsoft Excel", "accounting", "financial reporting", "bookkeeping"], "niceToHaveSkills": [], "qualifications": ["D3 in Accounting"], "industryKnowledge": []}
+`;
+
+async function extractSkillsWithAI(
+  resumeText: string,
+  jobDescription: string,
+): Promise<{ requiredSkills: string[]; niceToHaveSkills: string[] } | null> {
+  const prompt = [
+    '--- JOB DESCRIPTION ---',
+    jobDescription,
+    '',
+    '--- RESUME (for context on candidate background) ---',
+    resumeText.slice(0, 2000),
+    '',
+    SKILL_EXTRACTION_PROMPT,
+  ].join('\n');
+
+  try {
+    const data = await invoke<{ result: string }>('call_ai', {
+      prompt,
+      systemPrompt: 'You are an expert HR analyst. Extract skills from job descriptions accurately.',
+      task: 'skill_extraction',
+    });
+
+    let text = (data.result || '').trim();
+    // Strip markdown fences
+    const fenceMatch = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+    if (fenceMatch) text = fenceMatch[1].trim();
+
+    const parsed = JSON.parse(text);
+    return {
+      requiredSkills: Array.isArray(parsed.requiredSkills) ? parsed.requiredSkills : [],
+      niceToHaveSkills: Array.isArray(parsed.niceToHaveSkills) ? parsed.niceToHaveSkills : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ── Local skill match (fallback) ─────────────────────────────────────────────
+
+export async function generateFitScore(
   masterResume: MasterResume,
   jobDescription: string,
   jobId: string,
   expectedSalary?: string,
   salaryRange?: string,
-): FitScore {
+): Promise<FitScore> {
   const resumeText = masterResume.sections
     .flatMap(s => s.items.map(i => i.text))
     .join(' ');
@@ -332,8 +405,41 @@ export function generateFitScore(
     };
   }
 
-  const jdKeywords = extractKeywords(jobDescription);
-  const { score: skillMatch, matched, missing } = calculateSkillMatch(resumeText, jdKeywords, jobDescription);
+  // Try AI extraction first, fall back to local
+  const aiSkills = await extractSkillsWithAI(resumeText, jobDescription);
+
+  let matchedSkills: string[];
+  let missingSkills: string[];
+  let skillMatch: number;
+
+  if (aiSkills && (aiSkills.requiredSkills.length > 0 || aiSkills.niceToHaveSkills.length > 0)) {
+    // AI extraction succeeded — use its results
+    const allRequired = aiSkills.requiredSkills.map(s => s.toLowerCase());
+    const allNiceToHave = aiSkills.niceToHaveSkills.map(s => s.toLowerCase());
+    const allSkills = [...allRequired, ...allNiceToHave];
+    const resumeLower = resumeText.toLowerCase();
+
+    matchedSkills = allSkills.filter(s => resumeLower.includes(s));
+    missingSkills = allSkills.filter(s => !resumeLower.includes(s));
+
+    // Weight required skills higher
+    const requiredWeight = allRequired.length * 2;
+    const niceWeight = allNiceToHave.length;
+    const totalWeight = requiredWeight + niceWeight;
+    const matchedRequired = allRequired.filter(s => resumeLower.includes(s)).length;
+    const matchedNice = allNiceToHave.filter(s => resumeLower.includes(s)).length;
+    skillMatch = totalWeight > 0
+      ? Math.round(((matchedRequired * 2 + matchedNice) / totalWeight) * 100)
+      : 0;
+  } else {
+    // Fallback: local keyword extraction
+    const jdKeywords = extractKeywords(jobDescription);
+    const localResult = calculateSkillMatch(resumeText, jdKeywords, jobDescription);
+    matchedSkills = localResult.matched;
+    missingSkills = localResult.missing;
+    skillMatch = localResult.score;
+  }
+
   const experienceMatch = calculateExperienceMatch(resumeText, jobDescription);
   const preferenceMatch = calculatePreferenceMatch(jobDescription, expectedSalary, salaryRange);
 
@@ -348,8 +454,8 @@ export function generateFitScore(
     skillMatch,
     experienceMatch,
     preferenceMatch,
-    matchedSkills: matched,
-    missingSkills: missing,
+    matchedSkills,
+    missingSkills,
     calculatedAt: new Date(),
   };
 }

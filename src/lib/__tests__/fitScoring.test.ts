@@ -41,7 +41,7 @@ const sampleResume: MasterResume = {
 };
 
 describe('extractKeywords', () => {
-  it('should extract meaningful keywords from JD', () => {
+  it('should extract meaningful keywords from JD', async () => {
     const jd = 'We need a React developer with TypeScript experience. Must know Node.js and PostgreSQL.';
     const keywords = extractKeywords(jd);
     expect(keywords).toContain('react');
@@ -51,7 +51,7 @@ describe('extractKeywords', () => {
     expect(keywords).toContain('postgresql');
   });
 
-  it('should filter stop words', () => {
+  it('should filter stop words', async () => {
     const jd = 'The candidate must be able to work in a fast-paced environment';
     const keywords = extractKeywords(jd);
     expect(keywords).not.toContain('the');
@@ -59,13 +59,13 @@ describe('extractKeywords', () => {
     expect(keywords).not.toContain('able');
   });
 
-  it('should handle empty text', () => {
+  it('should handle empty text', async () => {
     expect(extractKeywords('')).toEqual([]);
   });
 });
 
 describe('extractSkillPhrases', () => {
-  it('should extract comma-separated skills', () => {
+  it('should extract comma-separated skills', async () => {
     const text = 'Required: React, Vue, Angular, TypeScript';
     const skills = extractSkillPhrases(text);
     expect(skills).toContain('react');
@@ -74,7 +74,7 @@ describe('extractSkillPhrases', () => {
     expect(skills).toContain('typescript');
   });
 
-  it('should extract technical terms', () => {
+  it('should extract technical terms', async () => {
     const text = 'Experience with React, Docker, and AWS required';
     const skills = extractSkillPhrases(text);
     expect(skills).toContain('react');
@@ -84,9 +84,9 @@ describe('extractSkillPhrases', () => {
 });
 
 describe('generateFitScore', () => {
-  it('should generate a valid fit score', () => {
+  it('should generate a valid fit score', async () => {
     const jd = 'We need a React developer with 3 years experience. Skills: React, TypeScript, Node.js, PostgreSQL';
-    const score = generateFitScore(sampleResume, jd, 'job-1');
+    const score = await generateFitScore(sampleResume, jd, 'job-1');
     expect(score).toBeDefined();
     expect(score.overallScore).toBeGreaterThanOrEqual(0);
     expect(score.overallScore).toBeLessThanOrEqual(100);
@@ -96,52 +96,52 @@ describe('generateFitScore', () => {
     expect(score.matchedSkills.length).toBeGreaterThan(0);
   });
 
-  it('should match skills from resume', () => {
+  it('should match skills from resume', async () => {
     const jd = 'Required: React, TypeScript, Node.js';
-    const score = generateFitScore(sampleResume, jd, 'job-2');
+    const score = await generateFitScore(sampleResume, jd, 'job-2');
     expect(score.matchedSkills).toContain('react');
     expect(score.matchedSkills).toContain('typescript');
     expect(score.matchedSkills.some(k => k.includes('node'))).toBe(true);
   });
 
-  it('should identify missing skills', () => {
+  it('should identify missing skills', async () => {
     const jd = 'Required: React, Kotlin, Swift, Flutter';
-    const score = generateFitScore(sampleResume, jd, 'job-3');
+    const score = await generateFitScore(sampleResume, jd, 'job-3');
     expect(score.missingSkills).toContain('kotlin');
     expect(score.missingSkills).toContain('swift');
     expect(score.missingSkills).toContain('flutter');
     expect(score.matchedSkills).toContain('react');
   });
 
-  it('should calculate experience match', () => {
+  it('should calculate experience match', async () => {
     const jd = 'Requires 3 years of experience in web development';
-    const score = generateFitScore(sampleResume, jd, 'job-4');
+    const score = await generateFitScore(sampleResume, jd, 'job-4');
     expect(score.experienceMatch).toBe(100); // Resume has 3 years, JD requires 3
   });
 
-  it('should handle JD with no experience requirement', () => {
+  it('should handle JD with no experience requirement', async () => {
     const jd = 'Looking for a React developer';
-    const score = generateFitScore(sampleResume, jd, 'job-5');
+    const score = await generateFitScore(sampleResume, jd, 'job-5');
     expect(score.experienceMatch).toBe(100); // No requirement = full match
   });
 
-  it('should penalize salary mismatch', () => {
+  it('should penalize salary mismatch', async () => {
     const jd = 'Salary range: 5-8 juta';
-    const score = generateFitScore(sampleResume, jd, 'job-6', '15 juta');
+    const score = await generateFitScore(sampleResume, jd, 'job-6', '15 juta');
     // salary check works when both expected and range are numeric
     expect(score.preferenceMatch).toBeGreaterThanOrEqual(0);
   });
 
-  it('should generate unique IDs', () => {
+  it('should generate unique IDs', async () => {
     const jd = 'React developer';
-    const score1 = generateFitScore(sampleResume, jd, 'job-7');
-    const score2 = generateFitScore(sampleResume, jd, 'job-8');
+    const score1 = await generateFitScore(sampleResume, jd, 'job-7');
+    const score2 = await generateFitScore(sampleResume, jd, 'job-8');
     expect(score1.id).not.toBe(score2.id);
   });
 
-  it('should include calculatedAt timestamp', () => {
+  it('should include calculatedAt timestamp', async () => {
     const before = new Date();
-    const score = generateFitScore(sampleResume, 'React', 'job-9');
+    const score = await generateFitScore(sampleResume, 'React', 'job-9');
     const after = new Date();
     expect(score.calculatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     expect(score.calculatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
