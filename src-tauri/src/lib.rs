@@ -92,6 +92,39 @@ fn get_ai_config() -> Result<serde_json::Value, String> {
     }))
 }
 
+// ── Database storage (JSON file via Rust backend) ──
+
+/// Base directory for useeker data files
+fn data_dir() -> Result<std::path::PathBuf, String> {
+    let dir = dirs::config_dir()
+        .ok_or_else(|| "Could not determine config directory".to_string())?
+        .join("useeker").join("data");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir)
+}
+
+/// Load entire database from JSON file
+#[tauri::command]
+fn load_database() -> Result<Option<String>, String> {
+    let dir = data_dir()?;
+    let path = dir.join("database.json");
+    if !path.exists() {
+        return Ok(None);
+    }
+    std::fs::read_to_string(&path).map_err(|e| e.to_string()).map(Some)
+}
+
+/// Save entire database to JSON file
+#[tauri::command]
+fn save_database(data: String) -> Result<(), String> {
+    let dir = data_dir()?;
+    let path = dir.join("database.json");
+    std::fs::write(&path, &data).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// ── Backup system ──
+
 /// Backup directory for database exports
 fn backup_dir() -> Result<std::path::PathBuf, String> {
     let dir = dirs::config_dir()
@@ -132,7 +165,7 @@ fn backup_database(data: String) -> Result<String, String> {
     Ok(filename)
 }
 
-/// Get latest backup content (for auto-restore after update)
+/// Get latest backup content
 #[tauri::command]
 fn restore_database() -> Result<Option<String>, String> {
     let dir = backup_dir()?;
@@ -184,16 +217,19 @@ pub fn run() {
             child: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
-            // Config commands (existing)
+            // Config commands
             save_config,
             read_config,
             get_ai_config,
-            // Backup/restore commands
+            // Database commands
+            load_database,
+            save_database,
+            // Backup commands
             backup_database,
             restore_database,
             export_to_file,
             import_from_file,
-            // Proxy commands (new — replaces Node.js server)
+            // Proxy commands
             proxy::call_ai,
             proxy::search_web,
             proxy::fetch_url,

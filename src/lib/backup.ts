@@ -1,22 +1,20 @@
 import { db } from './db';
-
-// ponytail: export/import Dexie data as JSON for backup/restore.
-// Add new tables here when schema changes.
+import type { JobEntry, FitScore, Application, CompanyIntel, MasterResume, TailoredResume, EventLog } from '../types';
 
 type BackupData = {
   version: number;
   timestamp: string;
-  masterResume: unknown[];
-  jobEntries: unknown[];
-  applications: unknown[];
-  fitScores: unknown[];
-  companyIntel: unknown[];
-  tailoredResumes: unknown[];
-  interviewQuestions: unknown[];
-  eventLog: unknown[];
+  masterResume: MasterResume[];
+  jobEntries: JobEntry[];
+  applications: Application[];
+  fitScores: FitScore[];
+  companyIntel: CompanyIntel[];
+  tailoredResumes: TailoredResume[];
+  interviewQuestions: any[];
+  eventLog: EventLog[];
 };
 
-/** Export all Dexie tables to a JSON-serializable object */
+/** Export all data to a JSON-serializable object */
 export async function exportAllData(): Promise<BackupData> {
   const [
     masterResume,
@@ -52,44 +50,29 @@ export async function exportAllData(): Promise<BackupData> {
   };
 }
 
-/** Import data from a backup into Dexie (clears existing data first) */
+/** Import data into database (clears existing data first) */
 export async function importAllData(data: BackupData): Promise<void> {
-  await db.transaction(
-    'rw',
-    [
-      db.masterResume,
-      db.jobEntries,
-      db.applications,
-      db.fitScores,
-      db.companyIntel,
-      db.tailoredResumes,
-      db.interviewQuestions,
-      db.eventLog,
-    ],
-    async () => {
-      await Promise.all([
-        db.masterResume.clear(),
-        db.jobEntries.clear(),
-        db.applications.clear(),
-        db.fitScores.clear(),
-        db.companyIntel.clear(),
-        db.tailoredResumes.clear(),
-        db.interviewQuestions.clear(),
-        db.eventLog.clear(),
-      ]);
+  await Promise.all([
+    db.masterResume.clear(),
+    db.jobEntries.clear(),
+    db.applications.clear(),
+    db.fitScores.clear(),
+    db.companyIntel.clear(),
+    db.tailoredResumes.clear(),
+    db.interviewQuestions.clear(),
+    db.eventLog.clear(),
+  ]);
 
-      await Promise.all([
-        data.masterResume.length ? db.masterResume.bulkAdd(data.masterResume as any[]) : Promise.resolve(),
-        data.jobEntries.length ? db.jobEntries.bulkAdd(data.jobEntries as any[]) : Promise.resolve(),
-        data.applications.length ? db.applications.bulkAdd(data.applications as any[]) : Promise.resolve(),
-        data.fitScores.length ? db.fitScores.bulkAdd(data.fitScores as any[]) : Promise.resolve(),
-        data.companyIntel.length ? db.companyIntel.bulkAdd(data.companyIntel as any[]) : Promise.resolve(),
-        data.tailoredResumes.length ? db.tailoredResumes.bulkAdd(data.tailoredResumes as any[]) : Promise.resolve(),
-        data.interviewQuestions.length ? db.interviewQuestions.bulkAdd(data.interviewQuestions as any[]) : Promise.resolve(),
-        data.eventLog.length ? db.eventLog.bulkAdd(data.eventLog as any[]) : Promise.resolve(),
-      ]);
-    },
-  );
+  await Promise.all([
+    data.masterResume.length ? db.masterResume.bulkAdd(data.masterResume as any[]) : Promise.resolve(),
+    data.jobEntries.length ? db.jobEntries.bulkAdd(data.jobEntries as any[]) : Promise.resolve(),
+    data.applications.length ? db.applications.bulkAdd(data.applications as any[]) : Promise.resolve(),
+    data.fitScores.length ? db.fitScores.bulkAdd(data.fitScores as any[]) : Promise.resolve(),
+    data.companyIntel.length ? db.companyIntel.bulkAdd(data.companyIntel as any[]) : Promise.resolve(),
+    data.tailoredResumes.length ? db.tailoredResumes.bulkAdd(data.tailoredResumes as any[]) : Promise.resolve(),
+    data.interviewQuestions.length ? db.interviewQuestions.bulkAdd(data.interviewQuestions as any[]) : Promise.resolve(),
+    data.eventLog.length ? db.eventLog.bulkAdd(data.eventLog as any[]) : Promise.resolve(),
+  ]);
 }
 
 /** Check if database has any data */

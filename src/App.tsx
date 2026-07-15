@@ -13,12 +13,14 @@ import Insights from './pages/Insights';
 import DataHub from './pages/DataHub';
 import Settings from './pages/Settings';
 import './App.css';
+import { exportLegacyData } from './lib/db_legacy';
+import { reloadDatabase } from './lib/db';
 
 function App() {
-  useEffect(() => {
-    // Service worker disabled until V2 (offline PWA support).
-    // Causes stale-cache white screens in dev/preview when sw.js is present in public/.
-  }, []);
+  useEffect(() => { (async () => {
+    // One-time migration: import IndexedDB data into JSON database.
+    try { const { importAllData } = await import('./lib/backup'); const data = await exportLegacyData(); if (data) { await importAllData(data); await reloadDatabase(); } } catch {}
+  })(); }, []);
 
   return (
     <ThemeProvider>
