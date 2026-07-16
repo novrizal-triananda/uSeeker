@@ -159,7 +159,11 @@ export async function getInterviewPrep(jobId: string): Promise<InterviewPrep | n
   // Filter events related to this job (where metadata.jobId matches)
   const eventHistory = allEvents
     .filter((e: EventLog) => e.metadata?.jobId === jobId)
-    .sort((a: EventLog, b: EventLog) => b.timestamp.getTime() - a.timestamp.getTime());
+    .sort((a: EventLog, b: EventLog) => {
+      const ta = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp as any).getTime() || 0;
+      const tb = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp as any).getTime() || 0;
+      return tb - ta;
+    });
 
   // Extract gapSkills and tailoring suggestions from tailored resume
   const gapSkills = tailoredResume?.gapSkills ?? [];

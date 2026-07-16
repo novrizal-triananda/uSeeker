@@ -113,7 +113,7 @@ export default function Research() {
         boxShadow: 'var(--shadow-sm)',
       }}>
         <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
-          Tambah Profil Perusahaan
+          Add Company Profile
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <div>
@@ -158,7 +158,7 @@ export default function Research() {
             </div>
             <div>
             <label htmlFor="enrichment-urls" style={{ display: 'block', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
-              URL Tambahan untuk Riset (opsional)
+              Additional Research URLs (optional)
             </label>
             <textarea
               id="enrichment-urls"
@@ -231,7 +231,7 @@ export default function Research() {
               opacity: (!company.trim() || (url.trim() && isBannedDomain(url))) ? 0.5 : undefined,
             }}
           >
-            + Tambah Kartu
+            + Add Card
           </button>
         </div>
       </form>
@@ -356,7 +356,7 @@ export default function Research() {
                         cursor: 'pointer', fontSize: 'var(--font-size-sm)',
                       }}
                     >
-                      Hapus
+                      Delete
                     </button>
                   </div>
                 </div>

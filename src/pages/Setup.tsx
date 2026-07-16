@@ -94,7 +94,7 @@ export default function Setup({ onComplete }: SetupProps) {
 
         <div style={styles.actions}>
           <button style={styles.saveButton} onClick={handleSave}>
-            Simpan & Lanjutkan
+            Save & Continue
           </button>
           <button style={styles.skipButton} onClick={handleSkip}>
             Lewati

@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 ];
 
 const BOTTOM_NAV_ITEMS = [
-  { path: '/settings', label: 'Pengaturan', icon: '⚙️' },
+  { path: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 const MOBILE_ITEMS = [
@@ -22,7 +22,7 @@ const MOBILE_ITEMS = [
   { path: '/research', label: 'Research', icon: '🔍' },
   { path: '/insights', label: 'Insights', icon: '💡' },
   { path: '/data-hub', label: 'Data Hub', icon: '🗄️' },
-  { path: '/settings', label: 'Pengaturan', icon: '⚙️' },
+  { path: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function Layout() {

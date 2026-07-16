@@ -52,12 +52,12 @@ export default function Settings() {
   }
 
   if (loading) {
-    return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--color-text-muted)' }}>Memuat pengaturan...</div>;
+    return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading settings...</div>;
   }
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Pengaturan</h1>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>Settings</h1>
       <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '24px' }}>
         Sesuaikan tampilan dan konfigurasi AI.
       </p>
@@ -92,7 +92,7 @@ export default function Settings() {
 
       {/* AI Config */}
       <div style={{ ...cardStyle, marginTop: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Pengaturan AI</h2>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>AI Settings</h2>
         <div style={fieldStyle}>
           <label style={labelStyle}>Base URL</label>
           <input type="text" style={inputStyle} value={settings.baseUrl}
@@ -115,8 +115,8 @@ export default function Settings() {
           <p style={hintStyle}>Nama model yang digunakan oleh penyedia AI. Contoh: deepseek-chat, gpt-4o, gemini-2.0-flash</p>
         </div>
         {error && <p style={{ color: 'var(--color-status-red)', fontSize: '0.875rem', marginBottom: '16px' }}>{error}</p>}
-        {saved && <p style={{ color: 'var(--color-status-green)', fontSize: '0.875rem', marginBottom: '16px' }}>Pengaturan tersimpan.</p>}
-        <button onClick={handleSave} style={saveBtnStyle}>Simpan Pengaturan</button>
+        {saved && <p style={{ color: 'var(--color-status-green)', fontSize: '0.875rem', marginBottom: '16px' }}>Settings saved.</p>}
+        <button onClick={handleSave} style={saveBtnStyle}>Save Settings</button>
       </div>
 
       {/* Privacy Note */}

@@ -70,8 +70,9 @@ export default function Tailoring() {
       try {
         analysis = await generateSkillAnalysis(resume, job.jobDescription || '', selectedJobId);
       } catch (err: any) {
-        console.error('AI skill analysis error:', err);
-        setAiError('Gagal mengambil analisis AI. Pastikan server AI berjalan. Analisis lokal tetap tersedia.');
+        const errMsg = err?.message || String(err);
+        console.error('AI skill analysis error:', errMsg);
+        setAiError('AI Error: ' + errMsg);
       }
       setSkillAnalysis(analysis);
       // Persist to DB
@@ -94,8 +95,9 @@ export default function Tailoring() {
         await db.tailoredResumes.add({ id: crypto.randomUUID(), ...resumeData });
       }
     } catch (err: any) {
-      console.error('Analysis failed:', err);
-      setAiError('Gagal menganalisis. Silakan coba lagi.');
+      const errMsg = err?.message || String(err);
+      console.error('Analysis failed:', errMsg);
+      setAiError('Analysis Error: ' + errMsg);
     } finally {
       setAiLoading(false);
     }
@@ -116,7 +118,7 @@ export default function Tailoring() {
           border: '1px solid var(--color-border)',
         }}>
           <div className="loading-spinner" />
-          <p style={{ fontSize: 'var(--font-size-lg)' }}>Memuat data...</p>
+          <p style={{ fontSize: 'var(--font-size-lg)' }}>Loading...</p>
         </div>
       ) : (<>
       {/* CV Status — read-only, imported from Triage */}
@@ -231,7 +233,7 @@ export default function Tailoring() {
                 opacity: (!selectedJobId || aiLoading) ? 0.5 : undefined,
               }}
             >
-              {aiLoading ? '⏳ Menganalisis...' : '🤖 Analisis'}
+              {aiLoading ? '⏳ Menganalisis...' : '🤖 Analyze'}
             </button>
           </div>
 

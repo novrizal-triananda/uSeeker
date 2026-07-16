@@ -17,7 +17,7 @@ uSeeker membantu kamu melacak lamaran kerja, menganalisis kecocokan CV dengan jo
 | **Visibility** | Pantau status lamaran kamu dalam bentuk *pipeline board*: Applied → Screen → Interview → Offer, dengan hasil akhir (Accepted / Rejected / Ghosted / Withdrawn). |
 | **Insights** | Analisis pola dari pengalaman lamaran kamu. Stage mana yang paling sering gagal? Skill apa yang kurang? |
 | **Data Hub** | Lihat semua data terkonsolidasi: Company Overview + Fit Score + Tailoring Suggestions dalam satu tampilan terpadu. |
-| **Pengaturan** | Konfigurasi API key AI dan pilih tema tampilan: Terang, Gelap, atau Pink. |
+| **Settings** | Configure AI API key and choose theme: Light, Dark, or Pink. |
 
 ### Fitur yang tidak butuh internet
 
@@ -141,7 +141,7 @@ Fitur AI seperti analisis kecocokan CV dan riset perusahaan membutuhkan **API ke
 2. Masukkan **Base URL** penyedia AI kamu (contoh: `https://api.deepseek.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`)
 3. Masukkan **API Key** kamu
 4. Wajib: tentukan **Model** yang akan digunakan
-5. Klik **Simpan Pengaturan**
+5. Click **Save Settings**
 
 > uSeeker mendukung **semua penyedia AI yang kompatibel dengan OpenAI API** — DeepSeek, OpenAI, OpenRouter, Groq, Mistral, Anthropic (via OpenRouter), Ollama (lokal), LM Studio, atau provider self-hosted lainnya. Cukup masukkan Base URL dan API Key dari provider pilihan kamu.
 
@@ -222,7 +222,7 @@ Buka [**Issue di GitHub**](https://github.com/novrizal-triananda/uSeeker/issues)
 
 ### Bagaimana cara update ke versi terbaru?
 
-Klik tombol **Cek Update** di bagian bawah sidebar untuk mengecek versi terbaru. Kalau ada update baru, kamu akan mendapat notifikasi untuk mengunduh versi terbaru.
+Click the **Check for Updates** button at the bottom of the sidebar to check for new versions. Kalau ada update baru, kamu akan mendapat notifikasi untuk mengunduh versi terbaru.
 
 ---
 

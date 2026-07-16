@@ -67,6 +67,7 @@ fn http_client() -> &'static Client {
         Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .redirect(reqwest::redirect::Policy::limited(5))
+            .gzip(true)
             .build()
             .expect("Failed to create HTTP client")
     })

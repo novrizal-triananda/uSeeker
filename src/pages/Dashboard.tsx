@@ -71,7 +71,7 @@ export default function Dashboard() {
     return (
       <section className="loading-state">
         <div className="loading-spinner" />
-        <p>Memuat...</p>
+        <p>Loading...</p>
       </section>
     );
   }
@@ -79,7 +79,7 @@ export default function Dashboard() {
   if (!data) {
     return (
       <section style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-        Gagal memuat data.
+        Failed to load data.
       </section>
     );
   }
@@ -122,7 +122,7 @@ export default function Dashboard() {
           />
           <QuickAction
             icon="💼"
-            label="Tambah Lowongan"
+            label="Add Job"
             description="Paste deskripsi pekerjaan"
             href="/triage"
             done={data.jobCount > 0}
@@ -159,11 +159,11 @@ export default function Dashboard() {
           }}
         >
           <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>
-            💼 Lowongan Terbaru
+            💼 Recent Jobs
           </h3>
           {data.recentJobs.length === 0 ? (
             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-              Belum ada lowongan. <a href="/triage" style={{ color: 'var(--color-primary)' }}>Tambahkan →</a>
+              Belum ada lowongan. <a href="/triage" style={{ color: 'var(--color-primary)' }}>Add →</a>
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -227,7 +227,7 @@ export default function Dashboard() {
           </h3>
           {data.recentApplications.length === 0 ? (
             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-              Belum ada lamaran. <a href="/visibility" style={{ color: 'var(--color-primary)' }}>Tambahkan →</a>
+              Belum ada lamaran. <a href="/visibility" style={{ color: 'var(--color-primary)' }}>Add →</a>
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>

@@ -7,14 +7,14 @@
 ## Daftar Isi
 
 1. [Dashboard](#1-dashboard)
-2. [Triage — Import CV & Tambah Lowongan](#2-triage--import-cv--tambah-lowongan)
+2. [Triage — Import CV & Add Job](#2-triage--import-cv--add-job)
 3. [Fit Scoring — Skor Kesesuaian](#3-fit-scoring--skor-kesesuaian)
 4. [Riset Perusahaan (Research)](#4-riset-perusahaan-research)
 5. [Tailoring — Penyesuaian Resume](#5-tailoring--penyesuaian-resume)
-6. [Visibility — Pipeline Lamaran](#6-visibility--pipeline-lamaran)
+6. [Visibility — Application Pipeline](#6-visibility--pipeline-lamaran)
 7. [DataHub — Konsolidasi & Persiapan Interview](#7-datahub--konsolidasi--persiapan-interview)
 8. [Insights — Analisis & Statistik](#8-insights--analisis--statistik)
-9. [Pengaturan (Settings)](#9-pengaturan-settings)
+9. [Settings](#9-settings)
 
 ---
 
@@ -28,26 +28,26 @@ Dashboard adalah halaman utama yang menampilkan ringkasan semua aktivitas pencar
 - **Rata-rata skor kesesuaian** dari semua lowongan yang sudah dihitung
 - **Jumlah lamaran** yang sedang kamu track
 - **Jumlah profil perusahaan** yang sudah kamu riset
-- **Lowongan terbaru** beserta skor kesesuaiannya
-- **Lamaran terbaru** beserta statusnya
+- **Recent jobs** beserta skor kesesuaiannya
+- **Recent applications** beserta statusnya
 
 ### Cara Menggunakan
 1. Buka uSeeker — kamu akan langsung melihat Dashboard
 2. Lihat kartu-kartu statistik di bagian atas untuk gambaran umum
 3. Di bagian **"Mulai dari mana?"**, klik langkah yang belum centang (✅):
    - **Import CV** → pergi ke Triage untuk upload CV
-   - **Tambah Lowongan** → pergi ke Triage untuk menambah pekerjaan
+   - **Add Job** → go to Triage to add a job
    - **Riset Perusahaan** → pergi ke Research
    - **Track Lamaran** → pergi ke Visibility
 
 ### Tips 💡
-- Kartu yang sudah centang ✅ berarti langkah itu sudah selesai
-- Kartu yang diberi border biru menunjukkan langkah berikutnya yang sebaiknya kamu lakukan
+- Cards with a checkmark ✅ berarti langkah itu sudah selesai
+- Cards with a blue border menunjukkan langkah berikutnya yang sebaiknya kamu lakukan
 - Semua data di Dashboard di-update otomatis setiap kali kamu membuka halaman ini
 
 ---
 
-## 2. Triage — Import CV & Tambah Lowongan
+## 2. Triage — Import CV & Add Job
 
 ### Apa ini?
 Triage adalah halaman utama untuk dua hal penting: **mengimpor CV/Resume** kamu dan **menambahkan lowongan pekerjaan** yang kamu minati.
@@ -70,20 +70,20 @@ Triage adalah halaman utama untuk dua hal penting: **mengimpor CV/Resume** kamu 
 - Jika sudah ada CV, klik tombol **"Ganti CV"** untuk upload versi terbaru
 - CV lama akan digantikan dengan yang baru
 
-### Bagian B: Tambah Lowongan
+### Section B: Add Job
 
-#### Cara Menambah Lowongan
-1. Di bagian **"Lowongan"**, klik tombol **"+ Tambah Lowongan"**
+#### How to Add a Job
+1. In the **"Jobs"** section, klik tombol **"+ Add Job"**
 2. Isi formulir yang muncul:
    - **Nama Perusahaan** * (wajib diisi)
    - **Judul Posisi** * (wajib diisi)
-   - **URL Lowongan** (opsional — tempel link lowongan asli)
-   - **Lokasi** (opsional — contoh: Jakarta, Remote)
-   - **Range Gaji** (opsional — contoh: 8-12 juta/bulan)
+   - **Job URL** (optional — tempel link lowongan asli)
+   - **Lokasi** (optional — contoh: Jakarta, Remote)
+   - **Range Gaji** (optional — contoh: 8-12 juta/bulan)
    - **Tipe Pekerjaan** (pilih: Full-time, Part-time, Internship, Freelance, Contract)
-   - **Deskripsi Posisi** (opsional — tempel seluruh deskripsi pekerjaan)
-   - **Catatan tambahan** (opsional)
-3. Klik **"✓ Simpan Lowongan"**
+   - **Deskripsi Posisi** (optional — tempel seluruh deskripsi pekerjaan)
+   - **Catatan tambahan** (optional)
+3. Klik **"✓ Save Job"**
 
 #### Melihat Detail Lowongan
 - Klik pada kartu lowongan untuk melihat deskripsi lengkapnya
@@ -164,10 +164,10 @@ Fitur Riset Perusahaan membantu kamu mengumpulkan informasi penting tentang peru
 2. Isi formulir:
    - **Nama Perusahaan** * (wajib)
    - **Situs Web Resmi** (contoh: https://www.perusahaan.com)
-   - **Catatan** (opsional — catatan pribadi tentang perusahaan)
-   - **Hubungkan ke Lowongan** (opsional — pilih lowongan yang sudah ada di Triage)
-   - **URL Tambahan** (opsional — URL halaman lain yang ingin dianalisis, pisahkan dengan enter atau koma)
-3. Klik **"+ Tambah Kartu"**
+   - **Catatan** (optional — catatan pribadi tentang perusahaan)
+   - **Hubungkan ke Lowongan** (optional — pilih lowongan yang sudah ada di Triage)
+   - **Additional URLs** (optional — URL halaman lain yang ingin dianalisis, pisahkan dengan enter atau koma)
+3. Klik **"+ Add Card"**
 
 #### Langkah 2: Jalankan Riset
 1. Pada kartu perusahaan yang sudah dibuat, klik tombol **"🔍 Riset"**
@@ -225,7 +225,7 @@ Tailoring membantu kamu menyesuaikan CV agar lebih cocok dengan lowongan tertent
 
 ---
 
-## 6. Visibility — Pipeline Lamaran
+## 6. Visibility — Application Pipeline
 
 ### Apa ini?
 Visibility memungkinkan kamu memantau setiap lamaran kerja melalui tahapan (pipeline). Kamu bisa melihat lamaran dalam tampilan papan (kanban board) yang intuitif.
@@ -252,12 +252,12 @@ Visibility memungkinkan kamu memantau setiap lamaran kerja melalui tahapan (pipe
 
 #### Menambah Lamaran
 1. Buka tab **Visibility** (Pipeline Lamaran)
-2. Klik tombol **"＋ Tambah Lamaran"**
+2. Klik tombol **"＋ Add Application"**
 3. Isi formulir:
    - **Pilih Lowongan** * (pilih dari lowongan yang sudah ada di Triage)
    - **Status** (pilih tahapan awal — biasanya "Applied")
-   - **Catatan** (opsional — catatan tentang lamaran ini)
-4. Klik **"💾 Simpan Lamaran"**
+   - **Catatan** (optional — catatan tentang lamaran ini)
+4. Klik **"💾 Save Application"**
 
 #### Mengubah Status
 1. Pada kartu lamaran, gunakan dropdown pertama untuk memilih tahapan baru
@@ -393,10 +393,10 @@ Insights memberikan analisis mendalam tentang pola pencarian kerja kamu. Kamu bi
 
 ---
 
-## 9. Pengaturan (Settings)
+## 9. Settings
 
 ### Apa ini?
-Pengaturan memungkinkan kamu mengubah tampilan aplikasi dan mengatur koneksi ke layanan AI.
+Settings let you mengubah tampilan aplikasi dan mengatur koneksi ke layanan AI.
 
 ### Opsi Tersedia
 
@@ -407,11 +407,11 @@ Pilih tampilan aplikasi sesuai selera:
 - 🌸 **Pink** — Tema pink yang menarik
 
 **Cara mengubah tema:**
-1. Buka tab **Pengaturan**
+1. Open the **Settings** tab
 2. Di bagian **"Tema"**, klik salah satu pilihan
 3. Tampilan akan berubah secara langsung
 
-#### 🤖 Pengaturan AI
+#### 🤖 AI Settings
 Fitur AI di uSeeker (seperti analisis tailoring dan riset perusahaan) membutuhkan koneksi ke penyedia AI.
 
 **Yang perlu diisi:**
@@ -427,8 +427,8 @@ Fitur AI di uSeeker (seperti analisis tailoring dan riset perusahaan) membutuhka
 
 **Cara menyimpan:**
 1. Isi semua kolom yang diperlukan
-2. Klik **"Simpan Pengaturan"**
-3. Muncul pesan **"Pengaturan tersimpan"**
+2. Click **"Save Settings"**
+3. A **"Settings saved"** message appears
 
 ### Catatan Privasi 🔒
 > Kunci API kamu disimpan secara lokal. Tidak ada data yang dikirim ke server uSeeker.
@@ -436,7 +436,7 @@ Fitur AI di uSeeker (seperti analisis tailoring dan riset perusahaan) membutuhka
 ### Tips 💡
 - Kamu bisa melewati pengaturan AI saat pertama kali menggunakan uSeeker
 - Tanpa AI, kamu tetap bisa menggunakan fitur impor CV, tambah lowongan, dan fit scoring
-- Pengaturan AI diperlukan untuk: Analisis Tailoring, Riset Perusahaan, dan Generate Pertanyaan Interview
+- AI Settings diperlukan untuk: Analisis Tailoring, Riset Perusahaan, dan Generate Pertanyaan Interview
 
 ---
 
@@ -446,11 +446,11 @@ Jika baru pertama kali menggunakan uSeeker, ikuti langkah-langkah ini:
 
 ```
 1. 📄 Import CV           → Tab Triage
-2. 💼 Tambah Lowongan     → Tab Triage
+2. 💼 Add Job     → Triage tab
 3. 🎯 Hitung Skor         → Tab Triage (klik "Hitung" di kartu lowongan)
 4. 🔍 Riset Perusahaan    → Tab Research
 5. ✂️ Analisis Tailoring   → Tab Tailoring
-6. 📋 Tambah Lamaran      → Tab Visibility
+6. 📋 Add Application      → Visibility tab
 7. 🎤 Persiapan Interview → Tab DataHub
 8. 📊 Lihat Insights      → Tab Insights
 ```
@@ -472,9 +472,9 @@ Buka tab Triage → klik "Ganti CV" → upload file baru. CV lama akan digantika
 Tidak. Skor kesesuaian hanya mengukur kecocokan antara CV dan deskripsi pekerjaan. Keputusan akhir tetap ada di perusahaan.
 
 **Q: Berapa banyak lowongan yang bisa saya tambahkan?**
-Tidak ada batasan. Tambahkan semua lowongan yang kamu minati!
+No limits. Add all the jobs you're interested in!
 
 **Q: Bagaimana cara menghapus data?**
 - Untuk lowongan: klik tombol "✕" di kartu lowongan (di Triage)
 - Untuk lamaran: klik tombol "✕" di kartu lamaran (di Visibility)
-- Untuk riset perusahaan: klik tombol "Hapus" di kartu perusahaan (di Research)
+- For company research: click the "Delete" button di kartu perusahaan (di Research)

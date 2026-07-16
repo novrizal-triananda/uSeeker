@@ -142,7 +142,7 @@ export default function Visibility() {
     return (
       <div className="loading-state" style={styles.container}>
         <div className="loading-spinner" />
-        <p>Memuat pipeline...</p>
+        <p>Loading pipeline...</p>
       </div>
     );
   }
@@ -155,7 +155,7 @@ export default function Visibility() {
           <p style={styles.subtitle}>Pantau progres setiap lamaran kerja.</p>
         </div>
         <button style={styles.addButton} onClick={() => setShowForm(!showForm)}>
-          {showForm ? '✕ Tutup' : '＋ Tambah Lamaran'}
+          {showForm ? '✕ Tutup' : '＋ Add Application'}
         </button>
       </div>
 
@@ -169,7 +169,7 @@ export default function Visibility() {
           ) : (
             <div style={styles.formGrid}>
               <div style={styles.formField}>
-                <label style={styles.label}>Pilih Lowongan *</label>
+                <label style={styles.label}>Select Job *</label>
                 <select
                   value={form.jobId}
                   onChange={(e) => setForm({ ...form, jobId: e.target.value })}
@@ -211,7 +211,7 @@ export default function Visibility() {
             style={styles.submitButton}
             disabled={submitting || !form.jobId}
           >
-            {submitting ? 'Menyimpan...' : '💾 Simpan Lamaran'}
+            {submitting ? 'Menyimpan...' : '💾 Save Application'}
           </button>
         </form>
       )}

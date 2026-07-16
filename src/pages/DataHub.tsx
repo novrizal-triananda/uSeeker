@@ -343,54 +343,10 @@ export default function DataHub() {
                 padding: 'var(--space-6)',
                 position: 'relative',
               }}>
-                <button
-                  onClick={() => { setExpandedJobId(null); setInterviewPrep(null); }}
-                  style={{
-                    position: 'absolute', top: 'var(--space-3)', right: 'var(--space-3)',
-                    width: 32, height: 32,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'var(--color-bg)', border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                    fontSize: 'var(--font-size-lg)', color: 'var(--color-text-muted)',
-                    lineHeight: 1,
-                  }}
-                  title="Tutup Detail Lowongan"
-                >
-                  ✕
-                </button>
                 <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-4)', color: '#7C3AED' }}>
                   📋 Detail Lowongan
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                  {/* Job Description - always visible when expanded */}
-                  <div style={{
-                    padding: 'var(--space-4)',
-                    background: 'var(--color-bg)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                  }}>
-                    <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📝 Deskripsi Pekerjaan</h4>
-                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                      {view.jobEntry.jobDescription || 'Tidak ada deskripsi'}
-                    </p>
-                    {view.jobEntry.location && (
-                      <div style={{ marginTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                        <span style={{ padding: 'var(--space-1) var(--space-3)', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
-                          📍 {view.jobEntry.location}
-                        </span>
-                        {view.jobEntry.salaryRange && (
-                          <span style={{ padding: 'var(--space-1) var(--space-3)', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
-                            💰 {view.jobEntry.salaryRange}
-                          </span>
-                        )}
-                        {view.jobEntry.employmentType && (
-                          <span style={{ padding: 'var(--space-1) var(--space-3)', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--font-size-xs)' }}>
-                            📅 {view.jobEntry.employmentType}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
 
                   {/* Loading indicator for additional data */}
                   {prepLoading && (
@@ -469,6 +425,8 @@ export default function DataHub() {
                       )}
                     </div>
                   )}
+
+
 
                   {/* Job Description */}
                   {interviewPrep.jobDescription && (

@@ -342,20 +342,18 @@ export async function generateSkillAnalysis(
     jobDescription,
   ].join('\n');
 
-  try {
-    const data = await invoke<{ result: string }>('call_ai', {
-      prompt,
-      systemPrompt,
-      task: 'skill_analysis',
-    });
-    const result: string = data.result || JSON.stringify(data);
-    return parseSkillAnalysis(result);
-  } catch {
-    return null;
-  }
+  const data = await invoke<{ result: string }>('call_ai', {
+    prompt,
+    systemPrompt,
+    task: 'skill_analysis',
+  });
+  const result: string = data.result || JSON.stringify(data);
+  const parsed = parseSkillAnalysis(result);
+  if (!parsed) throw new Error('AI returned invalid response');
+  return parsed;
 }
 
-/** Strip markdown code fences from AI response */ function stripMarkdown(text: string): string { const trimmed = text.trim(); const match = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/); return match ? match[1].trim() : trimmed; }
+/** Strip markdown code fences from AI response and extract JSON */ function stripMarkdown(text: string): string { const trimmed = text.trim(); try { JSON.parse(trimmed); return trimmed; } catch {} const m1 = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/); if (m1) { try { JSON.parse(m1[1].trim()); return m1[1].trim(); } catch {} } const m2 = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/); if (m2) { try { JSON.parse(m2[1].trim()); return m2[1].trim(); } catch {} } const mObj = trimmed.match(/\{[\s\S]*\}/); if (mObj) { try { JSON.parse(mObj[0].trim()); return mObj[0].trim(); } catch {} } const mArr = trimmed.match(/\[[\s\S]*\]/); if (mArr) { try { JSON.parse(mArr[0].trim()); return mArr[0].trim(); } catch {} } return trimmed; }
 function parseSkillAnalysis(response: string): SkillAnalysis | null {
   if (!response || response.trim().length === 0) return null;
 

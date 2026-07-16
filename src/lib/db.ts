@@ -42,7 +42,14 @@ async function persist() {
 }
 
 function reviveDates(obj: any): any {
-  if (obj && typeof obj === 'object') {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') {
+    // Handle raw ISO date strings (e.g. from older versions)
+    const t = Date.parse(obj);
+    if (!isNaN(t) && obj.includes('T') && obj.endsWith('Z')) return new Date(obj);
+    return obj;
+  }
+  if (typeof obj === 'object') {
     if (obj.__date) return new Date(obj.__date);
     for (const key of Object.keys(obj)) {
       obj[key] = reviveDates(obj[key]);

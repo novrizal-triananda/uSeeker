@@ -89,10 +89,11 @@ export default function Triage() {
         }));
 
       setJobs(jobList);
-      setMasterResume(resume || null);
-    } catch {
-      setJobs([]);
-      setMasterResume(null);
+      setMasterResume(resume ?? null);
+    } catch (err) {
+      console.error('[Triage] loadData error:', err);
+      // ponTail: don't clear data on error — user loses all displayed jobs
+      // TODO: show error banner instead of silent data loss
     } finally {
       setLoading(false);
     }
@@ -280,7 +281,7 @@ export default function Triage() {
     return (
       <section className="loading-state">
         <div className="loading-spinner" />
-        <p>Memuat...</p>
+        <p>Loading...</p>
       </section>
     );
   }
@@ -466,7 +467,7 @@ export default function Triage() {
                 fontWeight: 600,
               }}
             >
-              {showJobForm ? '✕ Batal' : '+ Tambah Lowongan'}
+              {showJobForm ? '✕ Cancel' : '+ Add Job'}
             </button>
           )}
         </div>
@@ -493,7 +494,7 @@ export default function Triage() {
             </div>
             <input
               type="text"
-              placeholder="URL Lowongan (opsional)"
+              placeholder="Job URL (optional)"
               value={jobForm.sourceUrl}
               onChange={(e) => setJobForm({ ...jobForm, sourceUrl: e.target.value })}
               style={{ ...inputStyle, marginBottom: 'var(--space-3)', width: '100%' }}
@@ -530,7 +531,7 @@ export default function Triage() {
               <div /> {/* spacer */}
             </div>
             <textarea
-              placeholder="Deskripsi Posisi (Job Description)"
+              placeholder="Job Description"
               value={jobForm.jobDescription}
               onChange={(e) => setJobForm({ ...jobForm, jobDescription: e.target.value })}
               rows={8}
@@ -559,7 +560,7 @@ export default function Triage() {
                 opacity: savingJob ? 0.6 : 1,
               }}
             >
-              {savingJob ? 'Menyimpan...' : editingJobId ? '✓ Update Lowongan' : '✓ Simpan Lowongan'}
+              {savingJob ? 'Menyimpan...' : editingJobId ? '✓ Update Job' : '✓ Save Job'}
             </button>
             {editingJobId && (
               <button
@@ -577,7 +578,7 @@ export default function Triage() {
                   fontSize: 'var(--font-size-sm)',
                 }}
               >
-                ✕ Batal
+                ✕ Cancel
               </button>
             )}
           </form>

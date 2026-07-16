@@ -105,7 +105,7 @@ export default function UpdateChecker() {
         aria-label="Cek update"
       >
         {state === 'checking' && '⏳ Mengecek...'}
-        {state === 'idle' && '🔄 Cek Update'}
+        {state === 'idle' && '🔄 Check for Updates'}
         {state === 'available' && '⬇️ Update Sekarang'}
         {state === 'installing' && `⬇️ Mengunduh... ${progressPercent}%`}
         {state === 'relaunching' && '🔄 Memulai ulang...'}

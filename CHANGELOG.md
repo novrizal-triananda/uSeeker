@@ -8,6 +8,24 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 ---
 
 ## [Unreleased]
+
+## [2.7.2] - 2026-07-16
+
+### Fixed
+- Triage: data loss bug — adding a job no longer clears all displayed data
+- Triage: reviveDates handles raw ISO date strings from older database versions
+- Data Hub: timestamp crash fixed with safe Date parsing
+- Data Hub: remove duplicate Job Description section in detail accordion
+- Data Hub: remove redundant location/salary/type tags in detail view
+- Tailoring: generateSkillAnalysis now surfaces errors to UI instead of silent failure
+- AI proxy: enable gzip decompression for compressed API responses
+- Database: ensureLoaded logs errors instead of silently creating empty state
+
+### Changed
+- UI labels standardized to English across all tabs (content remains Indonesian)
+- Settings page: English labels (Settings, AI Settings, Save Settings)
+- All buttons, loading states, and status messages in English
+
 ## [2.7.1] - 2026-07-15
 
 ### Changed
