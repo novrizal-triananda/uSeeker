@@ -9,6 +9,14 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ## [Unreleased]
 
+## [2.7.3] - 2026-07-21
+
+### Fixed
+- Visibility: board grid now uses correct 4 columns instead of 5 (was wasting 20% column width)
+- Visibility: select dropdowns (stage & outcome) no longer clipped by card overflow — controls always visible at any window size
+- Visibility: card controls wrap to next line when columns are narrow, preventing overlap
+- Visibility: fixes Linux, Windows (WebView2), and macOS (WKWebView) — native select minimum width handled via flexWrap + flexShrink:0
+
 ## [2.7.2] - 2026-07-16
 
 ### Fixed

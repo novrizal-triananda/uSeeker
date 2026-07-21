@@ -549,7 +549,7 @@ const styles: Record<string, React.CSSProperties> = {
   /* Board */
   board: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(4, 1fr)',
     gap: 'var(--space-3)',
     overflowX: 'auto',
     maxHeight: 'calc(100vh - 220px)',
@@ -609,7 +609,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     boxShadow: 'var(--shadow-sm)',
     border: '1px solid var(--color-border)',
-    overflow: 'hidden',
   },
   cardHeader: {
     display: 'flex',
@@ -652,6 +651,8 @@ const styles: Record<string, React.CSSProperties> = {
   cardControls: {
     display: 'flex',
     gap: 'var(--space-1)',
+    flexWrap: 'wrap',
+    flexShrink: 0,
   },
   deleteBtn: {
     background: 'none',
