@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createIntelCard, parseIntelResponse, requestResearch, isBannedDomain, labelClaims } from '../companyIntel';
+import { createIntelCard, parseIntelResponse, requestResearch, labelClaims } from '../companyIntel';
 import { db } from '../db';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -43,97 +43,87 @@ describe('createIntelCard', () => {
 describe('parseIntelResponse', () => {
   it('should parse a valid JSON response', () => {
     const response = JSON.stringify({
-      snapshot: 'Acme Corp is a tech company founded in 2010',
-      products: ['Acme Platform', 'Acme Analytics'],
-      industry: 'Technology / SaaS',
+      overview: 'Acme Corp is a tech company founded in 2010',
+      values: ['Innovation', 'Integrity'],
+      workModel: 'Hybrid — 3 days office',
+      compensation: 'Competitive salary + benefits',
+      careerGrowth: ['Training budget', 'Mentorship program'],
+      stability: 'Growing — 200+ employees',
+      culture: ['Flat hierarchy', 'Fast-paced'],
       redFlags: ['High turnover rate'],
+      interviewTips: ['Prepare system design questions'],
+      sources: ['https://acme.com/about', 'https://glassdoor.com/acme'],
     });
 
     const parsed = parseIntelResponse(response);
-    expect(parsed.snapshot).toContain('Acme Corp');
-    expect(parsed.products).toHaveLength(2);
-    expect(parsed.products).toContain('Acme Platform');
-    expect(parsed.industry).toBe('Technology / SaaS');
+    expect(parsed.overview).toContain('Acme Corp');
+    expect(parsed.values).toHaveLength(2);
+    expect(parsed.values).toContain('Innovation');
+    expect(parsed.workModel).toBe('Hybrid — 3 days office');
+    expect(parsed.stability).toBe('Growing — 200+ employees');
     expect(parsed.redFlags).toContain('High turnover rate');
+    expect(parsed.sources).toHaveLength(2);
   });
 
   it('should handle missing fields in JSON gracefully', () => {
-    const response = JSON.stringify({ snapshot: 'Partial data' });
+    const response = JSON.stringify({ overview: 'Partial data' });
 
     const parsed = parseIntelResponse(response);
-    expect(parsed.snapshot).toBe('Partial data');
-    expect(parsed.products).toEqual([]);
-    expect(parsed.industry).toBe('');
+    expect(parsed.overview).toBe('Partial data');
+    expect(parsed.values).toEqual([]);
+    expect(parsed.workModel).toBe('');
     expect(parsed.redFlags).toEqual([]);
+    expect(parsed.sources).toEqual([]);
+  });
+
+  it('should fallback to legacy fields in JSON', () => {
+    const response = JSON.stringify({
+      snapshot: 'Legacy overview text',
+      products: ['Product A'],
+    });
+
+    const parsed = parseIntelResponse(response);
+    expect(parsed.overview).toBe('Legacy overview text');
   });
 
   it('should parse text format with sections', () => {
     const response = [
-      'Snapshot: A well-known e-commerce company in Southeast Asia',
-      'Products: Lazada Marketplace, Lazada Wallet, Seller Center',
-      'Industry: E-Commerce',
+      'Overview: A well-known e-commerce company in Southeast Asia',
+      'Values: Customer First, Innovation, Integrity',
+      'Work Model: Remote-first with quarterly meetups',
+      'Compensation: Market-rate salary, equity, health insurance',
       'Red Flags: Recent layoffs, Management changes',
     ].join('\n');
 
     const parsed = parseIntelResponse(response);
-    expect(parsed.snapshot).toContain('e-commerce');
-    expect(parsed.products).toHaveLength(3);
-    expect(parsed.industry).toBe('E-Commerce');
+    expect(parsed.overview).toContain('e-commerce');
+    expect(parsed.values).toHaveLength(3);
+    expect(parsed.workModel).toContain('Remote-first');
     expect(parsed.redFlags).toHaveLength(2);
   });
 
   it('should parse text format with bullet points', () => {
     const response = [
-      'Snapshot: Tech startup in Jakarta',
-      'Products:',
-      '- MainApp v2',
-      '- DeveloperTools',
-      'Industry: FinTech',
+      'Overview: Tech startup in Jakarta',
+      'Values:',
+      '- Innovation',
+      '- Transparency',
+      'Stability: Series B funded, 100+ employees',
     ].join('\n');
 
     const parsed = parseIntelResponse(response);
-    expect(parsed.products).toContain('MainApp v2');
-    expect(parsed.products).toContain('DeveloperTools');
-    expect(parsed.industry).toBe('FinTech');
+    expect(parsed.values).toContain('Innovation');
+    expect(parsed.values).toContain('Transparency');
+    expect(parsed.stability).toContain('Series B');
   });
 
   it('should handle completely empty response', () => {
     const parsed = parseIntelResponse('');
-    expect(parsed.snapshot).toBe('');
-    expect(parsed.products).toEqual([]);
-    expect(parsed.industry).toBe('');
+    expect(parsed.overview).toBe('');
+    expect(parsed.values).toEqual([]);
+    expect(parsed.workModel).toBe('');
     expect(parsed.redFlags).toEqual([]);
-  });
-});
-
-describe('isBannedDomain', () => {
-  it('should detect LinkedIn', () => {
-    expect(isBannedDomain('https://www.linkedin.com/company/acme')).toBe(true);
-  });
-
-  it('should detect Glassdoor', () => {
-    expect(isBannedDomain('https://glassdoor.com/Reviews/acme-reviews')).toBe(true);
-  });
-
-  it('should detect Indeed', () => {
-    expect(isBannedDomain('https://indeed.com/cmp/acme')).toBe(true);
-  });
-
-  it('should detect AmbitionBox', () => {
-    expect(isBannedDomain('https://ambitionbox.com/overview/acme')).toBe(true);
-  });
-
-  it('should detect TeamBlind', () => {
-    expect(isBannedDomain('https://teamblind.com/company/acme')).toBe(true);
-  });
-
-  it('should allow official company websites', () => {
-    expect(isBannedDomain('https://acme.com')).toBe(false);
-    expect(isBannedDomain('https://www.google.com')).toBe(false);
-  });
-
-  it('should handle invalid URLs gracefully', () => {
-    expect(isBannedDomain('not-a-url')).toBe(false);
+    expect(parsed.sources).toEqual([]);
   });
 });
 
@@ -171,16 +161,6 @@ describe('requestResearch', () => {
 
     // Mock invoke to reject (simulating server down)
     vi.mocked(invoke).mockRejectedValue(new Error('Network error'));
-
-    const result = await requestResearch(intel.id);
-    expect(result).toBeNull();
-  });
-
-  it('should return null for banned domains', async () => {
-    const intel = await createIntelCard({
-      company: 'LinkedIn Corp',
-      officialUrl: 'https://linkedin.com/company/test',
-    });
 
     const result = await requestResearch(intel.id);
     expect(result).toBeNull();

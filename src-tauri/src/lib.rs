@@ -221,6 +221,7 @@ pub fn run() {
             save_config,
             read_config,
             get_ai_config,
+            proxy::get_search_config,
             // Database commands
             load_database,
             save_database,

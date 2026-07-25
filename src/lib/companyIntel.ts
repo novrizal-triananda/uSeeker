@@ -2,14 +2,6 @@ import { db } from './db';
 import type { CompanyIntel } from '../types';
 import { invoke } from '@tauri-apps/api/core';
 
-const BANNED_DOMAINS = [
-  'linkedin.com',
-  'glassdoor.com',
-  'indeed.com',
-  'ambitionbox.com',
-  'teamblind.com',
-];
-
 export type ClaimConfidence = 'sourced' | 'needs verification';
 
 export interface IntelClaim {
@@ -18,32 +10,22 @@ export interface IntelClaim {
 }
 
 export interface ParsedIntelResponse {
-  snapshot: string;
-  products: string[];
-  industry: string;
-  redFlags: string[];
+  overview: string;
+  values: string[];
+  workModel: string;
+  compensation: string;
+  careerGrowth: string[];
+  stability: string;
   culture: string[];
-  recentNews: string[];
+  redFlags: string[];
   interviewTips: string[];
-}
-
-/**
- * Check if a URL belongs to a banned domain (review sites, job boards).
- * These sources are unreliable for company intel.
- */
-export function isBannedDomain(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname.toLowerCase();
-    return BANNED_DOMAINS.some((d) => hostname.includes(d));
-  } catch {
-    return false;
-  }
+  sources: string[];
 }
 
 /**
  * Label AI-generated claims with confidence level.
  * Claims containing URLs or official markers are sourced.
- * All others are needs verification.
+ * All others need verification.
  */
 export function labelClaims(items: string[]): IntelClaim[] {
   return items.map((text) => ({
@@ -54,6 +36,7 @@ export function labelClaims(items: string[]): IntelClaim[] {
         : 'needs verification',
   }));
 }
+
 /**
  * Create a new CompanyIntel card in the DB with crawlDepth=0.
  */
@@ -86,25 +69,20 @@ export async function createIntelCard(data: {
  * Missing fields default to empty values.
  */
 export function parseIntelResponse(response: string): ParsedIntelResponse {
-  let snapshot = "";
-  let products: string[] = [];
-  let industry = "";
-  let redFlags: string[] = [];
-  let culture: string[] = [];
-  let recentNews: string[] = [];
-  let interviewTips: string[] = [];
-
   // Try JSON first
   try {
     const parsed = JSON.parse(response);
     return {
-      snapshot: parsed.snapshot || "",
-      products: Array.isArray(parsed.products) ? parsed.products : [],
-      industry: parsed.industry || "",
-      redFlags: Array.isArray(parsed.redFlags) ? parsed.redFlags : [],
+      overview: parsed.overview || parsed.snapshot || "",
+      values: Array.isArray(parsed.values) ? parsed.values : [],
+      workModel: parsed.workModel || "",
+      compensation: parsed.compensation || "",
+      careerGrowth: Array.isArray(parsed.careerGrowth) ? parsed.careerGrowth : [],
+      stability: parsed.stability || "",
       culture: Array.isArray(parsed.culture) ? parsed.culture : [],
-      recentNews: Array.isArray(parsed.recentNews) ? parsed.recentNews : [],
+      redFlags: Array.isArray(parsed.redFlags) ? parsed.redFlags : [],
       interviewTips: Array.isArray(parsed.interviewTips) ? parsed.interviewTips : [],
+      sources: Array.isArray(parsed.sources) ? parsed.sources : [],
     };
   } catch {
     // Not JSON - parse as text
@@ -113,83 +91,98 @@ export function parseIntelResponse(response: string): ParsedIntelResponse {
   // Parse line-based text format
   const lines = response.split("\n");
   let currentSection = "";
+  const result: ParsedIntelResponse = {
+    overview: "",
+    values: [],
+    workModel: "",
+    compensation: "",
+    careerGrowth: [],
+    stability: "",
+    culture: [],
+    redFlags: [],
+    interviewTips: [],
+    sources: [],
+  };
 
   for (const line of lines) {
     const trimmed = line.trim();
 
-    if (/^(?:snapshot|overview)[:\s]/i.test(trimmed)) {
-      currentSection = "snapshot";
-      const m = trimmed.match(/^(?:snapshot|overview)[:\s]+(.+)/i);
-      if (m) snapshot = m[1].trim();
-    } else if (/^products?[:\s]/i.test(trimmed)) {
-      currentSection = "products";
-      const m = trimmed.match(/^products?[:\s]+(.+)/i);
+    if (/^(?:overview|snapshot)[:\s]/i.test(trimmed)) {
+      currentSection = "overview";
+      const m = trimmed.match(/^(?:overview|snapshot)[:\s]+(.+)/i);
+      if (m) result.overview = m[1].trim();
+    } else if (/^values?[:\s]/i.test(trimmed)) {
+      currentSection = "values";
+      const m = trimmed.match(/^values?[:\s]+(.+)/i);
       if (m) {
-        products = m[1]
-          .split(/[,;]\s*/)
-          .map((p) => p.trim())
-          .filter(Boolean);
+        result.values = m[1].split(/[,;]\s*/).map((v) => v.trim()).filter(Boolean);
       }
-    } else if (/^(?:industry|sector)[:\s]/i.test(trimmed)) {
-      currentSection = "industry";
-      const m = trimmed.match(/^(?:industry|sector)[:\s]+(.+)/i);
-      if (m) industry = m[1].trim();
-    } else if (/^(?:red\s*flags?|concerns?)[:\s]/i.test(trimmed)) {
-      currentSection = "redFlags";
-      const m = trimmed.match(/^(?:red\s*flags?|concerns?)[:\s]+(.+)/i);
+    } else if (/^work[\s-]?model[:\s]/i.test(trimmed)) {
+      currentSection = "workModel";
+      const m = trimmed.match(/^work[\s-]?model[:\s]+(.+)/i);
+      if (m) result.workModel = m[1].trim();
+    } else if (/^compensation|benefits?|salary[:\s]/i.test(trimmed)) {
+      currentSection = "compensation";
+      const m = trimmed.match(/^(?:compensation|benefits?|salary)[:\s]+(.+)/i);
+      if (m) result.compensation = m[1].trim();
+    } else if (/^career[\s-]?growth[:\s]/i.test(trimmed)) {
+      currentSection = "careerGrowth";
+      const m = trimmed.match(/^career[\s-]?growth[:\s]+(.+)/i);
       if (m) {
-        redFlags = m[1]
-          .split(/[,;]\s*/)
-          .map((f) => f.trim())
-          .filter(Boolean);
+        result.careerGrowth = m[1].split(/[,;]\s*/).map((g) => g.trim()).filter(Boolean);
       }
+    } else if (/^stability[:\s]/i.test(trimmed)) {
+      currentSection = "stability";
+      const m = trimmed.match(/^stability[:\s]+(.+)/i);
+      if (m) result.stability = m[1].trim();
     } else if (/^culture[:\s]/i.test(trimmed)) {
       currentSection = "culture";
       const m = trimmed.match(/^culture[:\s]+(.+)/i);
       if (m) {
-        culture = m[1].split(/[,;]\s*/).map((c) => c.trim()).filter(Boolean);
+        result.culture = m[1].split(/[,;]\s*/).map((c) => c.trim()).filter(Boolean);
       }
-    } else if (/^(?:recent\s*news|berita)[:\s]/i.test(trimmed)) {
-      currentSection = "recentNews";
-      const m = trimmed.match(/^(?:recent\s*news|berita)[:\s]+(.+)/i);
+    } else if (/^(?:red[\s-]?flags?|concerns?)[:\s]/i.test(trimmed)) {
+      currentSection = "redFlags";
+      const m = trimmed.match(/^(?:red[\s-]?flags?|concerns?)[:\s]+(.+)/i);
       if (m) {
-        recentNews = m[1].split(/[,;]\s*/).map((n) => n.trim()).filter(Boolean);
+        result.redFlags = m[1].split(/[,;]\s*/).map((f) => f.trim()).filter(Boolean);
       }
-    } else if (/^(?:interview\s*tips?|tips\s*wawancara)[:\s]/i.test(trimmed)) {
+    } else if (/^(?:interview[\s-]?tips?|tips[\s-]?wawancara)[:\s]/i.test(trimmed)) {
       currentSection = "interviewTips";
-      const m = trimmed.match(/^(?:interview\s*tips?|tips\s*wawancara)[:\s]+(.+)/i);
+      const m = trimmed.match(/^(?:interview[\s-]?tips?|tips[\s-]?wawancara)[:\s]+(.+)/i);
       if (m) {
-        interviewTips = m[1].split(/[,;]\s*/).map((t) => t.trim()).filter(Boolean);
+        result.interviewTips = m[1].split(/[,;]\s*/).map((t) => t.trim()).filter(Boolean);
+      }
+    } else if (/^sources?[:\s]/i.test(trimmed)) {
+      currentSection = "sources";
+      const m = trimmed.match(/^sources?[:\s]+(.+)/i);
+      if (m) {
+        result.sources = m[1].split(/[,;]\s*/).map((s) => s.trim()).filter(Boolean);
       }
     } else if (/^[-*]\s+/.test(trimmed)) {
       // Bullet item under current section
       const item = trimmed.replace(/^[-*]\s+/, "").trim();
       if (!item) continue;
       switch (currentSection) {
-        case "products":
-          products.push(item);
-          break;
-        case "redFlags":
-          redFlags.push(item);
-          break;
-        case "culture":
-          culture.push(item);
-          break;
-        case "recentNews":
-          recentNews.push(item);
-          break;
-        case "interviewTips":
-          interviewTips.push(item);
-          break;
+        case "values": result.values.push(item); break;
+        case "careerGrowth": result.careerGrowth.push(item); break;
+        case "culture": result.culture.push(item); break;
+        case "redFlags": result.redFlags.push(item); break;
+        case "interviewTips": result.interviewTips.push(item); break;
+        case "sources": result.sources.push(item); break;
       }
-    } else if (currentSection === "snapshot" && trimmed.length > 0 && !trimmed.includes(":")) {
-      snapshot = snapshot ? snapshot + " " + trimmed : trimmed;
-    } else if (currentSection === "industry" && trimmed.length > 0 && !trimmed.includes(":")) {
-      industry = industry ? industry + " " + trimmed : trimmed;
+    } else if (currentSection === "overview" && trimmed.length > 0 && !trimmed.includes(":")) {
+      result.overview = result.overview ? result.overview + " " + trimmed : trimmed;
+    } else if (currentSection === "workModel" && trimmed.length > 0 && !trimmed.includes(":")) {
+      result.workModel = result.workModel ? result.workModel + " " + trimmed : trimmed;
+    } else if (currentSection === "compensation" && trimmed.length > 0 && !trimmed.includes(":")) {
+      result.compensation = result.compensation ? result.compensation + " " + trimmed : trimmed;
+    } else if (currentSection === "stability" && trimmed.length > 0 && !trimmed.includes(":")) {
+      result.stability = result.stability ? result.stability + " " + trimmed : trimmed;
     }
   }
 
-  return { snapshot, products, industry, redFlags, culture, recentNews, interviewTips };
+  return result;
 }
 
 /**
@@ -206,10 +199,9 @@ async function fetchUrlContent(url: string): Promise<string | null> {
 }
 
 /**
- * Search via DuckDuckGo as fallback when scraping fails.
- * Calls server-side /api/search endpoint which scrapes DuckDuckGo HTML results.
+ * Search via web search as fallback when scraping fails.
  */
-async function searchViaDuckDuckGo(query: string): Promise<{ title: string; url: string; content: string }[]> {
+async function searchWeb(query: string): Promise<{ title: string; url: string; content: string }[]> {
   try {
     const results = await invoke<{ title: string; url: string; content: string }[]>('search_web', { query });
     return (results || []).slice(0, 5).map((r) => ({
@@ -234,45 +226,47 @@ async function scrapeUrl(url: string): Promise<{ text: string; links: { url: str
 
 /**
  * Filter and rank links by relevance for company research.
- * Prioritizes: about, products, news, career, investor pages.
+ * Prioritizes: about, values, career, investor pages.
  */
 function filterRelevantLinks(
   links: { url: string; text: string }[],
   baseUrl: string,
   _company: string,
 ): string[] {
-  const baseHost = new URL(baseUrl).hostname;
-  const keywords = ['about', 'tentang', 'product', 'produk', 'service', 'layanan',
-    'news', 'berita', 'press', 'career', 'karir', 'investor', 'report', 'annual',
-    'profile', 'profil', 'company', 'perusahaan'];
+  let baseHost: string;
+  try {
+    baseHost = new URL(baseUrl).hostname;
+  } catch {
+    return [];
+  }
+  const keywords = ['about', 'tentang', 'values', 'nilai', 'vision', 'visi', 'mission', 'misi',
+    'career', 'karir', 'benefits', 'culture', 'budaya', 'investor', 'report', 'annual',
+    'profile', 'profil', 'company', 'perusahaan', 'work', 'team', 'leadership'];
 
   return links
     .filter(l => {
       try {
         const host = new URL(l.url).hostname;
-        // Same domain only
         if (!host.includes(baseHost.replace('www.', ''))) return false;
-        // Skip fragments, downloads, images
         if (l.url.includes('#') || l.url.match(/\.(pdf|jpg|png|gif|zip)$/i)) return false;
         return true;
       } catch { return false; }
     })
     .sort((a, b) => {
-      // Rank by keyword relevance
       const aText = (a.text + a.url).toLowerCase();
       const bText = (b.text + b.url).toLowerCase();
       const aScore = keywords.filter(k => aText.includes(k)).length;
       const bScore = keywords.filter(k => bText.includes(k)).length;
       return bScore - aScore;
     })
-    .slice(0, 5) // Top 5 links
+    .slice(0, 5)
     .map(l => l.url);
 }
 
 /**
  * Request AI research for a company intel card.
  * Multi-page scraping: fetches main page, extracts links, follows top pages.
- * Returns null if server is down, intel not found, or URL is banned.
+ * Returns null if AI is unavailable or intel not found.
  */
 export async function requestResearch(
   intelId: string,
@@ -280,8 +274,6 @@ export async function requestResearch(
 ): Promise<ParsedIntelResponse | null> {
   const intel = await db.companyIntel.get(intelId);
   if (!intel) return null;
-
-  if (isBannedDomain(intel.officialUrl)) return null;
 
   const contentSections: string[] = [];
   const fetchedSources: string[] = [];
@@ -319,25 +311,43 @@ export async function requestResearch(
     }
   }
 
-  // Step 2b: DuckDuckGo fallback if main scrape yielded little content
+  // Step 2b: Targeted web search for diverse data sources
+  // Run queries to fill gaps — prioritize interview, salary, red flags
   const totalContentLength = contentSections.join('').length;
-  if (totalContentLength < 200) {
-    const [profileResults, newsResults] = await Promise.all([
-      searchViaDuckDuckGo(`${intel.company} company profile`),
-      searchViaDuckDuckGo(`${intel.company} news`),
-    ]);
-    for (const r of profileResults) {
-      if (r.content) {
-        contentSections.push(
-          `=== DUCKDUCKGO HASIL: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR DUCKDUCKGO ===`
-        );
-        fetchedSources.push(r.url);
-      }
-    }
-    for (const r of newsResults) {
+  const QUERIES_MINIMAL = [
+    { query: `${intel.company} interview tips salary review`, tag: "interview" },
+    { query: `${intel.company} red flags employee review`, tag: "redflags" },
+  ];
+  const QUERIES_FULL = [
+    ...QUERIES_MINIMAL,
+    { query: `${intel.company} company culture values work environment`, tag: "culture" },
+    { query: `${intel.company} recruitment process tahapan wawancara`, tag: "interview" },
+    { query: `${intel.company} gaji tunjangan benefits karyawan`, tag: "compensation" },
+    { query: `${intel.company} career growth promotion training`, tag: "growth" },
+    { query: `${intel.company} news 2025 2026 update`, tag: "news" },
+  ];
+
+  // If website content is substantial (>2000 chars), only run minimal queries
+  // If thin (<2000 chars), run all queries to compensate
+  const queriesToRun = totalContentLength > 2000 ? QUERIES_MINIMAL : QUERIES_FULL;
+
+  const searchResults = await Promise.allSettled(
+    queriesToRun.map(async (sq) => {
+      const results = await searchWeb(sq.query);
+      return { tag: sq.tag, results };
+    })
+  );
+
+  for (const settled of searchResults) {
+    if (settled.status !== "fulfilled") continue;
+    const { tag, results } = settled.value;
+    for (const r of results.slice(0, 3)) {  // max 3 results per query
       if (r.content && !fetchedSources.includes(r.url)) {
+        const truncated = r.content.length > 800
+          ? r.content.slice(0, 800) + "...[truncated]"
+          : r.content;
         contentSections.push(
-          `=== DUCKDUCKGO HASIL: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR DUCKDUCKGO ===`
+          `=== HASIL PENCARIAN [${tag}]: ${r.title} (${r.url}) ===\n${truncated}\n=== AKHIR HASIL ===`
         );
         fetchedSources.push(r.url);
       }
@@ -350,7 +360,9 @@ export async function requestResearch(
   if (enrichmentList.length > 0) {
     const enrichResults = await Promise.allSettled(
       enrichmentList
-        .filter((url) => !isBannedDomain(url))
+        .filter((url) => {
+          try { return new URL(url).protocol.startsWith('http'); } catch { return false; }
+        })
         .map(async (url) => ({ url, content: await fetchUrlContent(url) })),
     );
     for (const r of enrichResults) {
@@ -368,17 +380,17 @@ export async function requestResearch(
     }
   }
 
-  // Step 3b: DuckDuckGo fallback for failed enrichment URLs
+  // Step 3b: Web search fallback for failed enrichment URLs
   if (failedEnrichmentUrls.length > 0) {
     for (const failedUrl of failedEnrichmentUrls.slice(0, 3)) {
       let domain = '';
       try { domain = new URL(failedUrl).hostname.replace('www.', ''); } catch { continue; }
       const searchQuery = `${intel.company} site:${domain}`;
-      const results = await searchViaDuckDuckGo(searchQuery);
+      const results = await searchWeb(searchQuery);
       for (const r of results) {
         if (r.content && !fetchedSources.includes(r.url)) {
           contentSections.push(
-            `=== DUCKDUCKGO HASIL: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR DUCKDUCKGO ===`
+            `=== HASIL PENCARIAN: ${r.title} (${r.url}) ===\n${r.content}\n=== AKHIR HASIL ===`
           );
           fetchedSources.push(r.url);
         }
@@ -386,84 +398,32 @@ export async function requestResearch(
     }
   }
 
-  const systemPrompt =
-    "Kamu adalah analis riset perusahaan senior yang membantu pencari kerja Indonesia " +
-    "mengevaluasi calon tempat kerja secara mendalam dan akurat. " +
-    "SEMUA output HARUS dalam Bahasa Indonesia. " +
-    "Tugasmu adalah melakukan analisis KOMPREHENSIF — bukan sekadar ringkasan permukaan. " +
-    "Gunakan SEMUA informasi dari konten website dan sumber yang diberikan untuk mengisi setiap field sejelas mungkin. " +
-    "Kembalikan HANYA objek JSON valid dengan field-field berikut:\n\n" +
-    '{\n' +
-    '  "snapshot": "...",\n' +
-    '  "products": [...],\n' +
-    '  "industry": "...",\n' +
-    '  "redFlags": [...],\n' +
-    '  "culture": [...],\n' +
-    '  "recentNews": [...],\n' +
-    '  "interviewTips": [...]\n' +
-    '}\n\n' +
-    "Panduan pengisian setiap field:\n\n" +
-    "**snapshot** (string, 3-5 kalimat): " +
-    "Ringkasan mendalam perusahaan yang mencakup: sejarah pendirian (tahun, founder, visi awal), " +
-    "ukuran perusahaan (jumlah karyawan estimasi, kantor di kota/negara mana saja), " +
-    "fokus bisnis utama, dan pencapaian/signifikansi perusahaan di industrinya. " +
-    "Jangan sekadar sebut nama — ceritakan KONTEKS perusahaan itu sendiri.\n\n" +
-    "**products** (array of string): " +
-    "Daftar produk/layanan UTAMA perusahaan. Untuk setiap item, sebutkan nama produk + penjelasan singkat apa fungsinya. " +
-    "Contoh yang benar: \"[ nama produk ] — [ apa yang dilakukan ]\". " +
-    "Jangan cuma daftar nama tanpa konteks.\n\n" +
-    "**industry** (string): " +
-    "Sektor/industri perusahaan, posisi di pasar (leader/challenger/niche), " +
-    "dan competitor utama yang disebutkan di sumber. " +
-    "Contoh: \"Fintech — salah satu pemain terbesar di Southeast Asia, bersaing dengan [competitor]\".\n\n" +
-    "**redFlags** (array of string): " +
-    "Potensi MASALAH nyata bagi pencari kerja. Cari indikator seperti: " +
-    "masa kerja karyawan rata-rata sangat pendek (high turnover), " +
-    "berita PHK massal atau restructuring, " +
-    "masalah hukum/litigasi/perdata, " +
-    "keuangan tidak stabil (burn rate tinggi, kerugian berturut-turut untuk startup), " +
-    "work-life balance buruk (pulang larut, kerja Sabtu), " +
-    "budaya micromanagement atau toxic. " +
-    "Jika tidak ada red flags, tulis \"Tidak ditemukan red flags signifikan dari sumber yang tersedia\".\n\n" +
-    "**culture** (array of string): " +
-    "Info budaya kerja SPESIFIK berdasarkan sumber: " +
-    "gaya manajemen (hierarkis vs flat), " +
-    "model kerja (remote/hybrid/onsite), " +
-    "nilai-nilai perusahaan yang ditekankan, " +
-    "feedback dari karyawan tentang lingkungan kerja, " +
-    "program kesejahteraan (benefits, training, wellness). " +
-    "Jika ada informasi spesifik dari sumber, gunakan itu — jangan generalisir.\n\n" +
-    "**recentNews** (array of string): " +
-    "Perkembangan terbaru perusahaan (12 bulan terakhir): " +
-    "peluncuran produk baru, akuisisi/merger, " +
-    "perubahan kepemimpinan (CEO baru, dll), " +
-    "pendanaan/seri investasi, " +
-    "ekspansi pasar, " +
-    "perubahan strategi bisnis. " +
-    "Setiap item harus jelas: apa yang terjadi + kapan (perkiraan waktu jika ada).\n\n" +
-    "**interviewTips** (array of string): " +
-    "Tips SPESIFIK untuk wawancara di perusahaan ini: " +
-    "proses rekrutmen (berapa tahap, apa formatnya), " +
-    "pertanyaan umum yang sering ditanyakan, " +
-    "apa yang perusahaan cari dari kandidat, " +
-    "saran persiapan (teknologi yang perlu dipelajari, portofolio yang relevan), " +
-    "etika bisnis perusahaan yang perlu dipahami kandidat. " +
-    "Jika informasi spesifik tidak tersedia dari sumber, berikan tips umum namun relevan dengan industri perusahaan.\n\n" +
-    "Jika informasi benar-benar tidak tersedia untuk suatu field, gunakan string kosong atau array kosong — " +
-    "TIDAK BOLEH mengarang informasi yang tidak ada di sumber yang diberikan.";
+  const systemPrompt = getCompanyResearchPrompt();
+
+  const contentBlock = contentSections.length > 0
+    ? "=== KONTEN DARI SUMBER ===\n" + contentSections.join("\n\n").slice(0, 12000) + "\n=== AKHIR KONTEN ===\n\n"
+    : "";
+
+  // Truncate total content to prevent AI context overflow
+  const MAX_CONTENT = 12000;
+  const truncatedBlock = contentBlock.length > MAX_CONTENT
+    ? contentBlock.slice(0, MAX_CONTENT) + "\n...[konten dipotong karena terlalu panjang]"
+    : contentBlock;
+
+  const sourceNote = fetchedSources.length > 0
+    ? "Sumber yang berhasil diakses: " + fetchedSources.join(", ")
+    : "Tidak ada sumber berhasil diakses. Gunakan pengetahuan umum dari training data dan tandai sebagai 'General knowledge'.";
 
   const prompt =
     "Lakukan riset mendalam tentang perusahaan \"" + intel.company + "\".\n\n" +
     "=== INFORMASI DASAR ===\n" +
     "Nama perusahaan: " + intel.company + "\n" +
     "Website resmi: " + intel.officialUrl + "\n" +
-    "Sumber yang berhasil diakses: " + (fetchedSources.length > 0 ? fetchedSources.join(", ") : "tidak ada") + "\n\n" +
-    (contentSections.length > 0
-      ? "=== KONTEN DARI SUMBER ===\n" + contentSections.join("\n\n") + "\n=== AKHIR KONTEN ===\n\n"
-      : "") +
-    "Gunakan informasi di atas untuk mengisi setiap field dengan SEJUJUR dan SEDETAIL mungkin. " +
-    "Jangan mengarang informasi — gunakan HANYA data dari sumber yang diberikan. " +
-    "Jika sumber tidak menyediakan informasi untuk field tertentu, tulis \"Informasi tidak tersedia dari sumber yang ada\".\n" +
+    sourceNote + "\n\n" +
+    truncatedBlock +
+    "Gunakan informasi di atas untuk mengisi setiap field dengan SEJUHUR dan SEDETAIL mungkin. " +
+    "Jangan mengarang informasi — gunakan HANYA data dari sumber yang diberikan atau pengetahuan umum yang kamu yakin benar. " +
+    "Kalau informasi benar-benar tidak tersedia, tulis 'Informasi tidak tersedia dari sumber yang ada'.\n" +
     "Kembalikan HANYA objek JSON, tanpa markdown formatting atau penjelasan tambahan.";
 
   try {
@@ -475,17 +435,22 @@ export async function requestResearch(
     const result = data.result || JSON.stringify(data);
     const parsed = parseIntelResponse(result);
 
+    // Merge fetched sources with AI-reported sources
+    const allSources = [...new Set([...fetchedSources, ...parsed.sources])];
+
     // Update intel card in DB
     await db.companyIntel.update(intelId, {
-      snapshot: parsed.snapshot,
-      products: parsed.products,
-      industry: parsed.industry,
-      redFlags: parsed.redFlags,
+      overview: parsed.overview,
+      values: parsed.values,
+      workModel: parsed.workModel,
+      compensation: parsed.compensation,
+      careerGrowth: parsed.careerGrowth,
+      stability: parsed.stability,
       culture: parsed.culture,
-      recentNews: parsed.recentNews,
+      redFlags: parsed.redFlags,
       interviewTips: parsed.interviewTips,
+      sources: allSources,
       crawlDepth: 1,
-      sources: [...new Set([...intel.sources, ...fetchedSources])],
     });
 
     return parsed;
@@ -493,4 +458,89 @@ export async function requestResearch(
     // Graceful degradation - server down or network error
     return null;
   }
+}
+
+/**
+ * System prompt for company research — career decision focus.
+ * Instructs AI to help job seekers evaluate if a company is good for their
+ * long-term career, not just for passing interviews.
+ */
+function getCompanyResearchPrompt(): string {
+  return `Kamu adalah analis riset perusahaan karier yang membantu pencari kerja Indonesia
+mengevaluasi apakah suatu perusahaan BAIK untuk masa depan karir mereka — bukan sekadar lolos wawancara.
+
+SEMUA output HARUS dalam Bahasa Indonesia.
+
+Tugasmu adalah melakukan analisis KOMPREHENSIF tentang perusahaan untuk membantu keputusan karir.
+Kamu akan menerima data dari BERBAGAI sumber: website resmi, hasil pencarian web (termasuk Glassdoor, Indeed, LinkedIn, Jobstreet, berita, forum).
+Gunakan SEMUA informasi yang tersedia — bukan cuma dari website resmi.
+Kembalikan HANYA objek JSON valid dengan field-field berikut:
+
+{
+  "overview": "...",
+  "values": [...],
+  "workModel": "...",
+  "compensation": "...",
+  "careerGrowth": [...],
+  "stability": "...",
+  "culture": [...],
+  "redFlags": [...],
+  "interviewTips": [...],
+  "sources": [...]
+}
+
+Panduan pengisian setiap field:
+
+**overview** (string, 3-5 kalimat):
+Ringkasan mendalam perusahaan: sejarah pendirian, ukuran (karyawan, kantor), fokus bisnis utama,
+dan posisi di industri. Sertakan website resmi dan informasi yang bisa diverifikasi.
+
+**values** (array of string):
+Core values, visi, dan misi perusahaan. Cari di halaman "About", "Our Values", "Vision & Mission".
+Untuk setiap item, sebutkan nama value + penjelasan singkat.
+Contoh: "Innovation — Mendorong karyawan untuk bereksperimen dan gagal tanpa takut"
+
+**workModel** (string):
+Gaya kerja: remote/hybrid/onsite, jam kerja, lokasi kantor, kebijakan WFH.
+Sertakan informasi spesifik yang ditemukan di sumber.
+
+**compensation** (string):
+Range gaji (jika tersedia), benefits, tunjangan, bonus structure.
+Sebutkan sumber data gaji jika ada (Glassdoor, indeed, dll).
+
+**careerGrowth** (array of string):
+Peluang pengembangan karir: training, mentoring, jalur promosi, rotasi posisi,
+dukungan sertifikasi/pendidikan. Sebutkan program spesifik jika ada.
+
+**stability** (string):
+Kestabilan perusahaan: kondisi keuangan, pertumbuhan pasar, tren hiring,
+akuisisi/merger, pendanaan terakhir. Apakah perusahaan sedang tumbuh atau menyusut?
+
+**culture** (array of string):
+Budaya kerja SPESIFIK berdasarkan sumber: gaya manajemen, model kerja,
+nilai-nilai yang ditekankan, feedback dari karyawan, program kesejahteraan.
+Jika ada informasi dari review sites, sebutkan itu.
+
+**redFlags** (array of string):
+Potensi MASALAH nyata bagi pencari kerja: high turnover, PHK massal,
+masalah hukum, keuangan tidak stabil, WLB buruk, toxic culture.
+Jika tidak ada red flags, tulis "Tidak ditemukan red flags signifikan dari sumber yang tersedia".
+
+**interviewTips** (array of string):
+Tips SPESIFIK untuk wawancara: proses rekrutmen, tahapan, pertanyaan umum,
+apa yang perusahaan cari, saran persiapan, etika bisnis.
+Cari dari: hasil pencarian "interview", Glassdoor, Indeed, forum karyawan.
+Jika tidak ada info spesifik dari sumber, tulis "Informasi tidak tersedia dari sumber yang ada".
+
+**sources** (array of string):
+Daftar URL sumber informasi yang kamu gunakan untuk analisis ini.
+Include SEMUA URL dari konten yang diberikan — website resmi, Glassdoor, LinkedIn, Indeed, berita, dll.
+Jika menggunakan pengetahuan umum, tambahkan "(General knowledge)" sebagai item terakhir.
+
+ATURAN PENTING:
+- Jangan mengarang informasi. Gunakan HANYA data dari sumber yang diberikan + pengetahuan umum yang kamu yakin benar.
+- Setiap klaim harus bisa diverifikasi. Sebutkan sumbernya.
+- Jika informasi tidak tersedia untuk field tertentu, tulis "Informasi tidak tersedia dari sumber yang ada".
+- Output final HARUS dalam Bahasa Indonesia.
+- Kembalikan HANYA objek JSON, tanpa markdown formatting.`;
 }

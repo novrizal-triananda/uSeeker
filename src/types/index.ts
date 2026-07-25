@@ -69,15 +69,23 @@ export interface CompanyIntel {
   officialUrl: string;
   notes?: string;
   enrichmentUrls?: string[];
+  // Career decision intel fields
+  overview?: string;
+  values?: string[];
+  workModel?: string;
+  compensation?: string;
+  careerGrowth?: string[];
+  stability?: string;
+  culture?: string[];
+  redFlags?: string[];
+  interviewTips?: string[];
+  sources?: string[];
+  // Legacy fields (kept for backward compat)
   snapshot?: string;
   products?: string[];
   industry?: string;
-  redFlags?: string[];
-  culture?: string[];
   recentNews?: string[];
-  interviewTips?: string[];
   crawlDepth: number;
-  sources: string[];
   createdAt: Date;
 }
 

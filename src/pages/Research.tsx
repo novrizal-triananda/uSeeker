@@ -7,7 +7,7 @@ function openUrl(url: string) {
 }
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
-import { createIntelCard, requestResearch, isBannedDomain } from '../lib/companyIntel';
+import { createIntelCard, requestResearch } from '../lib/companyIntel';
 import { logEvent } from '../lib/eventLog';
 import type { CompanyIntel, JobEntry } from '../types';
 
@@ -48,11 +48,6 @@ export default function Research() {
     e.preventDefault();
     if (!company.trim()) return;
 
-    if (url.trim() && isBannedDomain(url)) {
-      alert('Domain ini diblokir (review site/job board). Gunakan situs resmi perusahaan.');
-      return;
-    }
-
     await createIntelCard({
       company: company.trim(),
       officialUrl: url.trim() || '',
@@ -82,11 +77,11 @@ export default function Research() {
       const enrichmentUrls = card?.enrichmentUrls;
       const result = await requestResearch(id, enrichmentUrls);
       if (result === null) {
-        setResearchError('Server AI tidak tersedia. Pastikan server proxy berjalan di port 8787.');
+        setResearchError('Server AI tidak tersedia. Pastikan API key AI sudah dikonfigurasi di Settings.');
       }
       await loadData();
     } catch {
-      setResearchError('Gagal melakukan riset. Periksa koneksi server.');
+      setResearchError('Gagal melakukan riset. Periksa koneksi dan API key.');
     } finally {
       setResearchingId(null);
     }
@@ -95,6 +90,11 @@ export default function Research() {
   async function handleDelete(id: string) {
     await db.companyIntel.delete(id);
     await loadData();
+  }
+
+  // Check if card has new-format intel data
+  function hasIntel(card: CompanyIntel): boolean {
+    return Boolean(card.overview || card.values?.length || card.culture?.length || card.redFlags?.length);
   }
 
   return (
@@ -150,11 +150,6 @@ export default function Research() {
                 fontSize: 'var(--font-size-base)', fontFamily: 'var(--font-family)',
               }}
             />
-            {url && isBannedDomain(url) && (
-              <p style={{ color: 'var(--color-status-red)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-1)' }}>
-                ⚠️ Domain ini diblokir. Gunakan situs resmi perusahaan.
-              </p>
-            )}
             </div>
             <div>
             <label htmlFor="enrichment-urls" style={{ display: 'block', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
@@ -217,18 +212,15 @@ export default function Research() {
           )}
           <button
             type="submit"
-            disabled={!company.trim() || Boolean(url.trim() && isBannedDomain(url))}
+            disabled={!company.trim()}
             style={{
               alignSelf: 'flex-start',
               padding: 'var(--space-3) var(--space-6)',
               background: 'var(--color-primary)',
               color: 'var(--color-surface)',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-base)',
-              opacity: (!company.trim() || (url.trim() && isBannedDomain(url))) ? 0.5 : undefined,
+              border: 'none', borderRadius: 'var(--radius-md)',
+              fontWeight: 600, cursor: 'pointer', fontSize: 'var(--font-size-base)',
+              opacity: !company.trim() ? 0.5 : undefined,
             }}
           >
             + Add Card
@@ -264,7 +256,7 @@ export default function Research() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {cards.map((card) => {
             const isExpanded = expandedId === card.id;
-            const hasIntel = Boolean(card.snapshot || card.products?.length || card.industry || card.redFlags?.length);
+            const intelAvailable = hasIntel(card);
             return (
               <div key={card.id} style={{
                 background: 'var(--color-surface)',
@@ -278,28 +270,30 @@ export default function Research() {
                     <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
                       {card.company}
                     </h3>
-                    <button
-                      onClick={() => openUrl(card.officialUrl)}
-                      style={{
-                        color: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all',
-                        background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-                      }}
-                    >
-                      {card.officialUrl}
-                    </button>
+                    {card.officialUrl && (
+                      <button
+                        onClick={() => openUrl(card.officialUrl)}
+                        style={{
+                          color: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all',
+                          background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                        }}
+                      >
+                        {card.officialUrl}
+                      </button>
+                    )}
                     {card.notes && (
                       <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-2)' }}>
                         {card.notes}
                       </p>
                     )}
-                    {card.industry && (
+                    {card.overview && (
                       <span style={{
                         display: 'inline-block', marginTop: 'var(--space-2)',
                         padding: 'var(--space-1) var(--space-3)',
                         background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
                         fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)',
                       }}>
-                        🏭 {card.industry}
+                        🏭 {card.overview.slice(0, 80)}{card.overview.length > 80 ? '...' : ''}
                       </span>
                     )}
                     {card.jobId && (() => {
@@ -320,17 +314,17 @@ export default function Research() {
                   <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => handleResearch(card.id)}
-                      disabled={researchingId === card.id || isBannedDomain(card.officialUrl)}
+                      disabled={researchingId === card.id}
                       style={{
                         padding: 'var(--space-2) var(--space-4)',
-                        background: hasIntel ? 'var(--color-status-green)' : 'var(--color-primary)',
+                        background: intelAvailable ? 'var(--color-status-green)' : 'var(--color-primary)',
                         color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)',
                         fontWeight: 500, cursor: 'pointer', fontSize: 'var(--font-size-sm)',
                       }}
                     >
-                      {researchingId === card.id ? '⏳ Riset...' : hasIntel ? '🔄 Riset Ulang' : '🔍 Riset'}
+                      {researchingId === card.id ? '⏳ Riset...' : intelAvailable ? '🔄 Riset Ulang' : '🔍 Riset'}
                     </button>
-                    {hasIntel && (
+                    {intelAvailable && (
                     <button
                       onClick={() => {
                         const newId = isExpanded ? null : card.id;
@@ -362,76 +356,60 @@ export default function Research() {
                 </div>
 
                 {/* Expanded Intel Detail */}
-                {isExpanded && hasIntel && (
+                {isExpanded && intelAvailable && (
                   <div style={{
                     marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)',
                     borderTop: '1px solid var(--color-border)',
                   }}>
-                    {card.snapshot && (
-                      <div style={{ marginBottom: 'var(--space-4)' }}>
-                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📋 Snapshot</h4>
-                        <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{card.snapshot}</p>
-                      </div>
+                    {card.overview && (
+                      <Section title="📋 Overview" content={card.overview} />
                     )}
-                    {card.products && card.products.length > 0 && (
-                      <div style={{ marginBottom: 'var(--space-4)' }}>
-                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📦 Produk</h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                          {card.products.map((p, i) => (
-                            <span key={i} style={{
-                              padding: 'var(--space-1) var(--space-3)',
-                              background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)',
-                              fontSize: 'var(--font-size-sm)',
-                            }}>{p}</span>
-                          ))}
-                        </div>
-                      </div>
+                    {card.values && card.values.length > 0 && (
+                      <BulletList title="💎 Core Values & Visi Misi" items={card.values} />
                     )}
-                    {card.redFlags && card.redFlags.length > 0 && (
-                      <div>
-                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)', color: 'var(--color-status-red)' }}>
-                          🚩 Red Flags
-                        </h4>
-                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
-                          {card.redFlags.map((flag, i) => (
-                            <li key={i} style={{ color: 'var(--color-status-red)', marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)' }}>
-                              {flag}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                    {card.workModel && (
+                      <Section title="🏠 Work Model" content={card.workModel} />
+                    )}
+                    {card.compensation && (
+                      <Section title="💰 Compensation & Benefits" content={card.compensation} />
+                    )}
+                    {card.careerGrowth && card.careerGrowth.length > 0 && (
+                      <BulletList title="📈 Career Growth" items={card.careerGrowth} />
+                    )}
+                    {card.stability && (
+                      <Section title="📊 Stability & Market Position" content={card.stability} />
                     )}
                     {card.culture && card.culture.length > 0 && (
-                      <div style={{ marginTop: 'var(--space-4)' }}>
-                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>🏢 Budaya Kerja</h4>
-                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
-                          {card.culture.map((item, i) => (
-                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <BulletList title="🏢 Budaya Kerja" items={card.culture} />
                     )}
-                    {card.recentNews && card.recentNews.length > 0 && (
-                      <div style={{ marginTop: 'var(--space-4)' }}>
-                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>📰 Berita Terbaru</h4>
-                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
-                          {card.recentNews.map((item, i) => (
-                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                    {card.redFlags && card.redFlags.length > 0 && (
+                      <BulletList title="🚩 Red Flags" items={card.redFlags} color="var(--color-status-red)" />
                     )}
                     {card.interviewTips && card.interviewTips.length > 0 && (
+                      <BulletList title="💡 Tips Wawancara" items={card.interviewTips} />
+                    )}
+                    {card.sources && card.sources.length > 0 && (
                       <div style={{ marginTop: 'var(--space-4)' }}>
-                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>💡 Tips Wawancara</h4>
-                        <ul style={{ paddingLeft: 'var(--space-5)' }}>
-                          {card.interviewTips.map((item, i) => (
-                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                              {item}
+                        <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}>
+                          🔗 Sumber
+                        </h4>
+                        <ul style={{ paddingLeft: 'var(--space-5)', listStyleType: 'none', padding: 0 }}>
+                          {card.sources.map((src, i) => (
+                            <li key={i} style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-xs)' }}>
+                              {src.startsWith('http') ? (
+                                <button
+                                  onClick={() => openUrl(src)}
+                                  style={{
+                                    color: 'var(--color-primary)', background: 'none', border: 'none',
+                                    padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit',
+                                    textDecoration: 'underline', textAlign: 'left',
+                                  }}
+                                >
+                                  {src}
+                                </button>
+                              ) : (
+                                <span style={{ color: 'var(--color-text-muted)' }}>{src}</span>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -445,5 +423,34 @@ export default function Research() {
         </div>
       )}
     </section>
+  );
+}
+
+// ── Reusable sub-components ──
+
+function Section({ title, content }: { title: string; content: string }) {
+  return (
+    <div style={{ marginBottom: 'var(--space-4)' }}>
+      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>{title}</h4>
+      <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.6, fontSize: 'var(--font-size-sm)' }}>{content}</p>
+    </div>
+  );
+}
+
+function BulletList({ title, items, color }: { title: string; items: string[]; color?: string }) {
+  return (
+    <div style={{ marginBottom: 'var(--space-4)' }}>
+      <h4 style={{ fontWeight: 600, marginBottom: 'var(--space-2)', color: color || 'inherit' }}>{title}</h4>
+      <ul style={{ paddingLeft: 'var(--space-5)' }}>
+        {items.map((item, i) => (
+          <li key={i} style={{
+            marginBottom: 'var(--space-1)', fontSize: 'var(--font-size-sm)',
+            color: color || 'var(--color-text-muted)',
+          }}>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

@@ -9,6 +9,30 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/lang/id-ID/).
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-07-25
+
+### Added
+- Search Settings: Tavily API key configuration for web search (BYOK, 1,000 free searches/month)
+- Company Intel: 9 career-focused fields — overview, values, workModel, compensation, careerGrowth, stability, culture, redFlags, interviewTips
+- Company Intel: source attribution — every research includes clickable URLs for verification
+- Company Intel: 9 targeted search queries (culture, interview, salary, reviews, red flags, growth, news) in EN + ID
+- Backend: Tavily search provider (`search_tavily`) via POST api.tavily.com with Bearer token auth
+- Backend: `get_search_config` command for Settings UI
+
+### Changed
+- Company Intel redesign: focus shifted from "pass interview" to "career decision" — helps users evaluate if company is good for long-term career
+- Search fallback chain: Tavily (primary) → DuckDuckGo (fallback). Removed Brave (needs $5/mo) and Bing (retired Aug 2025)
+- Company Intel prompt: comprehensive multi-source analysis with diverse data from Glassdoor, Indeed, LinkedIn, Jobstreet, forums
+- Website scraping: all domains allowed (removed banned domain list) — source attribution handles credibility
+
+### Removed
+- BANNED_DOMAINS list (LinkedIn, Glassdoor, Indeed, AmbitionBox, TeamBlind) — all sources now allowed
+- Brave Search API provider (free tier removed, requires $5/mo subscription)
+- Bing Web Search API provider (retired August 2025)
+- `search_brave()` and `search_bing()` functions
+- `resolve_brave_key()` and `resolve_bing_key()` config resolvers
+- `urlencoding::encode()` helper (no longer needed)
+
 ## [2.7.3] - 2026-07-21
 
 ### Fixed

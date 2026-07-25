@@ -45,20 +45,12 @@ fn resolve_ai_model(runtime: Option<&str>) -> String {
         .unwrap_or_default()
 }
 
-fn resolve_brave_key() -> Option<String> {
-    std::env::var("USEEKER_BRAVE_API_KEY")
-        .ok()
+fn resolve_tavily_key(runtime: Option<&str>) -> Option<String> {
+    runtime
         .filter(|s| !s.is_empty())
-        .or_else(|| read_config_file_value("brave_key"))
-        .filter(|s| !s.is_empty())
-}
-
-fn resolve_bing_key() -> Option<String> {
-    std::env::var("USEEKER_BING_API_KEY")
-        .ok()
-        .filter(|s| !s.is_empty())
-        .or_else(|| read_config_file_value("bing_key"))
-        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .or_else(|| std::env::var("USEEKER_TAVILY_API_KEY").ok().filter(|s| !s.is_empty()))
+        .or_else(|| read_config_file_value("tavily_key").filter(|s| !s.is_empty()))
 }
 
 fn http_client() -> &'static Client {
@@ -176,29 +168,22 @@ pub async fn call_ai(
 }
 
 /// Multi-provider web search with automatic fallback.
-/// Order: DuckDuckGo (free) → Brave (API) → Bing (API).
+/// Order: Tavily (API) → DuckDuckGo (free fallback).
 #[command]
 pub async fn search_web(query: String) -> Result<Vec<SearchResult>, String> {
     if query.trim().is_empty() {
         return Err("query is required".to_string());
     }
 
-    // 1. DuckDuckGo (free, unlimited — but blocked by Indonesian ISPs)
+    // 1. Tavily (primary — official API, reliable)
+    if let Some(results) = search_tavily(&query).await {
+        if !results.is_empty() {
+            return Ok(results);
+        }
+    }
+
+    // 2. DuckDuckGo (fallback — free but may hit CAPTCHA)
     if let Some(results) = search_duckduckgo(&query).await {
-        if !results.is_empty() {
-            return Ok(results);
-        }
-    }
-
-    // 2. Brave Search API
-    if let Some(results) = search_brave(&query).await {
-        if !results.is_empty() {
-            return Ok(results);
-        }
-    }
-
-    // 3. Bing Web Search API
-    if let Some(results) = search_bing(&query).await {
         if !results.is_empty() {
             return Ok(results);
         }
@@ -395,10 +380,18 @@ fn version_gt(a: &str, b: &str) -> bool {
     false
 }
 
+/// Get search configuration from disk (for Settings UI).
+#[tauri::command]
+pub fn get_search_config() -> Result<serde_json::Value, String> {
+    let tavily_key = resolve_tavily_key(None).unwrap_or_default();
+    Ok(serde_json::json!({ "tavilyKey": tavily_key }))
+}
+
 /// Health check — returns config status (no secrets exposed).
 #[command]
 pub fn check_health() -> serde_json::Value {
     let ai_key = resolve_ai_key(None);
+    let tavily_key = resolve_tavily_key(None);
     serde_json::json!({
         "status": "ok",
         "ai": {
@@ -408,9 +401,8 @@ pub fn check_health() -> serde_json::Value {
         },
         "search": {
             "providers": [
+                { "name": "Tavily", "type": "api", "available": tavily_key.is_some() },
                 { "name": "DuckDuckGo", "type": "free", "available": true },
-                { "name": "Brave", "type": "api", "available": resolve_brave_key().is_some() },
-                { "name": "Bing", "type": "api", "available": resolve_bing_key().is_some() },
             ]
         },
         "timestamp": chrono_now(),
@@ -724,6 +716,49 @@ fn get_agent_system_prompt(task: &str) -> String {
 
 // ── Search providers ──
 
+async fn search_tavily(query: &str) -> Option<Vec<SearchResult>> {
+    let key = resolve_tavily_key(None)?;
+    let body = serde_json::json!({
+        "query": query,
+        "search_depth": "basic",
+        "max_results": 5,
+        "include_answer": false,
+    });
+
+    let resp = http_client()
+        .post("https://api.tavily.com/search")
+        .header("Authorization", format!("Bearer {}", key))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .ok()?;
+
+    if !resp.status().is_success() {
+        return None;
+    }
+
+    let data: serde_json::Value = resp.json().await.ok()?;
+    let results = data["results"].as_array()?;
+
+    Some(
+        results
+            .iter()
+            .take(5)
+            .filter_map(|r| {
+                let title = r["title"].as_str().unwrap_or("").to_string();
+                let url = r["url"].as_str().unwrap_or("").to_string();
+                let content = r["content"].as_str().unwrap_or("").to_string();
+                if title.is_empty() || url.is_empty() {
+                    None
+                } else {
+                    Some(SearchResult { title, url, content })
+                }
+            })
+            .collect(),
+    )
+}
+
 async fn search_duckduckgo(query: &str) -> Option<Vec<SearchResult>> {
     let params = [("q", query), ("kl", "wt-wt")];
     let resp = http_client()
@@ -793,80 +828,6 @@ async fn search_duckduckgo(query: &str) -> Option<Vec<SearchResult>> {
     } else {
         Some(results)
     }
-}
-
-async fn search_brave(query: &str) -> Option<Vec<SearchResult>> {
-    let key = resolve_brave_key()?;
-    let url = format!(
-        "https://api.search.brave.com/res/v1/web/search?q={}&count=5",
-        urlencoding::encode(query)
-    );
-
-    let resp = http_client()
-        .get(&url)
-        .header("Accept", "application/json")
-        .header("Accept-Encoding", "gzip")
-        .header("X-Subscription-Token", &key)
-        .send()
-        .await
-        .ok()?;
-
-    if !resp.status().is_success() {
-        return None;
-    }
-
-    let data: serde_json::Value = resp.json().await.ok()?;
-    let web_results = data["web"]["results"].as_array()?;
-
-    Some(
-        web_results
-            .iter()
-            .take(5)
-            .filter_map(|r| {
-                Some(SearchResult {
-                    title: r["title"].as_str().unwrap_or("").to_string(),
-                    url: r["url"].as_str().unwrap_or("").to_string(),
-                    content: r["description"].as_str().unwrap_or("").to_string(),
-                })
-            })
-            .collect(),
-    )
-}
-
-async fn search_bing(query: &str) -> Option<Vec<SearchResult>> {
-    let key = resolve_bing_key()?;
-    let url = format!(
-        "https://api.bing.microsoft.com/v7.0/search?q={}&count=5",
-        urlencoding::encode(query)
-    );
-
-    let resp = http_client()
-        .get(&url)
-        .header("Ocp-Apim-Subscription-Key", &key)
-        .send()
-        .await
-        .ok()?;
-
-    if !resp.status().is_success() {
-        return None;
-    }
-
-    let data: serde_json::Value = resp.json().await.ok()?;
-    let web_pages = data["webPages"]["value"].as_array()?;
-
-    Some(
-        web_pages
-            .iter()
-            .take(5)
-            .filter_map(|r| {
-                Some(SearchResult {
-                    title: r["name"].as_str().unwrap_or("").to_string(),
-                    url: r["url"].as_str().unwrap_or("").to_string(),
-                    content: r["snippet"].as_str().unwrap_or("").to_string(),
-                })
-            })
-            .collect(),
-    )
 }
 
 // ── HTML helpers ──

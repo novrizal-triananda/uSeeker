@@ -12,6 +12,10 @@ interface AiSettings {
   model: string;
 }
 
+interface SearchSettings {
+  tavilyKey: string;
+}
+
 const THEMES = [
   { key: 'light' as const, label: 'Terang', icon: '☀️' },
   { key: 'dark' as const, label: 'Gelap', icon: '🌙' },
@@ -21,8 +25,11 @@ const THEMES = [
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<AiSettings>({ apiKey: '', baseUrl: '', model: '' });
+  const [searchSettings, setSearchSettings] = useState<SearchSettings>({ tavilyKey: '' });
   const [saved, setSaved] = useState(false);
+  const [searchSaved, setSearchSaved] = useState(false);
   const [error, setError] = useState('');
+  const [searchError, setSearchError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadSettings(); }, []);
@@ -31,7 +38,9 @@ export default function Settings() {
     try {
       if (window.__TAURI_INTERNALS__) {
         const config = await invoke<AiSettings>('get_ai_config');
-        setSettings({ apiKey: '', baseUrl: config.baseUrl || '', model: config.model || '' });
+        setSettings({ apiKey: config.apiKey || '', baseUrl: config.baseUrl || '', model: config.model || '' });
+        const searchConfig = await invoke<SearchSettings>('get_search_config');
+        setSearchSettings({ tavilyKey: searchConfig.tavilyKey || '' });
       }
     } catch (e) { console.error('Failed to load settings:', e); } finally { setLoading(false); }
   }
@@ -49,6 +58,16 @@ export default function Settings() {
       }
       setSaved(true); setTimeout(() => setSaved(false), 3000);
     } catch (e) { setError('Gagal menyimpan: ' + String(e)); }
+  }
+
+  async function handleSearchSave() {
+    setSearchError(''); setSearchSaved(false);
+    try {
+      if (window.__TAURI_INTERNALS__) {
+        await invoke('save_config', { key: 'tavily_key', value: searchSettings.tavilyKey.trim() });
+      }
+      setSearchSaved(true); setTimeout(() => setSearchSaved(false), 3000);
+    } catch (e) { setSearchError('Gagal menyimpan: ' + String(e)); }
   }
 
   if (loading) {
@@ -117,6 +136,28 @@ export default function Settings() {
         {error && <p style={{ color: 'var(--color-status-red)', fontSize: '0.875rem', marginBottom: '16px' }}>{error}</p>}
         {saved && <p style={{ color: 'var(--color-status-green)', fontSize: '0.875rem', marginBottom: '16px' }}>Settings saved.</p>}
         <button onClick={handleSave} style={saveBtnStyle}>Save Settings</button>
+      </div>
+
+      {/* Search Settings */}
+      <div style={{ ...cardStyle, marginTop: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Search Settings</h2>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Tavily API Key</label>
+          <input type="password" style={inputStyle} value={searchSettings.tavilyKey}
+            onChange={(e) => { setSearchSettings(s => ({ ...s, tavilyKey: e.target.value })); setSearchError(''); setSearchSaved(false); }}
+            placeholder="tvly-..." />
+          <p style={hintStyle}>
+            Kunci API untuk pencarian web. Dapatkan gratis di{' '}
+            <a href="https://app.tavily.com" target="_blank" rel="noopener noreferrer"
+              style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+              tavily.com
+            </a>{' '}
+            (1,000 pencarian/bulan). Tanpa kunci, uSeeker menggunakan DuckDuckGo (terbatas).
+          </p>
+        </div>
+        {searchError && <p style={{ color: 'var(--color-status-red)', fontSize: '0.875rem', marginBottom: '16px' }}>{searchError}</p>}
+        {searchSaved && <p style={{ color: 'var(--color-status-green)', fontSize: '0.875rem', marginBottom: '16px' }}>Search settings saved.</p>}
+        <button onClick={handleSearchSave} style={saveBtnStyle}>Save Search Settings</button>
       </div>
 
       {/* Privacy Note */}
